@@ -1,0 +1,6 @@
+== SplitLeague ========================
+DB Database: splitleague
+Server IP:  77.68.13.150
+DB User: splitleague_user
+DB User PW: your_strong_password
+=======================================
