@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.example.splitleague_flutter"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973" // Updated to fix plugin compatibility issues
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

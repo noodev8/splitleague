@@ -1,0 +1,80 @@
+==== POSTMAN API TESTING GUIDE ====
+
+== Register User ==============================
+URL: http://localhost:3000/register
+Method: POST
+Headers: Content-Type: application/json
+Body:
+{
+  "name": "Test User",
+  "nickname": "Tester",
+  "email": "test1@test.com",
+  "password": "1234"
+}
+======================================
+
+== Login User ==============================
+URL: http://localhost:3000/login_user
+Method: POST
+Headers: Content-Type: application/json
+Body:
+{
+  "email": "test1@test.com",
+  "password": "1234"
+}
+======================================
+
+== Create League ==============================
+URL: http://localhost:3000/create_league
+Method: POST
+Headers:
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+Body:
+{
+  "name": "Premier League 2025",
+  "points_for_win": 3,
+  "points_for_draw": 1,
+  "points_for_win_margin": 1,
+  "points_for_close_loss": 1,
+  "win_margin_threshold": 15,
+  "start_date": "2025-05-01",
+  "end_date": "2025-08-31"
+}
+
+Response will include a unique 4-digit public_code and active=true
+======================================
+
+== Join League ==============================
+URL: http://localhost:3000/join_league
+Method: POST
+Headers:
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+Body:
+{
+  "public_code": "1234"
+}
+======================================
+
+== Test User 1 ==============================
+Email: test1@test.com
+Password: 1234
+======================================
+
+== Authentication Header Format ==============================
+For authenticated routes, add this header:
+Authorization: Bearer YOUR_JWT_TOKEN
+======================================
+
+== Common Response Codes ==============================
+SUCCESS - Operation completed successfully
+MISSING_FIELDS - Required fields are missing
+INVALID_CREDENTIALS - Email or password is incorrect
+EMAIL_ALREADY_EXISTS - Email is already registered
+INVALID_CODE - The provided public code is invalid
+LEAGUE_INACTIVE - The league is not active
+CODE_GENERATION_FAILED - Failed to generate a unique code
+SERVER_ERROR - Server encountered an error
+UNAUTHORIZED - Authentication token is missing or invalid
+======================================

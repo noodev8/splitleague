@@ -1,3 +1,20 @@
+== Tables ==
+app_user
+league
+league_members
+fixture
+
+== Get Table Schema ==
+SELECT column_name, data_type, is_nullable, character_maximum_length
+FROM information_schema.columns
+WHERE table_name = 'available_slot';
+
+== get Table Names ==
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+  AND table_type = 'BASE TABLE';
+
 == SplitLeague ========================
 DB Database: splitleague
 Server IP:  77.68.13.150
