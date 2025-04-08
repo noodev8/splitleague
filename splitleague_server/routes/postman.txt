@@ -102,6 +102,21 @@ Retrieves all fixtures for a specific league with player details
 Only league members or the creator can access fixtures
 ======================================
 
+== Get League Members ==============================
+URL: http://localhost:3000/get_league_members
+Method: POST
+Headers:
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+Body:
+{
+  "league_id": 1
+}
+
+Retrieves all members of a specific league including the creator
+Only league members or the creator can access the member list
+======================================
+
 == Test User 1 ==============================
 Email: test1@test.com
 Password: 1234

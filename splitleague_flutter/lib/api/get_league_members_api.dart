@@ -1,6 +1,6 @@
 /*
-API service for retrieving league fixtures
-Fetches all fixtures for a specific league
+API service for retrieving league members
+Fetches all members of a specific league
 */
 
 import 'dart:convert';
@@ -8,11 +8,11 @@ import 'package:http/http.dart' as http;
 import '../helpers/config.dart';
 import '../helpers/auth_helper.dart';
 
-class GetLeagueFixturesApi {
-  // Get all fixtures for a league
-  static Future<Map<String, dynamic>> getLeagueFixtures(int leagueId) async {
+class GetLeagueMembersApi {
+  // Get all members for a league
+  static Future<Map<String, dynamic>> getLeagueMembers(int leagueId) async {
     // Create the request URL
-    final url = Uri.parse('${Config.baseUrl}/get_league_fixtures');
+    final url = Uri.parse('${Config.baseUrl}/get_league_members');
 
     try {
       // Get the JWT token
@@ -58,8 +58,8 @@ class GetLeagueFixturesApi {
         try {
           final Map<String, dynamic> errorData = jsonDecode(response.body);
 
-          // Handle NO_FIXTURES_FOUND as a normal case, not an error
-          if (errorData['return_code'] == 'NO_FIXTURES_FOUND') {
+          // Handle NO_MEMBERS_FOUND as a normal case, not an error
+          if (errorData['return_code'] == 'NO_MEMBERS_FOUND') {
             return errorData;
           }
 

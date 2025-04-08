@@ -25,6 +25,7 @@ const join_league = require('./routes/join_league');
 const get_user_leagues = require('./routes/get_user_leagues');
 const generate_fixtures = require('./routes/generate_fixtures');
 const get_league_fixtures = require('./routes/get_league_fixtures');
+const get_league_members = require('./routes/get_league_members');
 
 // Use routes
 app.use('/register', register);
@@ -34,6 +35,7 @@ app.use('/join_league', join_league);
 app.use('/get_user_leagues', get_user_leagues);
 app.use('/generate_fixtures', generate_fixtures);
 app.use('/get_league_fixtures', get_league_fixtures);
+app.use('/get_league_members', get_league_members);
 
 // Root route
 app.get('/', (req, res) => {
