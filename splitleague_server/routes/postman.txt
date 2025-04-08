@@ -1,18 +1,5 @@
 ==== POSTMAN API TESTING GUIDE ====
 
-== Register User ==============================
-URL: http://localhost:3000/register
-Method: POST
-Headers: Content-Type: application/json
-Body:
-{
-  "name": "Test User",
-  "nickname": "Tester",
-  "email": "test1@test.com",
-  "password": "1234"
-}
-======================================
-
 == Login User ==============================
 URL: http://localhost:3000/login_user
 Method: POST
@@ -23,6 +10,21 @@ Body:
   "password": "1234"
 }
 ======================================
+
+
+== Register User ==============================
+URL: http://localhost:3000/register
+Method: POST
+Headers: Content-Type: application/json
+Body:
+{
+  "name": "Test User",
+  "nickname": "Tester",
+  "email": "test1@test.com",
+  "password": "123456"
+}
+======================================
+
 
 == Create League ==============================
 URL: http://localhost:3000/create_league
@@ -55,6 +57,18 @@ Body:
 {
   "public_code": "1234"
 }
+======================================
+
+== Get User Leagues ==============================
+URL: http://localhost:3000/get_user_leagues
+Method: POST
+Headers:
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+Body:
+{}
+
+Returns all leagues the authenticated user is a member of
 ======================================
 
 == Test User 1 ==============================

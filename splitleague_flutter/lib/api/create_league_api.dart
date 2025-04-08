@@ -17,8 +17,6 @@ class CreateLeagueApi {
     int? pointsForWinMargin,
     int? pointsForCloseLoss,
     int? winMarginThreshold,
-    String? startDate,
-    String? endDate,
   }) async {
     // Create the request URL
     final url = Uri.parse('${Config.baseUrl}/create_league');
@@ -45,8 +43,6 @@ class CreateLeagueApi {
       if (pointsForWinMargin != null) body['points_for_win_margin'] = pointsForWinMargin;
       if (pointsForCloseLoss != null) body['points_for_close_loss'] = pointsForCloseLoss;
       if (winMarginThreshold != null) body['win_margin_threshold'] = winMarginThreshold;
-      if (startDate != null) body['start_date'] = startDate;
-      if (endDate != null) body['end_date'] = endDate;
 
       // Send POST request to the server
       final response = await http.post(

@@ -5,6 +5,7 @@ API Route: create_league
 Method: POST
 Purpose: Creates a new league with the provided details. The authenticated user becomes the creator of the league.
          Generates a unique 4-digit public code for the league and marks it as active.
+         Creates entries in both league and league_points tables.
 =======================================================================================================================================
 Request Payload:
 {
@@ -27,14 +28,18 @@ Success Response:
     "created_by": 123,                  // integer - User ID of creator
     "public_code": "1234",              // string - Unique 4-digit code for joining the league
     "active": true,                     // boolean - League active status
-    "points_for_win": 3,                // integer - Points for win
-    "points_for_draw": 1,               // integer - Points for draw
-    "points_for_win_margin": 1,         // integer - Points for win margin
-    "points_for_close_loss": 1,         // integer - Points for close loss
-    "win_margin_threshold": 15,         // integer - Win margin threshold
     "start_date": "2025-05-01",         // date - Start date
     "end_date": "2025-08-31",           // date - End date
-    "created_at": "2025-04-06T12:00:00.000Z" // timestamp - Creation date
+    "created_at": "2025-04-06T12:00:00.000Z", // timestamp - Creation date
+    "points": {
+      "id": 1,                          // integer - Unique points ID
+      "league_id": 1,                   // integer - League ID
+      "points_for_win": 3,              // integer - Points for win
+      "points_for_draw": 1,             // integer - Points for draw
+      "points_for_win_margin": 1,       // integer - Points for win margin
+      "points_for_close_loss": 1,       // integer - Points for close loss
+      "win_margin_threshold": 15        // integer - Win margin threshold
+    }
   }
 }
 =======================================================================================================================================
@@ -44,6 +49,7 @@ Return Codes:
 "UNAUTHORIZED"
 "SERVER_ERROR"
 "CODE_GENERATION_FAILED"
+"TRANSACTION_FAILED"
 =======================================================================================================================================
 */
 
@@ -89,6 +95,9 @@ const generateUniqueCode = async () => {
 
 // POST /create_league
 router.post('/', verifyToken, async (req, res) => {
+  // Get a client from the pool for transaction
+  const client = await pool.connect();
+
   try {
     // Extract league details from request body
     const {
@@ -124,46 +133,72 @@ router.post('/', verifyToken, async (req, res) => {
       });
     }
 
-    // Insert the new league into the database with public_code and active=true
-    const insertResult = await pool.query(
+    // Begin transaction
+    await client.query('BEGIN');
+
+    // Insert the new league into the league table
+    const leagueInsertResult = await client.query(
       `INSERT INTO league (
         name,
         created_by,
         public_code,
         active,
-        points_for_win,
-        points_for_draw,
-        points_for_win_margin,
-        points_for_close_loss,
-        win_margin_threshold,
         start_date,
         end_date
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *`,
       [
         name,
         userId,
         publicCode,
         true, // Set active to true
-        points_for_win || 3,
-        points_for_draw || 1,
-        points_for_win_margin || 1,
-        points_for_close_loss || 1,
-        win_margin_threshold || 15,
         start_date || null,
         end_date || null
       ]
     );
 
     // Get the newly created league
-    const league = insertResult.rows[0];
+    const league = leagueInsertResult.rows[0];
 
-    // Return success response with league data
+    // Insert the points settings into the league_points table
+    const pointsInsertResult = await client.query(
+      `INSERT INTO league_points (
+        league_id,
+        points_for_win,
+        points_for_draw,
+        points_for_win_margin,
+        points_for_close_loss,
+        win_margin_threshold
+      ) VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *`,
+      [
+        league.id,
+        points_for_win || 3,
+        points_for_draw || 1,
+        points_for_win_margin || 1,
+        points_for_close_loss || 1,
+        win_margin_threshold || 15
+      ]
+    );
+
+    // Get the points settings
+    const points = pointsInsertResult.rows[0];
+
+    // Commit the transaction
+    await client.query('COMMIT');
+
+    // Add points to the league object for the response
+    league.points = points;
+
+    // Return success response with league data including points
     return res.status(201).json({
       return_code: 'SUCCESS',
       league: league
     });
   } catch (error) {
+    // Rollback the transaction in case of error
+    await client.query('ROLLBACK');
+
     console.error('Error in create_league route:', error);
 
     // Return server error response
@@ -171,6 +206,9 @@ router.post('/', verifyToken, async (req, res) => {
       return_code: 'SERVER_ERROR',
       message: 'An error occurred while processing your request'
     });
+  } finally {
+    // Release the client back to the pool
+    client.release();
   }
 });
 
