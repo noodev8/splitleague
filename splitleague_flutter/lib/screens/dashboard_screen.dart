@@ -11,6 +11,7 @@ import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
 import '../widgets/league_card.dart';
 import 'create_league_screen.dart';
+import 'fixtures_screen.dart';
 import 'join_league_screen.dart';
 import 'profile_screen.dart';
 
@@ -241,8 +242,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             return LeagueCard(
                               league: _leagues[index],
                               onTap: () {
-                                // Handle league tap
-                                ErrorHelper.showSuccessToast('League details coming soon!');
+                                // Navigate to fixtures screen
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => FixturesScreen(
+                                      league: _leagues[index],
+                                    ),
+                                  ),
+                                );
                               },
                             );
                           },

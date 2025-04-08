@@ -72,6 +72,36 @@ Body:
 Returns all leagues the authenticated user is a member of
 ======================================
 
+== Generate Fixtures ==============================
+URL: http://localhost:3000/generate_fixtures
+Method: POST
+Headers:
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+Body:
+{
+  "league_id": 1
+}
+
+Generates fixtures for all members of the league based on play_each_other setting
+Only the league creator can generate fixtures
+======================================
+
+== Get League Fixtures ==============================
+URL: http://localhost:3000/get_league_fixtures
+Method: POST
+Headers:
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+Body:
+{
+  "league_id": 1
+}
+
+Retrieves all fixtures for a specific league with player details
+Only league members or the creator can access fixtures
+======================================
+
 == Test User 1 ==============================
 Email: test1@test.com
 Password: 1234
