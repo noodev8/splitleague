@@ -12,6 +12,7 @@ import '../styles/app_styles.dart';
 import '../widgets/league_card.dart';
 import 'login_user_screen.dart';
 import 'create_league_screen.dart';
+import 'join_league_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -200,22 +201,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Create league button
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const CreateLeagueScreen(),
+                      // League action buttons
+                      Row(
+                        children: [
+                          // Create league button
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const CreateLeagueScreen(),
+                                  ),
+                                ).then((_) => _loadUserLeagues()); // Reload leagues after returning
+                              },
+                              style: AppStyles.primaryButtonStyle,
+                              icon: const Icon(Icons.add),
+                              label: const Text('Create'),
                             ),
-                          ).then((_) => _loadUserLeagues()); // Reload leagues after returning
-                        },
-                        style: AppStyles.primaryButtonStyle,
-                        icon: const Icon(Icons.add),
-                        label: const Text('Create New League'),
+                          ),
+                          const SizedBox(width: 16),
+                          // Join league button
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => JoinLeagueScreen(
+                                      onLeagueJoined: () {
+                                        // Reload leagues when a league is joined
+                                        _loadUserLeagues();
+                                      },
+                                    ),
+                                  ),
+                                );
+                              },
+                              style: AppStyles.secondaryButtonStyle,
+                              icon: const Icon(Icons.group_add),
+                              label: const Text('Join'),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        'You can create a new league or join an existing one using a 4-digit code.',
+                        'Create a new league or join an existing one using a 4-digit code.',
                         style: AppStyles.bodyStyle,
                       ),
 
