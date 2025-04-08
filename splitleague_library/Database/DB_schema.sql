@@ -5,7 +5,7 @@
 -- Dumped from database version 11.18 (Debian 11.18-0+deb10u1)
 -- Dumped by pg_dump version 17.1
 
--- Started on 2025-04-08 08:26:48
+-- Started on 2025-04-08 19:43:24
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -215,7 +215,8 @@ CREATE TABLE public.league_points (
     points_for_draw integer,
     points_for_win_margin integer,
     points_for_close_loss integer,
-    win_margin_threshold integer
+    win_margin_threshold integer,
+    play_each_other integer
 );
 
 
@@ -351,7 +352,7 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 GRANT ALL ON SCHEMA public TO splitleague_user;
 
 
--- Completed on 2025-04-08 08:26:49
+-- Completed on 2025-04-08 19:43:25
 
 --
 -- PostgreSQL database dump complete

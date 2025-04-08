@@ -17,6 +17,7 @@ class CreateLeagueApi {
     int? pointsForWinMargin,
     int? pointsForCloseLoss,
     int? winMarginThreshold,
+    int? playEachOther,
   }) async {
     // Create the request URL
     final url = Uri.parse('${Config.baseUrl}/create_league');
@@ -43,6 +44,7 @@ class CreateLeagueApi {
       if (pointsForWinMargin != null) body['points_for_win_margin'] = pointsForWinMargin;
       if (pointsForCloseLoss != null) body['points_for_close_loss'] = pointsForCloseLoss;
       if (winMarginThreshold != null) body['win_margin_threshold'] = winMarginThreshold;
+      if (playEachOther != null) body['play_each_other'] = playEachOther;
 
       // Send POST request to the server
       final response = await http.post(

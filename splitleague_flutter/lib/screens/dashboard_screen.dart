@@ -1,7 +1,7 @@
 /*
-Show the dashboard screen after user login
-This is a basic placeholder showing the app_user name only
-Provides a logout button to return to the login screen
+Show the leagues dashboard screen after user login
+Displays a list of leagues the user is a member of
+Provides options to create or join leagues
 */
 
 import 'package:flutter/material.dart';
@@ -10,9 +10,9 @@ import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
 import '../widgets/league_card.dart';
-import 'login_user_screen.dart';
 import 'create_league_screen.dart';
 import 'join_league_screen.dart';
+import 'profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -94,57 +94,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  // Handle logout button press
-  Future<void> _handleLogout() async {
-    try {
-      // Show confirmation dialog
-      bool confirm = await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Logout'),
-          content: const Text('Are you sure you want to logout?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Logout'),
-            ),
-          ],
-        ),
-      ) ?? false;
-
-      if (!confirm) return;
-
-      // Perform logout
-      await AuthHelper.logout();
-
-      // Show success message
-      ErrorHelper.showSuccessToast('Logged out successfully');
-
-      // Navigate to login screen
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginUserScreen()),
-        );
-      }
-    } catch (e) {
-      ErrorHelper.showErrorToast('Failed to logout');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: const Text('Leagues'),
         actions: [
-          // Logout button
+          // Profile button
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _handleLogout,
+            icon: const Icon(Icons.account_circle),
+            tooltip: 'Profile',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ProfileScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -156,51 +122,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ? const Center(
                   child: Text('No user data found'),
                 )
-              : Padding(
+              : SingleChildScrollView(
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Welcome message
-                      Text(
-                        'Welcome, ${_userData!['name']}!',
-                        style: AppStyles.headingStyle,
-                      ),
-                      const SizedBox(height: 24),
-
-                      // User info card
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: AppStyles.cardDecoration,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Your Profile',
-                              style: AppStyles.subheadingStyle,
-                            ),
-                            const Divider(),
-                            const SizedBox(height: 8),
-
-                            // User details
-                            _buildUserInfoRow('Name', _userData!['name']),
-                            const SizedBox(height: 8),
-                            _buildUserInfoRow('Nickname', _userData!['nickname']),
-                            const SizedBox(height: 8),
-                            _buildUserInfoRow('Email', _userData!['email']),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // League section
-                      const Text(
-                        'Leagues',
-                        style: AppStyles.subheadingStyle,
-                      ),
-                      const SizedBox(height: 16),
-
                       // League action buttons
                       Row(
                         children: [
@@ -305,48 +231,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         )
                       else
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: _leagues.length,
-                            itemBuilder: (context, index) {
-                              return LeagueCard(
-                                league: _leagues[index],
-                                onTap: () {
-                                  // Handle league tap
-                                  ErrorHelper.showSuccessToast('League details coming soon!');
-                                },
-                              );
-                            },
-                          ),
+                        ListView.builder(
+                          // Disable scrolling on the inner ListView
+                          physics: const NeverScrollableScrollPhysics(),
+                          // Shrink the ListView to fit its content
+                          shrinkWrap: true,
+                          itemCount: _leagues.length,
+                          itemBuilder: (context, index) {
+                            return LeagueCard(
+                              league: _leagues[index],
+                              onTap: () {
+                                // Handle league tap
+                                ErrorHelper.showSuccessToast('League details coming soon!');
+                              },
+                            );
+                          },
                         ),
+
+                      // Add some padding at the bottom
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
-    );
-  }
-
-  // Helper method to build user info rows
-  Widget _buildUserInfoRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 100,
-          child: Text(
-            '$label:',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: AppStyles.secondaryTextColor,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: AppStyles.bodyStyle,
-          ),
-        ),
-      ],
     );
   }
 }

@@ -29,6 +29,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
   final _pointsForWinMarginController = TextEditingController(text: '1');
   final _pointsForCloseLossController = TextEditingController(text: '1');
   final _winMarginThresholdController = TextEditingController(text: '15');
+  final _playEachOtherController = TextEditingController(text: '2');
 
   // Loading state
   bool _isLoading = false;
@@ -45,6 +46,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     _pointsForWinMarginController.dispose();
     _pointsForCloseLossController.dispose();
     _winMarginThresholdController.dispose();
+    _playEachOtherController.dispose();
     super.dispose();
   }
 
@@ -71,6 +73,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
       int pointsForWinMargin = int.tryParse(_pointsForWinMarginController.text) ?? 1;
       int pointsForCloseLoss = int.tryParse(_pointsForCloseLossController.text) ?? 1;
       int winMarginThreshold = int.tryParse(_winMarginThresholdController.text) ?? 15;
+      int playEachOther = int.tryParse(_playEachOtherController.text) ?? 2;
 
       // Call create league API
       Map<String, dynamic> response = await CreateLeagueApi.createLeague(
@@ -80,6 +83,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
         pointsForWinMargin: pointsForWinMargin,
         pointsForCloseLoss: pointsForCloseLoss,
         winMarginThreshold: winMarginThreshold,
+        playEachOther: playEachOther,
       );
 
       // Check response
@@ -244,9 +248,30 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 16),
+
+                // Play each other field
+                TextFormField(
+                  controller: _playEachOtherController,
+                  decoration: AppStyles.inputDecoration(
+                    'Play Each Other',
+                    hint: 'Number of times each player plays each other',
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a value';
+                    }
+                    if (int.tryParse(value) == null) {
+                      return 'Please enter a valid number';
+                    }
+                    if (int.tryParse(value)! < 1) {
+                      return 'Value must be at least 1';
+                    }
+                    return null;
+                  },
+                ),
                 const SizedBox(height: 24),
-
-
 
                 // Error message
                 if (_errorMessage != null)

@@ -15,6 +15,7 @@ Request Payload:
   "points_for_win_margin": 1,           // integer, optional - Extra points for winning by a margin (default: 1)
   "points_for_close_loss": 1,           // integer, optional - Points for losing by a small margin (default: 1)
   "win_margin_threshold": 15,           // integer, optional - Threshold for win margin points (default: 15)
+  "play_each_other": 2,                 // integer, optional - Number of times each player plays each other (default: 2)
   "start_date": "2025-05-01",           // date, optional - League start date (YYYY-MM-DD)
   "end_date": "2025-08-31"              // date, optional - League end date (YYYY-MM-DD)
 }
@@ -38,7 +39,8 @@ Success Response:
       "points_for_draw": 1,             // integer - Points for draw
       "points_for_win_margin": 1,       // integer - Points for win margin
       "points_for_close_loss": 1,       // integer - Points for close loss
-      "win_margin_threshold": 15        // integer - Win margin threshold
+      "win_margin_threshold": 15,       // integer - Win margin threshold
+      "play_each_other": 2              // integer - Number of times each player plays each other
     }
   }
 }
@@ -107,6 +109,7 @@ router.post('/', verifyToken, async (req, res) => {
       points_for_win_margin,
       points_for_close_loss,
       win_margin_threshold,
+      play_each_other,
       start_date,
       end_date
     } = req.body;
@@ -168,8 +171,9 @@ router.post('/', verifyToken, async (req, res) => {
         points_for_draw,
         points_for_win_margin,
         points_for_close_loss,
-        win_margin_threshold
-      ) VALUES ($1, $2, $3, $4, $5, $6)
+        win_margin_threshold,
+        play_each_other
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *`,
       [
         league.id,
@@ -177,7 +181,8 @@ router.post('/', verifyToken, async (req, res) => {
         points_for_draw || 1,
         points_for_win_margin || 1,
         points_for_close_loss || 1,
-        win_margin_threshold || 15
+        win_margin_threshold || 15,
+        play_each_other || 2  // Default to 2 if not provided
       ]
     );
 
