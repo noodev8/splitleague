@@ -9,6 +9,7 @@ import '../api/generate_fixtures_api.dart';
 import '../api/get_league_fixtures_api.dart';
 import '../api/get_league_members_api.dart';
 import '../api/get_league_info_api.dart';
+import '../api/get_league_table_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
@@ -32,11 +33,13 @@ class _FixturesScreenState extends State<FixturesScreen> {
   bool _isGeneratingFixtures = false;
   bool _isLoadingFixtures = true;
   bool _isLoadingMembers = true;
+  bool _isLoadingStandings = false;
 
   // Error messages
   String? _generateErrorMessage;
   String? _fixturesErrorMessage;
   String? _membersErrorMessage;
+  String? _standingsErrorMessage;
 
   // Success message
   String? _successMessage;
@@ -50,12 +53,15 @@ class _FixturesScreenState extends State<FixturesScreen> {
   // League members list
   List<Map<String, dynamic>> _leagueMembers = [];
 
+  // League standings list
+  List<Map<String, dynamic>> _standings = [];
+
   // Filter state
   String? _filterPlayerId;
   String? _filterPlayerName = 'All Fixtures';
 
   // Tab selection
-  int _selectedTabIndex = 0; // 0 = Fixtures, 1 = Details, 2 = Standings
+  int _selectedTabIndex = 0; // 0 = Fixtures, 1 = Standings, 2 = Details
 
   // Filtered fixtures
   List<Map<String, dynamic>> get _filteredFixtures {
@@ -80,6 +86,35 @@ class _FixturesScreenState extends State<FixturesScreen> {
     _loadUserData();
     _loadFixtures();
     _loadLeagueMembers();
+  }
+
+  // Load league standings
+  Future<void> _loadStandings() async {
+    setState(() {
+      _isLoadingStandings = true;
+      _standingsErrorMessage = null;
+    });
+
+    try {
+      final result = await getLeagueTable(widget.league['id']);
+
+      if (result['success']) {
+        setState(() {
+          _standings = List<Map<String, dynamic>>.from(result['standings']);
+          _isLoadingStandings = false;
+        });
+      } else {
+        setState(() {
+          _standingsErrorMessage = result['message'];
+          _isLoadingStandings = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _standingsErrorMessage = 'Failed to load standings: $e';
+        _isLoadingStandings = false;
+      });
+    }
   }
 
   // Load league members
@@ -119,6 +154,18 @@ class _FixturesScreenState extends State<FixturesScreen> {
         _isLoadingMembers = false;
         _membersErrorMessage = 'An error occurred while loading league members';
       });
+    }
+  }
+
+  // Called when tab changes
+  void _onTabChanged(int index) {
+    setState(() {
+      _selectedTabIndex = index;
+    });
+
+    // Load standings when switching to standings tab
+    if (index == 1) {
+      _loadStandings();
     }
   }
 
@@ -514,11 +561,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                     // Fixtures tab
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            _selectedTabIndex = 0;
-                          });
-                        },
+                        onPressed: () => _onTabChanged(0),
                         style: _selectedTabIndex == 0
                             ? AppStyles.activeTabButtonStyle
                             : AppStyles.tabButtonStyle,
@@ -544,14 +587,10 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       ),
                     ),
 
-                    // Details tab
+                    // Standings tab (moved to second position)
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            _selectedTabIndex = 1;
-                          });
-                        },
+                        onPressed: () => _onTabChanged(1),
                         style: _selectedTabIndex == 1
                             ? AppStyles.activeTabButtonStyle
                             : AppStyles.tabButtonStyle,
@@ -560,13 +599,13 @@ class _FixturesScreenState extends State<FixturesScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.info_outline,
+                              Icons.leaderboard,
                               size: 14,
                               color: _selectedTabIndex == 1 ? Colors.white : AppStyles.secondaryTextColor,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'Details',
+                              'Standings',
                               style: TextStyle(
                                 fontWeight: _selectedTabIndex == 1 ? FontWeight.bold : FontWeight.normal,
                                 fontSize: 12,
@@ -577,14 +616,10 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       ),
                     ),
 
-                    // Standings tab
+                    // Details tab (moved to third position)
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            _selectedTabIndex = 2;
-                          });
-                        },
+                        onPressed: () => _onTabChanged(2),
                         style: _selectedTabIndex == 2
                             ? AppStyles.activeTabButtonStyle
                             : AppStyles.tabButtonStyle,
@@ -593,13 +628,13 @@ class _FixturesScreenState extends State<FixturesScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.leaderboard,
+                              Icons.info_outline,
                               size: 14,
                               color: _selectedTabIndex == 2 ? Colors.white : AppStyles.secondaryTextColor,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'Standings',
+                              'Details',
                               style: TextStyle(
                                 fontWeight: _selectedTabIndex == 2 ? FontWeight.bold : FontWeight.normal,
                                 fontSize: 12,
@@ -615,7 +650,9 @@ class _FixturesScreenState extends State<FixturesScreen> {
               const SizedBox(height: 24),
 
               // Tab content
-              if (_selectedTabIndex == 1) // Details tab
+              if (_selectedTabIndex == 1) // Standings tab
+                _buildStandingsTab()
+              else if (_selectedTabIndex == 2) // Details tab
                 Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -629,30 +666,6 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       const SizedBox(height: 16),
                       const Text(
                         'Details Coming Soon',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'This feature is under development',
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
-                )
-              else if (_selectedTabIndex == 2) // Standings tab
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 40),
-                      Icon(
-                        Icons.construction,
-                        size: 64,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Standings Coming Soon',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
@@ -1080,6 +1093,244 @@ class _FixturesScreenState extends State<FixturesScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  // Build the standings tab
+  Widget _buildStandingsTab() {
+    // Load standings if not already loaded
+    if (_standings.isEmpty && !_isLoadingStandings && _standingsErrorMessage == null) {
+      _loadStandings();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Loading indicator
+        if (_isLoadingStandings)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32.0),
+              child: SpinKitCircle(color: AppStyles.primaryColor, size: 50.0),
+            ),
+          )
+        // Error message
+        else if (_standingsErrorMessage != null)
+          Container(
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: AppStyles.errorColor.withAlpha(25),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline, color: AppStyles.errorColor),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _standingsErrorMessage!,
+                    style: const TextStyle(color: AppStyles.errorColor),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh, color: AppStyles.primaryColor),
+                  onPressed: _loadStandings,
+                  tooltip: 'Retry',
+                ),
+              ],
+            ),
+          )
+        // Empty standings
+        else if (_standings.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.leaderboard_outlined,
+                    size: 64,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No standings available',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Play some matches to see the standings',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ),
+          )
+        // Standings table
+        else
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withAlpha(40),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              children: [
+                // Table header
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: AppStyles.primaryColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 24, child: Text('#', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        flex: 3,
+                        child: Text('Player', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                      ),
+                      const SizedBox(width: 8),
+                      const SizedBox(width: 30, child: Text('P', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
+                      const SizedBox(width: 30, child: Text('W', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
+                      if (_standings.first.containsKey('drawn'))
+                        const SizedBox(width: 30, child: Text('D', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
+                      const SizedBox(width: 30, child: Text('L', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
+                      if (_standings.first.containsKey('score_for')) ...[
+                        const SizedBox(width: 30, child: Text('F', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
+                        const SizedBox(width: 30, child: Text('A', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
+                        const SizedBox(width: 30, child: Text('+/-', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
+                      ],
+                      const SizedBox(width: 8),
+                      const SizedBox(width: 30, child: Text('Pts', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
+                    ],
+                  ),
+                ),
+
+                // Table rows
+                ...List.generate(_standings.length, (index) {
+                  final player = _standings[index];
+                  final isCurrentUser = player['user_id'] == _userData?['id'];
+
+                  return Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: isCurrentUser ? AppStyles.primaryColor.withAlpha(15) : Colors.white,
+                      border: Border(
+                        bottom: BorderSide(
+                          color: index < _standings.length - 1 ? Colors.grey.shade200 : Colors.transparent,
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        // Position
+                        SizedBox(
+                          width: 24,
+                          child: Text(
+                            '${index + 1}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: index < 3 ? AppStyles.primaryColor : AppStyles.textColor,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        // Player name
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            player['nickname'] ?? player['name'],
+                            style: TextStyle(
+                              fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.normal,
+                              color: isCurrentUser ? AppStyles.primaryColor : AppStyles.textColor,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        // Played
+                        SizedBox(width: 30, child: Text('${player['played']}', textAlign: TextAlign.center)),
+
+                        // Won
+                        SizedBox(
+                          width: 30,
+                          child: Text(
+                            '${player['won']}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: AppStyles.successColor, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+
+                        // Drawn (only for WDL leagues)
+                        if (player.containsKey('drawn'))
+                          SizedBox(width: 30, child: Text('${player['drawn']}', textAlign: TextAlign.center)),
+
+                        // Lost
+                        SizedBox(
+                          width: 30,
+                          child: Text(
+                            '${player['lost']}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: AppStyles.errorColor, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+
+                        // Score stats (only for PTS leagues)
+                        if (player.containsKey('score_for')) ...[
+                          SizedBox(width: 30, child: Text('${player['score_for']}', textAlign: TextAlign.center)),
+                          SizedBox(width: 30, child: Text('${player['score_against']}', textAlign: TextAlign.center)),
+                          SizedBox(
+                            width: 30,
+                            child: Text(
+                              '${player['score_diff'] > 0 ? '+' : ''}${player['score_diff']}',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: player['score_diff'] > 0
+                                    ? AppStyles.successColor
+                                    : player['score_diff'] < 0
+                                        ? AppStyles.errorColor
+                                        : AppStyles.textColor,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(width: 8),
+
+                        // Points
+                        SizedBox(
+                          width: 30,
+                          child: Text(
+                            '${player['points']}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }

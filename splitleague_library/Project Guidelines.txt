@@ -14,6 +14,8 @@ Use the database schema to identify the tables needed.
 For middleware use
 "C:\SplitLeague\splitleague_server\middleware\auth_middleware.js"
 
+Config file is here "C:\splitleague\splitleague_flutter\lib\helpers\config.dart"
+
 Be patient with me as I learn and thank you for working on this project with me.
 
 
