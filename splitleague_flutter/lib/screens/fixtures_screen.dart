@@ -34,12 +34,14 @@ class _FixturesScreenState extends State<FixturesScreen> {
   bool _isLoadingFixtures = true;
   bool _isLoadingMembers = true;
   bool _isLoadingStandings = false;
+  bool _isLoadingLeagueInfo = false;
 
   // Error messages
   String? _generateErrorMessage;
   String? _fixturesErrorMessage;
   String? _membersErrorMessage;
   String? _standingsErrorMessage;
+  String? _leagueInfoErrorMessage;
 
   // Success message
   String? _successMessage;
@@ -55,6 +57,9 @@ class _FixturesScreenState extends State<FixturesScreen> {
 
   // League standings list
   List<Map<String, dynamic>> _standings = [];
+
+  // League info
+  Map<String, dynamic> _leagueInfo = {};
 
   // Filter state
   String? _filterPlayerId;
@@ -163,9 +168,40 @@ class _FixturesScreenState extends State<FixturesScreen> {
       _selectedTabIndex = index;
     });
 
-    // Load standings when switching to standings tab
+    // Load data based on selected tab
     if (index == 1) {
       _loadStandings();
+    } else if (index == 2) {
+      _loadLeagueInfo();
+    }
+  }
+
+  // Load league info
+  Future<void> _loadLeagueInfo() async {
+    setState(() {
+      _isLoadingLeagueInfo = true;
+      _leagueInfoErrorMessage = null;
+    });
+
+    try {
+      final result = await GetLeagueInfoApi.getLeagueInfo(widget.league['id']);
+
+      if (result['return_code'] == 'SUCCESS') {
+        setState(() {
+          _leagueInfo = result['league'];
+          _isLoadingLeagueInfo = false;
+        });
+      } else {
+        setState(() {
+          _leagueInfoErrorMessage = result['message'];
+          _isLoadingLeagueInfo = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _leagueInfoErrorMessage = 'Failed to load league info: $e';
+        _isLoadingLeagueInfo = false;
+      });
     }
   }
 
@@ -653,29 +689,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
               if (_selectedTabIndex == 1) // Standings tab
                 _buildStandingsTab()
               else if (_selectedTabIndex == 2) // Details tab
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 40),
-                      Icon(
-                        Icons.construction,
-                        size: 64,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Details Coming Soon',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'This feature is under development',
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
-                )
+                _buildDetailsTab()
               else // Fixtures tab (default)
 
               // Generate fixtures section (only for league creator and if no fixtures exist)
@@ -1332,5 +1346,557 @@ class _FixturesScreenState extends State<FixturesScreen> {
           ),
       ],
     );
+  }
+
+  // Build the details tab
+  Widget _buildDetailsTab() {
+    // Load league info if not already loaded
+    if (_leagueInfo.isEmpty && !_isLoadingLeagueInfo && _leagueInfoErrorMessage == null) {
+      _loadLeagueInfo();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Loading indicator
+        if (_isLoadingLeagueInfo)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32.0),
+              child: SpinKitCircle(color: AppStyles.primaryColor, size: 50.0),
+            ),
+          )
+        // Error message
+        else if (_leagueInfoErrorMessage != null)
+          Container(
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: AppStyles.errorColor.withAlpha(25),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline, color: AppStyles.errorColor),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _leagueInfoErrorMessage!,
+                    style: const TextStyle(color: AppStyles.errorColor),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh, color: AppStyles.primaryColor),
+                  onPressed: _loadLeagueInfo,
+                  tooltip: 'Retry',
+                ),
+              ],
+            ),
+          )
+        // Empty league info
+        else if (_leagueInfo.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 64,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No league information available',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Unable to load league details',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
+            ),
+          )
+        // League info
+        else
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // League name and code section
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withAlpha(40),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // League name
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppStyles.primaryColor.withAlpha(25),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.emoji_events,
+                              color: AppStyles.primaryColor,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'League Name',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppStyles.secondaryTextColor,
+                                  ),
+                                ),
+                                Text(
+                                  _leagueInfo['name'] ?? 'Unknown',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Public code
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppStyles.accentColor.withAlpha(25),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.key,
+                              color: AppStyles.accentColor,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Public Code',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppStyles.secondaryTextColor,
+                                ),
+                              ),
+                              Text(
+                                _leagueInfo['public_code'] ?? 'N/A',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: _leagueInfo['active'] == true
+                                  ? AppStyles.successColor.withAlpha(25)
+                                  : AppStyles.errorColor.withAlpha(25),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              _leagueInfo['active'] == true ? 'Active' : 'Inactive',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: _leagueInfo['active'] == true
+                                    ? AppStyles.successColor
+                                    : AppStyles.errorColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Dates section
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withAlpha(40),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'League Dates',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Start date
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.calendar_today,
+                              color: Colors.green.shade700,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Start Date',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppStyles.secondaryTextColor,
+                                ),
+                              ),
+                              Text(
+                                _leagueInfo['start_date'] ?? 'Not set',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // End date
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.event,
+                              color: Colors.red.shade700,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'End Date',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppStyles.secondaryTextColor,
+                                ),
+                              ),
+                              Text(
+                                _leagueInfo['end_date'] ?? 'Not set',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Created at
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.history,
+                              color: Colors.blue.shade700,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Created On',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppStyles.secondaryTextColor,
+                                ),
+                              ),
+                              Text(
+                                _formatDate(_leagueInfo['created_at']),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Points rules section
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withAlpha(40),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            'Points Rules',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _getWinTypeColor(_leagueInfo['win_type']).withAlpha(25),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              _getWinTypeLabel(_leagueInfo['win_type']),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: _getWinTypeColor(_leagueInfo['win_type']),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Points rules grid
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          // Win points
+                          _buildPointsCard(
+                            'Win',
+                            '${_leagueInfo['points_for_win'] ?? 0}',
+                            Icons.emoji_events,
+                            Colors.amber,
+                          ),
+
+                          // Draw points (only for WDL)
+                          if (_leagueInfo['win_type'] == 'WDL')
+                            _buildPointsCard(
+                              'Draw',
+                              '${_leagueInfo['points_for_draw'] ?? 0}',
+                              Icons.handshake,
+                              Colors.blue,
+                            ),
+
+                          // Win margin bonus
+                          _buildPointsCard(
+                            'Win Margin Bonus',
+                            '${_leagueInfo['points_for_win_margin'] ?? 0}',
+                            Icons.add_circle,
+                            Colors.green,
+                          ),
+
+                          // Close loss points
+                          _buildPointsCard(
+                            'Lose within margin',
+                            '${_leagueInfo['points_for_close_loss'] ?? 0}',
+                            Icons.remove_circle,
+                            Colors.orange,
+                          ),
+
+                          // Margin threshold
+                          _buildPointsCard(
+                            'Margin Threshold',
+                            '${_leagueInfo['win_margin_threshold'] ?? 0}',
+                            Icons.speed,
+                            Colors.purple,
+                          ),
+
+                          // Play each other
+                          _buildPointsCard(
+                            'Play Each Other',
+                            '${_leagueInfo['play_each_other'] ?? 1} time${_leagueInfo['play_each_other'] == 1 ? '' : 's'}',
+                            Icons.repeat,
+                            Colors.teal,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  // Helper method to build points rule card
+  Widget _buildPointsCard(String label, String value, IconData icon, Color color) {
+    return Container(
+      width: 150,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withAlpha(25),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withAlpha(50)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: color.withAlpha(200),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method to format date
+  String _formatDate(String? dateString) {
+    if (dateString == null) return 'Not available';
+
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  // Helper method to get win type label
+  String _getWinTypeLabel(String? winType) {
+    switch (winType) {
+      case 'PTS':
+        return 'Points Based';
+      case 'WIN':
+        return 'Win Only';
+      case 'WDL':
+        return 'Win/Draw/Loss';
+      default:
+        return winType ?? 'Unknown';
+    }
+  }
+
+  // Helper method to get win type color
+  Color _getWinTypeColor(String? winType) {
+    switch (winType) {
+      case 'PTS':
+        return Colors.blue;
+      case 'WIN':
+        return Colors.green;
+      case 'WDL':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
   }
 }
