@@ -54,6 +54,9 @@ class _FixturesScreenState extends State<FixturesScreen> {
   String? _filterPlayerId;
   String? _filterPlayerName = 'All Fixtures';
 
+  // Tab selection
+  int _selectedTabIndex = 0; // 0 = Fixtures, 1 = Details, 2 = Standings
+
   // Filtered fixtures
   List<Map<String, dynamic>> get _filteredFixtures {
     if (_filterPlayerId == null) return _fixtures;
@@ -490,20 +493,177 @@ class _FixturesScreenState extends State<FixturesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Fixtures'),
+        title: Text(widget.league['name']),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          // Reduce horizontal padding to fix overflow
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // League name
-              Text(
-                widget.league['name'],
-                style: AppStyles.headingStyle,
+              // Removed league name as it's now in the app bar
+              const SizedBox(height: 8),
+
+              // Tab selection
+              Container(
+                padding: const EdgeInsets.all(2),
+                decoration: AppStyles.tabContainerDecoration,
+                child: Row(
+                  children: [
+                    // Fixtures tab
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedTabIndex = 0;
+                          });
+                        },
+                        style: _selectedTabIndex == 0
+                            ? AppStyles.activeTabButtonStyle
+                            : AppStyles.tabButtonStyle,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.sports_soccer,
+                              size: 14,
+                              color: _selectedTabIndex == 0 ? Colors.white : AppStyles.secondaryTextColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Fixtures',
+                              style: TextStyle(
+                                fontWeight: _selectedTabIndex == 0 ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Details tab
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedTabIndex = 1;
+                          });
+                        },
+                        style: _selectedTabIndex == 1
+                            ? AppStyles.activeTabButtonStyle
+                            : AppStyles.tabButtonStyle,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              size: 14,
+                              color: _selectedTabIndex == 1 ? Colors.white : AppStyles.secondaryTextColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Details',
+                              style: TextStyle(
+                                fontWeight: _selectedTabIndex == 1 ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Standings tab
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedTabIndex = 2;
+                          });
+                        },
+                        style: _selectedTabIndex == 2
+                            ? AppStyles.activeTabButtonStyle
+                            : AppStyles.tabButtonStyle,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.leaderboard,
+                              size: 14,
+                              color: _selectedTabIndex == 2 ? Colors.white : AppStyles.secondaryTextColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Standings',
+                              style: TextStyle(
+                                fontWeight: _selectedTabIndex == 2 ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 24),
+
+              // Tab content
+              if (_selectedTabIndex == 1) // Details tab
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 40),
+                      Icon(
+                        Icons.construction,
+                        size: 64,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Details Coming Soon',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'This feature is under development',
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
+                    ],
+                  ),
+                )
+              else if (_selectedTabIndex == 2) // Standings tab
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 40),
+                      Icon(
+                        Icons.construction,
+                        size: 64,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Standings Coming Soon',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'This feature is under development',
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
+                    ],
+                  ),
+                )
+              else // Fixtures tab (default)
 
               // Generate fixtures section (only for league creator and if no fixtures exist)
               if (_isCreator && _fixtures.isEmpty && !_isLoadingFixtures) ...[
@@ -600,92 +760,86 @@ class _FixturesScreenState extends State<FixturesScreen> {
                 ),
               if (_successMessage != null) const SizedBox(height: 24),
 
-              // Fixtures section header (only shown when fixtures exist)
+              // Fixtures section (only shown when fixtures exist)
               if (_fixtures.isNotEmpty) ...[
-                const Text(
-                  'Fixtures',
-                  style: AppStyles.subheadingStyle,
-                ),
+                // Removed Fixtures header text as we have tab buttons now
 
                 // Filter controls in a separate row
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Filter indicator and button
-                      Row(
-                        children: [
-                          // Filter menu button - moved to the left
-                          IconButton(
-                            icon: Icon(
-                              Icons.filter_list,
-                              color: _filterPlayerId != null ? AppStyles.primaryColor : null,
-                            ),
-                            onPressed: () {
-                              _showFilterMenu(context);
-                            },
-                            tooltip: 'Filter fixtures',
-                            constraints: const BoxConstraints(
-                              minWidth: 40,
-                              minHeight: 40,
-                            ),
+                      // Filter menu button
+                      IconButton(
+                        icon: Icon(
+                          Icons.filter_list,
+                          color: _filterPlayerId != null ? AppStyles.primaryColor : null,
+                        ),
+                        onPressed: () {
+                          _showFilterMenu(context);
+                        },
+                        tooltip: 'Filter fixtures',
+                        constraints: const BoxConstraints(
+                          minWidth: 36,  // Reduced from 40
+                          minHeight: 36, // Reduced from 40
+                        ),
+                      ),
+                      // Filter indicator with Expanded
+                      Expanded(
+                        child: Container(
+                          constraints: const BoxConstraints(maxWidth: 200),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          margin: const EdgeInsets.only(left: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppStyles.primaryColor.withAlpha(100)),
                           ),
-                          // Filter indicator - always shown
-                          Container(
-                            constraints: const BoxConstraints(maxWidth: 200),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            margin: const EdgeInsets.only(left: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: AppStyles.primaryColor.withAlpha(100)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // Filter name with ellipsis (no icon)
-                                Flexible(
-                                  child: Text(
-                                    _filterPlayerName ?? 'All Fixtures',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: _filterPlayerId != null ? AppStyles.primaryColor : Colors.grey.shade700,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  _filterPlayerName ?? 'All Fixtures',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: _filterPlayerId != null ? AppStyles.primaryColor : Colors.grey.shade700,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                              if (_filterPlayerId != null) ...[
+                                const SizedBox(width: 4),
+                                InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _filterPlayerId = null;
+                                      _filterPlayerName = 'All Fixtures';
+                                    });
+                                  },
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 14,
+                                    color: AppStyles.primaryColor,
                                   ),
                                 ),
-                                // Only show clear button if not showing "All Fixtures"
-                                if (_filterPlayerId != null) ...[
-                                  const SizedBox(width: 4),
-                                  InkWell(
-                                    onTap: () {
-                                      setState(() {
-                                        _filterPlayerId = null;
-                                        _filterPlayerName = 'All Fixtures';
-                                      });
-                                    },
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: const Icon(
-                                      Icons.close,
-                                      size: 14,
-                                      color: AppStyles.primaryColor,
-                                    ),
-                                  ),
-                                ],
                               ],
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-
                       // Refresh button
                       IconButton(
                         icon: const Icon(Icons.refresh),
                         onPressed: _loadFixtures,
                         tooltip: 'Refresh fixtures',
+                        constraints: const BoxConstraints(
+                          minWidth: 36,  // Reduced from default
+                          minHeight: 36, // Reduced from default
+                        ),
                       ),
                     ],
                   ),

@@ -1,0 +1,134 @@
+Routes Coding Rules
+	All use POST
+	All return a machine readable return code "return_code" which is either "SUCCESS" or an error of some kind.
+	All routes are free to return any other paramaters but must adhere to having "return_code" for the client to understand
+
+Use extensive comments in your code so I can see what is going on
+
+Use procedural style coding with lots of space. It will be easier for me to understand code in this way as I am from a Powerbuilder development background. Anything else suited to a Powerbuilder midset in your code will help me. Strikle a balnace between modern and readable for me please.
+
+Authentication - Use JWT Authentication throughout
+
+Use the database schema to identify the tables needed.
+
+For middleware use
+"C:\SplitLeague\splitleague_server\middleware\auth_middleware.js"
+
+Be patient with me as I learn and thank you for working on this project with me.
+
+
+
+== Tech Stack ==
+node.js
+expresss.js
+flutter
+PostgreSQL
+postman
+Developing on Windows
+
+
+== Core Folder Project Structure ==
+- Always lowercase folder and file names
+c:/splitleague
+	splitleague_server
+		routes
+	splitleague_flutter
+		api
+		helpers
+		screens
+		styles
+
+And Any others you may have created to assist code
+
+== Structure Details ==
+splitleague_flutter
+splitleague_flutter/screens/
+	has all the screens for project name with the word screen at the end. Example, login_user_screen.dart
+splitleague_flutter/api/
+	has all the api functions. The functions/files are a one to one naming with each route provided by server with "api" at the end. Example login_user_api.dart
+splitleague_flutter/helpers/
+	somewhere to put any addiitonal functions shared by the screens
+splitleague_flutter/styles/
+	any shared widgets and styles used by the screens
+
+
+splitleague_server
+splitleague_server/server.js
+	Where we define each route. Each route has a function/API name which is shared across filenames. This is the code I would like to use as an example
+
+	const login_user = require("./routes/login_user");
+	app.use("/login_user", login_user);
+
+splitleague_server/routes/
+	Where we have all the API routes. All routes are POST. We use the name of the API (function) for the filename. Example, login_user.js
+	Example code for login_user and structure we use across the project
+
+	// POST /login_user
+	router.post('/', async (req, res) => {
+ 	 const { email, password } = req.body;
+	
+
+Database uses direct PostgreSQL
+
+C:\splitleague\splitleague_server\db.js
+C:\splitleague\splitleague_server\.env
+Updated Database Schema is kept here in plain text: C:\splitleague\splitleague_library\Database\DB_schema.sql
+
+
+== File Headers ==
+For each file, I would like to follow a structure to make it readable and maintanable
+
+screens
+C:\splitleague\splitleague_flutter\lib\screens
+For all screens display a brief description of what the screen does
+Example:
+/*
+Show the login screen allowing users to log into the application
+This screen also has an option to Register is the user is not already registered
+Once logged in, it goes straight to the dashboard
+*/
+
+
+routes
+C:\splitleague\splitleague_server\routes
+Example Header
+
+/*
+=======================================================================================================================================
+API Route: login_user
+=======================================================================================================================================
+Method: POST
+Purpose: Authenticates a user using their email and password. Returns a token and basic user details upon success.
+=======================================================================================================================================
+Request Payload:
+{
+  "email": "user@example.com",         // string, required
+  "password": "securepassword123"      // string, required
+}
+
+Success Response:
+{
+  "return_code": "SUCCESS"
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", // string, JWT token for auth
+  "user": {
+    "id": 123,                         // integer, unique user ID
+    "name": "Andreas",                 // string, user’s name
+    "email": "user@example.com",       // string, user’s email
+    "account_level": "standard"        // string, e.g. 'standard', 'premium', 'admin'
+  }
+}
+=======================================================================================================================================
+Return Codes:
+"SUCCESS"
+"MISSING_FIELDS"
+"INVALID_CREDENTIALS"
+"SERVER_ERROR"
+=======================================================================================================================================
+*/
+
+
+== STYLING =====================================================================================
+Please use a clean design using Material Design 3
+Use the following app styles to start. In this folder: "C:\splitleague\splitleague_flutter\lib\styles\app_styles.dart"
+
+

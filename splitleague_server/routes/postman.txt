@@ -194,6 +194,54 @@ Retrieves detailed information about a specific league
 Only league members or the creator can access the league info
 ======================================
 
+== Get League Table ==============================
+URL: http://localhost:3000/get_league_table
+Method: POST
+Headers:
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+Body:
+{
+  "league_id": 1
+}
+
+Response example:
+{
+  "return_code": "SUCCESS",
+  "standings": [
+    {
+      "user_id": 123,
+      "name": "John Doe",
+      "nickname": "Johnny",
+      "played": 10,
+      "won": 5,
+      "drawn": 2,
+      "lost": 3,
+      "points": 17,
+      "score_for": 25,
+      "score_against": 18,
+      "score_diff": 7
+    },
+    {
+      "user_id": 456,
+      "name": "Jane Smith",
+      "nickname": "Janie",
+      "played": 10,
+      "won": 4,
+      "drawn": 3,
+      "lost": 3,
+      "points": 15,
+      "score_for": 20,
+      "score_against": 15,
+      "score_diff": 5
+    }
+  ]
+}
+
+Calculates and returns the league table standings based on the league's points rules
+Only league members or the creator can access the standings
+======================================
+
 == Test User 1 ==============================
 Email: test1@test.com
 Password: 1234
