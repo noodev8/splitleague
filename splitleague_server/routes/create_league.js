@@ -10,6 +10,7 @@ Purpose: Creates a new league with the provided details. The authenticated user 
 Request Payload:
 {
   "name": "Premier League 2025",        // string, required - Name of the league
+  "win_type": "PTS",                    // string, optional - Type of win calculation: "PTS" (Points), "WIN" (Win only), "WDL" (Win/Draw/Loss) (default: "PTS")
   "points_for_win": 3,                  // integer, optional - Points awarded for a win (default: 3)
   "points_for_draw": 1,                 // integer, optional - Points awarded for a draw (default: 1)
   "points_for_win_margin": 1,           // integer, optional - Extra points for winning by a margin (default: 1)
@@ -40,7 +41,8 @@ Success Response:
       "points_for_win_margin": 1,       // integer - Points for win margin
       "points_for_close_loss": 1,       // integer - Points for close loss
       "win_margin_threshold": 15,       // integer - Win margin threshold
-      "play_each_other": 2              // integer - Number of times each player plays each other
+      "play_each_other": 2,             // integer - Number of times each player plays each other
+      "win_type": "PTS"                 // string - Type of win calculation: "PTS", "WIN", or "WDL"
     }
   }
 }
@@ -104,6 +106,7 @@ router.post('/', verifyToken, async (req, res) => {
     // Extract league details from request body
     const {
       name,
+      win_type,
       points_for_win,
       points_for_draw,
       points_for_win_margin,
@@ -172,8 +175,9 @@ router.post('/', verifyToken, async (req, res) => {
         points_for_win_margin,
         points_for_close_loss,
         win_margin_threshold,
-        play_each_other
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        play_each_other,
+        win_type
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *`,
       [
         league.id,
@@ -182,7 +186,8 @@ router.post('/', verifyToken, async (req, res) => {
         points_for_win_margin || 1,
         points_for_close_loss || 1,
         win_margin_threshold || 15,
-        play_each_other || 2  // Default to 2 if not provided
+        play_each_other || 2,  // Default to 2 if not provided
+        win_type || 'PTS'      // Default to PTS if not provided
       ]
     );
 

@@ -35,6 +35,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
 Body:
 {
   "name": "Premier League 2025",
+  "win_type": "PTS",
   "points_for_win": 3,
   "points_for_draw": 1,
   "points_for_win_margin": 1,
@@ -44,6 +45,11 @@ Body:
   "start_date": "2025-05-01",
   "end_date": "2025-08-31"
 }
+
+Win Type Options:
+- "PTS": Points-based scoring (like Snooker)
+- "WIN": Win-only scoring (like Pool)
+- "WDL": Win/Draw/Loss scoring (like Football)
 
 Response will include a unique 4-digit public_code and active=true
 ======================================
@@ -123,6 +129,8 @@ Method: POST
 Headers:
 Content-Type: application/json
 Authorization: Bearer YOUR_JWT_TOKEN
+
+1. For Points-based leagues (win_type="PTS"):
 Body:
 {
   "fixture_id": 1,
@@ -130,7 +138,21 @@ Body:
   "player_2_score": 2
 }
 
-Updates the score for a specific fixture
+2. For Win-only leagues (win_type="WIN"):
+Body:
+{
+  "fixture_id": 1,
+  "result": "WIN_1"  // or "WIN_2"
+}
+
+3. For Win/Draw/Loss leagues (win_type="WDL"):
+Body:
+{
+  "fixture_id": 1,
+  "result": "WIN_1"  // or "WIN_2" or "DRAW"
+}
+
+Updates the score for a specific fixture based on the league's win_type
 Only the league creator or the players involved can update the score
 ======================================
 

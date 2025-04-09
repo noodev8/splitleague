@@ -27,28 +27,69 @@ class UpdateScoreScreen extends StatefulWidget {
 class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
   // Form key for validation
   final _formKey = GlobalKey<FormState>();
-  
+
   // Text controllers
   final _player1ScoreController = TextEditingController();
   final _player2ScoreController = TextEditingController();
-  
+
+  // Result selection for WIN/WDL win types
+  String? _selectedResult;
+
   // Loading state
   bool _isSubmitting = false;
-  
+
   // Error message
   String? _errorMessage;
-  
+
+  // Win type from the league
+  String? _winType;
+
+  // Helper method to get a user-friendly label for the win type
+  String _getWinTypeLabel() {
+    switch (_winType) {
+      case 'PTS':
+        return 'Points-based (like Snooker)';
+      case 'WIN':
+        return 'Win-only (like Pool)';
+      case 'WDL':
+        return 'Win/Draw/Loss (like Football)';
+      default:
+        return 'Points-based';
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    
+
+    // Get the win type from the fixture
+    _winType = widget.fixture['win_type'] ?? 'PTS';
+
+    // Debug: Print fixture data to see what we're getting
+    print('Fixture data: ${widget.fixture}');
+    print('Win type: $_winType');
+
     // Pre-fill scores if they exist
     if (widget.fixture['played'] == true) {
-      _player1ScoreController.text = widget.fixture['player_1_score']?.toString() ?? '';
-      _player2ScoreController.text = widget.fixture['player_2_score']?.toString() ?? '';
+      if (_winType == 'PTS') {
+        _player1ScoreController.text = widget.fixture['player_1_score']?.toString() ?? '';
+        _player2ScoreController.text = widget.fixture['player_2_score']?.toString() ?? '';
+      } else {
+        // For WIN or WDL types, determine the result from the scores
+        final player1Score = widget.fixture['player_1_score'] ?? 0;
+        final player2Score = widget.fixture['player_2_score'] ?? 0;
+
+        if (player1Score > player2Score) {
+          _selectedResult = 'WIN_1';
+        } else if (player2Score > player1Score) {
+          _selectedResult = 'WIN_2';
+        } else if (player1Score == 1 && player2Score == 1) {
+          _selectedResult = 'DRAW';
+        }
+      }
     }
   }
-  
+
   @override
   void dispose() {
     // Dispose controllers
@@ -56,42 +97,60 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
     _player2ScoreController.dispose();
     super.dispose();
   }
-  
+
   // Handle form submission
   Future<void> _handleSubmit() async {
     // Validate form
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
-    // Get scores from controllers
-    final player1Score = int.parse(_player1ScoreController.text);
-    final player2Score = int.parse(_player2ScoreController.text);
-    
+
     // Set loading state
     setState(() {
       _isSubmitting = true;
       _errorMessage = null;
     });
-    
+
     try {
-      // Call API to update fixture score
-      final response = await UpdateFixtureScoreApi.updateFixtureScore(
-        widget.fixture['id'],
-        player1Score,
-        player2Score,
-      );
-      
+      Map<String, dynamic> response;
+
+      // Call appropriate API based on win type
+      if (_winType == 'PTS') {
+        // For points-based leagues, send actual scores
+        final player1Score = int.parse(_player1ScoreController.text);
+        final player2Score = int.parse(_player2ScoreController.text);
+
+        response = await UpdateFixtureScoreApi.updateFixtureScore(
+          widget.fixture['id'],
+          player1Score,
+          player2Score,
+        );
+      } else {
+        // For WIN or WDL leagues, send the result
+        if (_selectedResult == null) {
+          setState(() {
+            _isSubmitting = false;
+            _errorMessage = 'Please select a result';
+          });
+          return;
+        }
+
+        response = await UpdateFixtureScoreApi.updateFixtureResult(
+          widget.fixture['id'],
+          _selectedResult!,
+        );
+      }
+
       // Check response
       if (response['return_code'] == 'SUCCESS') {
         // Show success message
         ErrorHelper.showSuccessToast(response['message'] ?? 'Score updated successfully');
-        
+
         // Call onScoreUpdated callback if provided
         if (widget.onScoreUpdated != null) {
           widget.onScoreUpdated!();
         }
-        
+
         // Pop screen
         if (mounted) {
           Navigator.of(context).pop();
@@ -118,11 +177,11 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
     final player1Name = widget.fixture['player_1_nickname']?.isNotEmpty == true
         ? widget.fixture['player_1_nickname']
         : widget.fixture['player_1_name'];
-    
+
     final player2Name = widget.fixture['player_2_nickname']?.isNotEmpty == true
         ? widget.fixture['player_2_nickname']
         : widget.fixture['player_2_name'];
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Update Score'),
@@ -136,15 +195,22 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Title
-                const Text(
-                  'Enter Match Result',
+                Text(
+                  _winType == 'PTS' ? 'Enter Match Score' : 'Select Match Result',
                   style: AppStyles.headingStyle,
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  'League Type: ${_getWinTypeLabel()}',
+                  style: const TextStyle(color: AppStyles.secondaryTextColor),
+                ),
                 const SizedBox(height: 24),
-                
-                // Players and score inputs
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+
+                // Different UI based on win type
+                if (_winType == 'PTS')
+                  // Points-based score entry
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Player 1
                     Expanded(
@@ -163,7 +229,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 16),
-                          
+
                           // Player 1 score input
                           SizedBox(
                             width: 80,
@@ -190,7 +256,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                         ],
                       ),
                     ),
-                    
+
                     // VS
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -203,7 +269,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                         ),
                       ),
                     ),
-                    
+
                     // Player 2
                     Expanded(
                       child: Column(
@@ -221,7 +287,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 16),
-                          
+
                           // Player 2 score input
                           SizedBox(
                             width: 80,
@@ -251,7 +317,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                   ],
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Error message
                 if (_errorMessage != null)
                   Container(
@@ -276,7 +342,91 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                     ),
                   ),
                 if (_errorMessage != null) const SizedBox(height: 24),
-                
+
+                // Win/Draw/Loss selection for WIN or WDL types
+                if (_winType == 'WIN' || _winType == 'WDL')
+                  Column(
+                    children: [
+                      // Player names
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                player1Name,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const Text(
+                              'vs',
+                              style: TextStyle(color: AppStyles.secondaryTextColor),
+                            ),
+                            Expanded(
+                              child: Text(
+                                player2Name,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Result selection
+                      const Text(
+                        'Select Result:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Player 1 wins
+                      RadioListTile<String>(
+                        title: Text('$player1Name wins'),
+                        value: 'WIN_1',
+                        groupValue: _selectedResult,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedResult = value;
+                          });
+                        },
+                      ),
+
+                      // Player 2 wins
+                      RadioListTile<String>(
+                        title: Text('$player2Name wins'),
+                        value: 'WIN_2',
+                        groupValue: _selectedResult,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedResult = value;
+                          });
+                        },
+                      ),
+
+                      // Draw option (only for WDL type)
+                      if (_winType == 'WDL')
+                        RadioListTile<String>(
+                          title: const Text('Draw'),
+                          value: 'DRAW',
+                          groupValue: _selectedResult,
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedResult = value;
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+
+                const SizedBox(height: 24),
+
                 // Submit button
                 SizedBox(
                   width: double.infinity,
@@ -288,10 +438,10 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                             color: Colors.white,
                             size: 24,
                           )
-                        : const Text('Submit Score'),
+                        : Text(_winType == 'PTS' ? 'Submit Score' : 'Submit Result'),
                   ),
                 ),
-                
+
                 // Note
                 const SizedBox(height: 16),
                 const Text(

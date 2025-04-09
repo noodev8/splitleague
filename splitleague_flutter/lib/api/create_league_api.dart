@@ -12,6 +12,7 @@ class CreateLeagueApi {
   // Create a new league
   static Future<Map<String, dynamic>> createLeague({
     required String name,
+    String? winType,
     int? pointsForWin,
     int? pointsForDraw,
     int? pointsForWinMargin,
@@ -39,6 +40,7 @@ class CreateLeagueApi {
       };
 
       // Add optional parameters if provided
+      if (winType != null) body['win_type'] = winType;
       if (pointsForWin != null) body['points_for_win'] = pointsForWin;
       if (pointsForDraw != null) body['points_for_draw'] = pointsForDraw;
       if (pointsForWinMargin != null) body['points_for_win_margin'] = pointsForWinMargin;

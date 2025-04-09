@@ -31,6 +31,9 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
   final _winMarginThresholdController = TextEditingController(text: '15');
   final _playEachOtherController = TextEditingController(text: '2');
 
+  // Win type selection
+  String _selectedWinType = 'PTS'; // Default to Points-based scoring
+
   // Loading state
   bool _isLoading = false;
 
@@ -78,6 +81,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
       // Call create league API
       Map<String, dynamic> response = await CreateLeagueApi.createLeague(
         name: name,
+        winType: _selectedWinType,
         pointsForWin: pointsForWin,
         pointsForDraw: pointsForDraw,
         pointsForWinMargin: pointsForWinMargin,
@@ -143,6 +147,55 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                 ),
                 const SizedBox(height: 24),
 
+                // Win Type Selection
+                const Text(
+                  'Win Type',
+                  style: AppStyles.subheadingStyle,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title: const Text('Points'),
+                        subtitle: const Text('Like Snooker'),
+                        value: 'PTS',
+                        groupValue: _selectedWinType,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedWinType = value!;
+                          });
+                        },
+                      ),
+                    ),
+                    Expanded(
+                      child: RadioListTile<String>(
+                        title: const Text('Win Only'),
+                        subtitle: const Text('Like Pool'),
+                        value: 'WIN',
+                        groupValue: _selectedWinType,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedWinType = value!;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                RadioListTile<String>(
+                  title: const Text('Win/Draw/Loss'),
+                  subtitle: const Text('Like Football'),
+                  value: 'WDL',
+                  groupValue: _selectedWinType,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedWinType = value!;
+                    });
+                  },
+                ),
+                const SizedBox(height: 24),
+
                 // Points section
                 const Text(
                   'Points System',
@@ -151,104 +204,119 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                 const SizedBox(height: 16),
 
                 // Points for win field
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _pointsForWinController,
-                        decoration: AppStyles.inputDecoration('Points for Win'),
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Required';
-                          }
-                          if (int.tryParse(value) == null) {
-                            return 'Enter a number';
-                          }
-                          return null;
-                        },
+                Visibility(
+                  visible: _selectedWinType != 'WIN', // Hide for WIN type
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _pointsForWinController,
+                              decoration: AppStyles.inputDecoration('Points for Win'),
+                              keyboardType: TextInputType.number,
+                              validator: _selectedWinType == 'WIN' ? null : (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Required';
+                                }
+                                if (int.tryParse(value) == null) {
+                                  return 'Enter a number';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _pointsForDrawController,
+                              decoration: AppStyles.inputDecoration('Points for Draw'),
+                              keyboardType: TextInputType.number,
+                              enabled: _selectedWinType != 'WIN',
+                              validator: _selectedWinType == 'WIN' ? null : (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Required';
+                                }
+                                if (int.tryParse(value) == null) {
+                                  return 'Enter a number';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _pointsForDrawController,
-                        decoration: AppStyles.inputDecoration('Points for Draw'),
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Required';
-                          }
-                          if (int.tryParse(value) == null) {
-                            return 'Enter a number';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Bonus points section
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _pointsForWinMarginController,
-                        decoration: AppStyles.inputDecoration('Win Margin Bonus'),
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Required';
-                          }
-                          if (int.tryParse(value) == null) {
-                            return 'Enter a number';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _pointsForCloseLossController,
-                        decoration: AppStyles.inputDecoration('Close Loss Points'),
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Required';
-                          }
-                          if (int.tryParse(value) == null) {
-                            return 'Enter a number';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Win margin threshold field
-                TextFormField(
-                  controller: _winMarginThresholdController,
-                  decoration: AppStyles.inputDecoration(
-                    'Win Margin Threshold',
-                    hint: 'Points difference to qualify for bonus',
+                      const SizedBox(height: 16),
+                    ],
                   ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a threshold value';
-                    }
-                    if (int.tryParse(value) == null) {
-                      return 'Please enter a valid number';
-                    }
-                    return null;
-                  },
                 ),
-                const SizedBox(height: 16),
+
+                // Bonus points section - only visible for PTS type
+                Visibility(
+                  visible: _selectedWinType == 'PTS',
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _pointsForWinMarginController,
+                              decoration: AppStyles.inputDecoration('Win Margin Bonus'),
+                              keyboardType: TextInputType.number,
+                              validator: _selectedWinType != 'PTS' ? null : (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Required';
+                                }
+                                if (int.tryParse(value) == null) {
+                                  return 'Enter a number';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _pointsForCloseLossController,
+                              decoration: AppStyles.inputDecoration('Close Loss Points'),
+                              keyboardType: TextInputType.number,
+                              validator: _selectedWinType != 'PTS' ? null : (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Required';
+                                }
+                                if (int.tryParse(value) == null) {
+                                  return 'Enter a number';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Win margin threshold field
+                      TextFormField(
+                        controller: _winMarginThresholdController,
+                        decoration: AppStyles.inputDecoration(
+                          'Win Margin Threshold',
+                          hint: 'Points difference to qualify for bonus',
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: _selectedWinType != 'PTS' ? null : (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a threshold value';
+                          }
+                          if (int.tryParse(value) == null) {
+                            return 'Please enter a valid number';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
+                ),
 
                 // Play each other field
                 TextFormField(

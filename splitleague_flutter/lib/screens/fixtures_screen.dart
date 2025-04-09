@@ -8,6 +8,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/generate_fixtures_api.dart';
 import '../api/get_league_fixtures_api.dart';
 import '../api/get_league_members_api.dart';
+import '../api/get_league_info_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
@@ -855,19 +856,68 @@ class _FixturesScreenState extends State<FixturesScreen> {
                     final fixture = _filterPlayerId != null ? _filteredFixtures[index] : _fixtures[index];
                     return FixtureCard(
                       fixture: fixture,
-                      onTap: (fixture) {
-                        // Navigate to update score screen
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => UpdateScoreScreen(
-                              fixture: fixture,
-                              onScoreUpdated: () {
-                                // Reload fixtures when score is updated
-                                _loadFixtures();
-                              },
+                      onTap: (fixture) async {
+                        // Show loading indicator
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => const AlertDialog(
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(),
+                                SizedBox(height: 16),
+                                Text('Loading league info...'),
+                              ],
                             ),
                           ),
                         );
+
+                        try {
+                          // Get league info to get the win_type
+                          final response = await GetLeagueInfoApi.getLeagueInfo(widget.league['id']);
+
+                          // Close loading dialog
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                          }
+
+                          if (response['return_code'] == 'SUCCESS') {
+                            // Add win_type to fixture data
+                            final updatedFixture = Map<String, dynamic>.from(fixture);
+                            updatedFixture['win_type'] = response['league']['win_type'];
+
+                            // Debug info is logged in the console
+
+                            // Navigate to update score screen with updated fixture data
+                            if (context.mounted) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => UpdateScoreScreen(
+                                    fixture: updatedFixture,
+                                    onScoreUpdated: () {
+                                      // Reload fixtures when score is updated
+                                      _loadFixtures();
+                                    },
+                                  ),
+                                ),
+                              );
+                            }
+                          } else {
+                            // Show error message
+                            if (context.mounted) {
+                              ErrorHelper.showErrorToast(
+                                response['message'] ?? 'Failed to get league info',
+                              );
+                            }
+                          }
+                        } catch (e) {
+                          // Close loading dialog
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                            ErrorHelper.showErrorToast('An error occurred: $e');
+                          }
+                        }
                       },
                     );
                   },
