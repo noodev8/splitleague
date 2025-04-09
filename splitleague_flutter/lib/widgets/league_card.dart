@@ -22,157 +22,114 @@ class LeagueCard extends StatelessWidget {
     final String name = league['name'] ?? 'Unnamed League';
     final bool isCreator = league['is_creator'] ?? false;
     final bool isActive = league['active'] ?? false;
-    final String publicCode = league['public_code'] ?? '';
-
-    // Get points data
-    final Map<String, dynamic> points = league['points'] ?? {};
-    final int pointsForWin = points['points_for_win'] ?? 3;
-    final int pointsForDraw = points['points_for_draw'] ?? 1;
+    final int playerCount = league['player_count'] ?? 0;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 8),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
       ),
-      elevation: 2,
+      elevation: 1,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // League header with status indicator
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: AppStyles.primaryColor.withOpacity(0.1),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Row(
+            children: [
+
+
+              // League name and player count
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
                       name,
                       style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.people,
+                          size: 14,
+                          color: AppStyles.secondaryTextColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Row(
+                          children: [
+                            Text(
+                              '$playerCount ${playerCount == 1 ? 'player' : 'players'}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppStyles.secondaryTextColor,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: isActive ? AppStyles.successColor.withAlpha(25) : Colors.grey.withAlpha(25),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                isActive ? 'Active' : 'Inactive',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: isActive ? AppStyles.successColor : Colors.grey,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Status indicators
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
                   if (isCreator)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
-                        color: AppStyles.primaryColor,
+                        color: AppStyles.primaryColor.withAlpha(30),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
                         'Creator',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
+                          color: AppStyles.primaryColor,
+                          fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isActive ? AppStyles.successColor : Colors.grey,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      isActive ? 'Active' : 'Inactive',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppStyles.secondaryTextColor,
                   ),
                 ],
               ),
-            ),
-
-            // League details
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Points system
-                  Row(
-                    children: [
-                      _buildPointsItem('Win', pointsForWin.toString()),
-                      const SizedBox(width: 16),
-                      _buildPointsItem('Draw', pointsForDraw.toString()),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // League code
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.key,
-                        size: 16,
-                        color: AppStyles.secondaryTextColor,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'League Code: $publicCode',
-                        style: const TextStyle(
-                          color: AppStyles.secondaryTextColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // Helper method to build points item
-  Widget _buildPointsItem(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: AppStyles.secondaryTextColor,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: AppStyles.primaryColor,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 }

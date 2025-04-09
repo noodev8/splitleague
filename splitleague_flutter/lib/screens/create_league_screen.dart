@@ -148,51 +148,139 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                 const SizedBox(height: 24),
 
                 // Win Type Selection
-                const Text(
-                  'Win Type',
-                  style: AppStyles.subheadingStyle,
-                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
-                      child: RadioListTile<String>(
-                        title: const Text('Points'),
-                        subtitle: const Text('Like Snooker'),
-                        value: 'PTS',
-                        groupValue: _selectedWinType,
-                        onChanged: (value) {
+                      child: GestureDetector(
+                        onTap: () {
                           setState(() {
-                            _selectedWinType = value!;
+                            _selectedWinType = 'PTS';
                           });
                         },
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: _selectedWinType == 'PTS'
+                              ? AppStyles.selectedCardDecoration
+                              : AppStyles.selectionCardDecoration,
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.sports_score,
+                                size: 32,
+                                color: _selectedWinType == 'PTS' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Points',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: _selectedWinType == 'PTS' ? AppStyles.primaryColor : AppStyles.textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Like Snooker',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: _selectedWinType == 'PTS' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: RadioListTile<String>(
-                        title: const Text('Win Only'),
-                        subtitle: const Text('Like Pool'),
-                        value: 'WIN',
-                        groupValue: _selectedWinType,
-                        onChanged: (value) {
+                      child: GestureDetector(
+                        onTap: () {
                           setState(() {
-                            _selectedWinType = value!;
+                            _selectedWinType = 'WIN';
                           });
                         },
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: _selectedWinType == 'WIN'
+                              ? AppStyles.selectedCardDecoration
+                              : AppStyles.selectionCardDecoration,
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.emoji_events,
+                                size: 32,
+                                color: _selectedWinType == 'WIN' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Win Only',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: _selectedWinType == 'WIN' ? AppStyles.primaryColor : AppStyles.textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Like Pool',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: _selectedWinType == 'WIN' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
-                RadioListTile<String>(
-                  title: const Text('Win/Draw/Loss'),
-                  subtitle: const Text('Like Football'),
-                  value: 'WDL',
-                  groupValue: _selectedWinType,
-                  onChanged: (value) {
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () {
                     setState(() {
-                      _selectedWinType = value!;
+                      _selectedWinType = 'WDL';
                     });
                   },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: _selectedWinType == 'WDL'
+                        ? AppStyles.selectedCardDecoration
+                        : AppStyles.selectionCardDecoration,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.sports_soccer,
+                          size: 32,
+                          color: _selectedWinType == 'WDL' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Win/Draw/Loss',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: _selectedWinType == 'WDL' ? AppStyles.primaryColor : AppStyles.textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Like Football',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: _selectedWinType == 'WDL' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 24),
 
@@ -278,7 +366,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                           Expanded(
                             child: TextFormField(
                               controller: _pointsForCloseLossController,
-                              decoration: AppStyles.inputDecoration('Close Loss Points'),
+                              decoration: AppStyles.inputDecoration('Lose within margin Bonus'),
                               keyboardType: TextInputType.number,
                               validator: _selectedWinType != 'PTS' ? null : (value) {
                                 if (value == null || value.isEmpty) {

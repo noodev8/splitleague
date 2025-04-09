@@ -13,18 +13,18 @@ class JoinLeagueApi {
   static Future<Map<String, dynamic>> joinLeague(String publicCode) async {
     // Create the request URL
     final url = Uri.parse('${Config.baseUrl}/join_league');
-    
+
     try {
       // Get the JWT token
       final token = await AuthHelper.getToken();
-      
+
       if (token == null) {
         return {
           'return_code': 'UNAUTHORIZED',
           'message': 'Authentication token not found',
         };
       }
-      
+
       // Send POST request to the server
       final response = await http.post(
         url,
@@ -36,27 +36,25 @@ class JoinLeagueApi {
           'public_code': publicCode,
         }),
       );
-      
+
       // Check if response is successful
       if (response.statusCode >= 200 && response.statusCode < 300) {
         try {
           // Parse the response
           final Map<String, dynamic> responseData = jsonDecode(response.body);
-          
+
           // Return the response data
           return responseData;
         } catch (e) {
-          print('JSON parsing error: ${e.toString()}');
-          print('Response body: ${response.body}');
+          // Error is handled in the return statement below
           return {
             'return_code': 'PARSE_ERROR',
             'message': 'Failed to parse server response: ${e.toString()}',
           };
         }
       } else {
-        print('HTTP error: ${response.statusCode}');
-        print('Response body: ${response.body}');
-        
+        // Error is handled in the return statement below
+
         // Try to parse error message from response if possible
         try {
           final Map<String, dynamic> errorData = jsonDecode(response.body);

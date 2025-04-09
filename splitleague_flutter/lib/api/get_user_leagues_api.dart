@@ -44,16 +44,14 @@ class GetUserLeaguesApi {
           // Return the response data
           return responseData;
         } catch (e) {
-          print('JSON parsing error: ${e.toString()}');
-          print('Response body: ${response.body}');
+          // Error is handled in the return statement below
           return {
             'return_code': 'PARSE_ERROR',
             'message': 'Failed to parse server response: ${e.toString()}',
           };
         }
       } else {
-        print('HTTP error: ${response.statusCode}');
-        print('Response body: ${response.body}');
+        // Error is handled in the return statement below
         return {
           'return_code': 'HTTP_ERROR',
           'message': 'Server returned error code: ${response.statusCode}',

@@ -126,15 +126,9 @@ router.post('/', verifyToken, async (req, res) => {
         league_id = $1
     `, [league_id]);
 
-    // Log the query results for debugging
-    console.log('League data retrieved:', leagueData);
-    console.log('Points data retrieved:', pointsResult.rows[0] || 'No points data found');
-
     // If no points data exists, we'll create a record with default values
     let pointsData;
     if (pointsResult.rows.length === 0) {
-      console.log('No league_points record found, creating default values');
-
       // Insert default values into league_points table
       const defaultPointsResult = await pool.query(`
         INSERT INTO league_points
@@ -145,7 +139,6 @@ router.post('/', verifyToken, async (req, res) => {
       `, [league_id]);
 
       pointsData = defaultPointsResult.rows[0];
-      console.log('Created default points data:', pointsData);
     } else {
       pointsData = pointsResult.rows[0];
     }

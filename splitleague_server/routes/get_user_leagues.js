@@ -54,55 +54,41 @@ router.post('/', verifyToken, async (req, res) => {
   try {
     // Get the user ID from the authenticated token
     const userId = req.userId;
-
+    
     // Query to get all leagues the user is a member of (including leagues they created)
     const result = await pool.query(`
-      SELECT
-        l.id::integer as league_id, -- Use league_id as the field name for the actual league ID
-        l.name,
-        l.created_by,
-        l.public_code,
-        l.active,
-        l.start_date,
-        l.end_date,
-        l.created_at,
+      SELECT 
+        l.*,
         CASE WHEN l.created_by = $1 THEN true ELSE false END as is_creator,
         lm.joined_at,
         lp.*,
         (
-          SELECT COUNT(*)
-          FROM league_members lm2
+          SELECT COUNT(*) 
+          FROM league_members lm2 
           WHERE lm2.league_id = l.id
-        ) as player_count  -- Creator is already counted in the members table
+        ) + 1 as player_count  -- Add 1 to include the creator
       FROM league l
       LEFT JOIN league_members lm ON l.id = lm.league_id AND lm.user_id = $1
       LEFT JOIN league_points lp ON l.id = lp.league_id
       WHERE l.created_by = $1 OR lm.user_id = $1
     `, [userId]);
-
+    
     // Process the results to format them properly
     const leagues = [];
     const processedLeagueIds = new Set();
-
-    // Debug log to see what's coming from the database
-    console.log('Database results:', result.rows.map(row => ({ id: row.id, league_id: row.league_id, name: row.name })));
-
-    // Log the raw database results to see all fields
-    console.log('Raw database results (first row):', result.rows[0]);
-    console.log('ID type:', typeof result.rows[0].id);
-
+    
     for (const row of result.rows) {
       // Skip if we've already processed this league
-      if (processedLeagueIds.has(row.league_id)) {
+      if (processedLeagueIds.has(row.id)) {
         continue;
       }
-
+      
       // Mark this league as processed
-      processedLeagueIds.add(row.league_id);
-
+      processedLeagueIds.add(row.id);
+      
       // Format the league data
       const league = {
-        id: parseInt(row.league_id || row.id), // Use league_id if available, otherwise fall back to id
+        id: row.id,
         name: row.name,
         created_by: row.created_by,
         public_code: row.public_code,
@@ -121,18 +107,10 @@ router.post('/', verifyToken, async (req, res) => {
           win_margin_threshold: row.win_margin_threshold
         }
       };
-
+      
       leagues.push(league);
     }
-
-    // Debug log to see what's being sent to the client
-    console.log('Response leagues:', leagues.map(league => ({ id: league.id, name: league.name })));
-
-    // Log the first league object to see all fields
-    if (leagues.length > 0) {
-      console.log('First league object:', leagues[0]);
-    }
-
+    
     // Return success response with leagues data
     return res.status(200).json({
       return_code: 'SUCCESS',
@@ -140,7 +118,7 @@ router.post('/', verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error in get_user_leagues route:', error);
-
+    
     // Return server error response
     return res.status(500).json({
       return_code: 'SERVER_ERROR',
