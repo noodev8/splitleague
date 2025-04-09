@@ -8,7 +8,7 @@ import '../styles/app_styles.dart';
 
 class FixtureCard extends StatelessWidget {
   final Map<String, dynamic> fixture;
-  final VoidCallback? onTap;
+  final Function(Map<String, dynamic>)? onTap;
 
   const FixtureCard({
     super.key,
@@ -41,7 +41,7 @@ class FixtureCard extends StatelessWidget {
       ),
       elevation: 2,
       child: InkWell(
-        onTap: onTap,
+        onTap: onTap != null ? () => onTap!(fixture) : null,
         borderRadius: BorderRadius.circular(10),
         child: Padding(
           padding: const EdgeInsets.all(16),

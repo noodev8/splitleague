@@ -12,6 +12,7 @@ import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
 import '../widgets/fixture_card.dart';
+import 'update_score_screen.dart';
 
 class FixturesScreen extends StatefulWidget {
   final Map<String, dynamic> league;
@@ -55,7 +56,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
   // Filtered fixtures
   List<Map<String, dynamic>> get _filteredFixtures {
     if (_filterPlayerId == null) return _fixtures;
-    
+
     return _fixtures.where((fixture) {
       final player1Id = fixture['player_1_id'];
       final player2Id = fixture['player_2_id'];
@@ -83,19 +84,19 @@ class _FixturesScreenState extends State<FixturesScreen> {
       _isLoadingMembers = true;
       _membersErrorMessage = null;
     });
-    
+
     try {
       // Call get league members API
       final response = await GetLeagueMembersApi.getLeagueMembers(widget.league['id']);
-      
+
       // Check response
       if (response['return_code'] == 'SUCCESS') {
         // Get members from response
         final List<dynamic> membersData = response['members'] ?? [];
-        
+
         // Convert to List<Map<String, dynamic>>
         final members = membersData.map((member) => member as Map<String, dynamic>).toList();
-        
+
         setState(() {
           _leagueMembers = members;
           _isLoadingMembers = false;
@@ -129,26 +130,26 @@ class _FixturesScreenState extends State<FixturesScreen> {
       // Error is ignored as this is not critical functionality
     }
   }
-  
+
   // Load fixtures for the league
   Future<void> _loadFixtures() async {
     setState(() {
       _isLoadingFixtures = true;
       _fixturesErrorMessage = null;
     });
-    
+
     try {
       // Call get league fixtures API
       final response = await GetLeagueFixturesApi.getLeagueFixtures(widget.league['id']);
-      
+
       // Check response
       if (response['return_code'] == 'SUCCESS') {
         // Get fixtures from response
         final List<dynamic> fixturesData = response['fixtures'] ?? [];
-        
+
         // Convert to List<Map<String, dynamic>>
         final fixtures = fixturesData.map((fixture) => fixture as Map<String, dynamic>).toList();
-        
+
         setState(() {
           _fixtures = fixtures;
           _isLoadingFixtures = false;
@@ -203,9 +204,9 @@ class _FixturesScreenState extends State<FixturesScreen> {
         ],
       ),
     ) ?? false;
-    
+
     if (!confirm) return;
-    
+
     // Set loading state
     setState(() {
       _isGeneratingFixtures = true;
@@ -213,11 +214,11 @@ class _FixturesScreenState extends State<FixturesScreen> {
       _successMessage = null;
       _fixturesCount = null;
     });
-    
+
     try {
       // Call generate fixtures API
       final response = await GenerateFixturesApi.generateFixtures(widget.league['id']);
-      
+
       // Check response
       if (response['return_code'] == 'SUCCESS') {
         // Show success message
@@ -227,10 +228,10 @@ class _FixturesScreenState extends State<FixturesScreen> {
           _fixturesCount = response['fixtures_created'];
           _generateErrorMessage = null;
         });
-        
+
         // Show success toast
         ErrorHelper.showSuccessToast(_successMessage ?? 'Fixtures generated successfully');
-        
+
         // Reload fixtures
         _loadFixtures();
       } else {
@@ -254,7 +255,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
   // Show filter menu
   void _showFilterMenu(BuildContext context) {
     if (_fixtures.isEmpty) return;
-    
+
     // Get all players for counting
     final allPlayers = <String, Map<String, dynamic>>{};
     for (final fixture in _fixtures) {
@@ -262,28 +263,28 @@ class _FixturesScreenState extends State<FixturesScreen> {
       final player2Id = fixture['player_2_id'].toString();
       final player1Name = fixture['player_1_name'];
       final player2Name = fixture['player_2_name'];
-      
+
       if (!allPlayers.containsKey(player1Id)) {
         allPlayers[player1Id] = {'name': player1Name};
       }
-      
+
       if (!allPlayers.containsKey(player2Id)) {
         allPlayers[player2Id] = {'name': player2Name};
       }
     }
-    
+
     final totalPlayerCount = allPlayers.length;
     final displayedPlayerCount = _uniquePlayers.length;
-    
+
     // Use a safer approach to position the menu
     final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
     final RenderBox? overlay = Navigator.of(context).overlay?.context.findRenderObject() as RenderBox?;
-    
+
     if (renderBox == null || overlay == null) {
       // If we can't get the render objects, use a default position
       return;
     }
-    
+
     // Calculate position relative to the button
     final RelativeRect position = RelativeRect.fromRect(
       Rect.fromPoints(
@@ -292,7 +293,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
       ),
       Offset.zero & overlay.size,
     );
-    
+
     showMenu<String>(
       context: context,
       position: position,
@@ -359,7 +360,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
           final playerId = player['id'].toString();
           final playerName = player['name'] as String;
           final playerNickname = player['nickname'] as String?;
-          
+
           // Use nickname if available, otherwise use name
           String displayName;
           if (playerNickname != null && playerNickname.isNotEmpty) {
@@ -373,7 +374,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
               displayName = playerName;
             }
           }
-          
+
           return PopupMenuItem<String>(
             value: 'player:$playerId:$displayName',
             child: Row(
@@ -398,7 +399,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
             ),
           );
         }),
-        
+
         // Show "More Players" option if there are more players than we're displaying
         if (totalPlayerCount > displayedPlayerCount)
           PopupMenuItem<String>(
@@ -442,16 +443,16 @@ class _FixturesScreenState extends State<FixturesScreen> {
           }
         }
       });
-      
+
       // Reload fixtures to apply filter
       setState(() {});
     });
   }
-  
+
   // Get all unique players in fixtures
   List<Map<String, dynamic>> get _uniquePlayers {
     final players = <String, Map<String, dynamic>>{};
-    
+
     for (final fixture in _fixtures) {
       final player1Id = fixture['player_1_id'].toString();
       final player2Id = fixture['player_2_id'].toString();
@@ -459,7 +460,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
       final player2Name = fixture['player_2_name'];
       final player1Nickname = fixture['player_1_nickname'];
       final player2Nickname = fixture['player_2_nickname'];
-      
+
       if (!players.containsKey(player1Id)) {
         players[player1Id] = {
           'id': player1Id,
@@ -467,7 +468,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
           'nickname': player1Nickname,
         };
       }
-      
+
       if (!players.containsKey(player2Id)) {
         players[player2Id] = {
           'id': player2Id,
@@ -476,11 +477,11 @@ class _FixturesScreenState extends State<FixturesScreen> {
         };
       }
     }
-    
+
     // Sort players by name and limit to 10 to avoid very long menus
     final sortedPlayers = players.values.toList()
       ..sort((a, b) => (a['name'] as String).compareTo(b['name'] as String));
-    
+
     return sortedPlayers.take(10).toList();
   }
 
@@ -502,7 +503,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                 style: AppStyles.headingStyle,
               ),
               const SizedBox(height: 24),
-              
+
               // Generate fixtures section (only for league creator and if no fixtures exist)
               if (_isCreator && _fixtures.isEmpty && !_isLoadingFixtures) ...[
                 const Text(
@@ -510,14 +511,14 @@ class _FixturesScreenState extends State<FixturesScreen> {
                   style: AppStyles.subheadingStyle,
                 ),
                 const SizedBox(height: 16),
-                
+
                 const Text(
                   'As the league organiser, you can generate fixtures for all members of the league. '
                   'This will create matches based on the "Play Each Other" setting.',
                   style: AppStyles.bodyStyle,
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Generate fixtures button
                 ElevatedButton.icon(
                   onPressed: _isGeneratingFixtures ? null : _handleGenerateFixtures,
@@ -532,7 +533,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                 ),
                 const SizedBox(height: 24),
               ],
-              
+
               // Generate error message
               if (_generateErrorMessage != null)
                 Container(
@@ -557,7 +558,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                   ),
                 ),
               if (_generateErrorMessage != null) const SizedBox(height: 24),
-              
+
               // Success message
               if (_successMessage != null)
                 Container(
@@ -597,7 +598,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                   ),
                 ),
               if (_successMessage != null) const SizedBox(height: 24),
-              
+
               // Fixtures section header (only shown when fixtures exist)
               if (_fixtures.isNotEmpty) ...[
                 const Text(
@@ -689,9 +690,9 @@ class _FixturesScreenState extends State<FixturesScreen> {
                   ),
                 ),
               ],
-              
+
               const SizedBox(height: 16),
-              
+
               // Fixtures error message
               if (_fixturesErrorMessage != null)
                 Container(
@@ -716,7 +717,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                   ),
                 ),
               if (_fixturesErrorMessage != null) const SizedBox(height: 16),
-              
+
               // Fixtures list
               if (_isLoadingFixtures)
                 const Center(
@@ -742,7 +743,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       style: AppStyles.bodyStyle,
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Members list
                     if (_isLoadingMembers)
                       const Center(
@@ -796,7 +797,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                           final nickname = member['nickname'] ?? '';
                           final displayName = nickname.isNotEmpty ? nickname : name;
                           final isCreator = member['is_creator'] ?? false;
-                          
+
                           return Card(
                             margin: const EdgeInsets.only(bottom: 8),
                             child: ListTile(
@@ -854,9 +855,19 @@ class _FixturesScreenState extends State<FixturesScreen> {
                     final fixture = _filterPlayerId != null ? _filteredFixtures[index] : _fixtures[index];
                     return FixtureCard(
                       fixture: fixture,
-                      onTap: () {
-                        // Handle fixture tap
-                        ErrorHelper.showSuccessToast('Fixture details coming soon!');
+                      onTap: (fixture) {
+                        // Navigate to update score screen
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => UpdateScoreScreen(
+                              fixture: fixture,
+                              onScoreUpdated: () {
+                                // Reload fixtures when score is updated
+                                _loadFixtures();
+                              },
+                            ),
+                          ),
+                        );
                       },
                     );
                   },

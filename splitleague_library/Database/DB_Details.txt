@@ -15,6 +15,13 @@ FROM information_schema.tables
 WHERE table_schema = 'public'
   AND table_type = 'BASE TABLE';
 
+== Change Timezone ==
+ALTER TABLE fixture
+ALTER COLUMN created_at TYPE TIMESTAMPTZ
+USING updated_at AT TIME ZONE 'UTC',
+ALTER COLUMN updated_at SET DEFAULT NOW();
+
+
 == SplitLeague ========================
 DB Database: splitleague
 Server IP:  77.68.13.150

@@ -117,6 +117,23 @@ Retrieves all members of a specific league including the creator
 Only league members or the creator can access the member list
 ======================================
 
+== Update Fixture Score ==============================
+URL: http://localhost:3000/update_fixture_score
+Method: POST
+Headers:
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+Body:
+{
+  "fixture_id": 1,
+  "player_1_score": 3,
+  "player_2_score": 2
+}
+
+Updates the score for a specific fixture
+Only the league creator or the players involved can update the score
+======================================
+
 == Test User 1 ==============================
 Email: test1@test.com
 Password: 1234
