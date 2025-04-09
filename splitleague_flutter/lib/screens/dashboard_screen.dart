@@ -5,7 +5,6 @@ Provides options to create or join leagues
 */
 
 import 'package:flutter/material.dart';
-import 'package:pull_to_refresh/pull_to_refresh.dart';
 import '../api/get_user_leagues_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
@@ -37,26 +36,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Error message for leagues
   String? _leaguesErrorMessage;
 
-  // Refresh controller for pull-to-refresh
-  final RefreshController _refreshController = RefreshController(initialRefresh: false);
-
   @override
   void initState() {
     super.initState();
     _loadUserData();
     _loadUserLeagues();
-  }
-
-  @override
-  void dispose() {
-    _refreshController.dispose();
-    super.dispose();
-  }
-
-  // Handle refresh
-  void _onRefresh() async {
-    await _loadUserLeagues();
-    _refreshController.refreshCompleted();
   }
 
   // Load user data from secure storage
@@ -115,7 +99,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SplitLeague'),
+        title: const Text('Leagues'),
         actions: [
           // Profile button
           IconButton(
@@ -139,77 +123,76 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ? const Center(
                   child: Text('No user data found'),
                 )
-              : SmartRefresher(
-                  controller: _refreshController,
-                  onRefresh: _onRefresh,
-                  header: const WaterDropHeader(
-                    waterDropColor: AppStyles.primaryColor,
-                    complete: Icon(Icons.check, color: AppStyles.successColor),
-                  ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // League action buttons - more subtle design
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade200),
-                        ),
-                        child: Row(
-                          children: [
-                            // Create league button
-                            Expanded(
-                              child: TextButton.icon(
-                                onPressed: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => const CreateLeagueScreen(),
+                      // League action buttons
+                      Row(
+                        children: [
+                          // Create league button
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const CreateLeagueScreen(),
+                                  ),
+                                ).then((_) => _loadUserLeagues()); // Reload leagues after returning
+                              },
+                              style: AppStyles.primaryButtonStyle,
+                              icon: const Icon(Icons.add),
+                              label: const Text('Create'),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          // Join league button
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => JoinLeagueScreen(
+                                      onLeagueJoined: () {
+                                        // Reload leagues when a league is joined
+                                        _loadUserLeagues();
+                                      },
                                     ),
-                                  ).then((_) => _loadUserLeagues()); // Reload leagues after returning
-                                },
-                                style: AppStyles.subtleButtonStyle,
-                                icon: const Icon(Icons.add_circle_outline, size: 20),
-                                label: const Text('Create'),
-                              ),
+                                  ),
+                                );
+                              },
+                              style: AppStyles.secondaryButtonStyle,
+                              icon: const Icon(Icons.group_add),
+                              label: const Text('Join'),
                             ),
-                            // Divider
-                            Container(
-                              height: 24,
-                              width: 1,
-                              color: Colors.grey.shade300,
-                            ),
-                            // Join league button
-                            Expanded(
-                              child: TextButton.icon(
-                                onPressed: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => JoinLeagueScreen(
-                                        onLeagueJoined: () {
-                                          // Reload leagues when a league is joined
-                                          _loadUserLeagues();
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                },
-                                style: AppStyles.subtleButtonStyle,
-                                icon: const Icon(Icons.group_add_outlined, size: 20),
-                                label: const Text('Join'),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Create a new league or join an existing one using a 4-digit code.',
+                        style: AppStyles.bodyStyle,
                       ),
 
                       const SizedBox(height: 24),
 
-                      // Leagues section header - no title needed as per requirements
-                      const SizedBox(height: 8),
+                      // My Leagues section
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'My Leagues',
+                            style: AppStyles.subheadingStyle,
+                          ),
+                          // Refresh button
+                          IconButton(
+                            icon: const Icon(Icons.refresh),
+                            onPressed: _loadUserLeagues,
+                            tooltip: 'Refresh leagues',
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 16),
 
                       // Error message
@@ -277,7 +260,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                 ),
-              ),
     );
   }
 }

@@ -9,7 +9,6 @@ import '../api/generate_fixtures_api.dart';
 import '../api/get_league_fixtures_api.dart';
 import '../api/get_league_members_api.dart';
 import '../api/get_league_info_api.dart';
-import '../api/get_league_table_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
@@ -33,15 +32,11 @@ class _FixturesScreenState extends State<FixturesScreen> {
   bool _isGeneratingFixtures = false;
   bool _isLoadingFixtures = true;
   bool _isLoadingMembers = true;
-  bool _isLoadingStandings = false;
-  bool _isLoadingLeagueInfo = false;
 
   // Error messages
   String? _generateErrorMessage;
   String? _fixturesErrorMessage;
   String? _membersErrorMessage;
-  String? _standingsErrorMessage;
-  String? _leagueInfoErrorMessage;
 
   // Success message
   String? _successMessage;
@@ -55,18 +50,9 @@ class _FixturesScreenState extends State<FixturesScreen> {
   // League members list
   List<Map<String, dynamic>> _leagueMembers = [];
 
-  // League standings list
-  List<Map<String, dynamic>> _standings = [];
-
-  // League info
-  Map<String, dynamic> _leagueInfo = {};
-
   // Filter state
   String? _filterPlayerId;
   String? _filterPlayerName = 'All Fixtures';
-
-  // Tab selection
-  int _selectedTabIndex = 0; // 0 = Fixtures, 1 = Standings, 2 = Details
 
   // Filtered fixtures
   List<Map<String, dynamic>> get _filteredFixtures {
@@ -91,35 +77,6 @@ class _FixturesScreenState extends State<FixturesScreen> {
     _loadUserData();
     _loadFixtures();
     _loadLeagueMembers();
-  }
-
-  // Load league standings
-  Future<void> _loadStandings() async {
-    setState(() {
-      _isLoadingStandings = true;
-      _standingsErrorMessage = null;
-    });
-
-    try {
-      final result = await getLeagueTable(widget.league['id']);
-
-      if (result['success']) {
-        setState(() {
-          _standings = List<Map<String, dynamic>>.from(result['standings']);
-          _isLoadingStandings = false;
-        });
-      } else {
-        setState(() {
-          _standingsErrorMessage = result['message'];
-          _isLoadingStandings = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _standingsErrorMessage = 'Failed to load standings: $e';
-        _isLoadingStandings = false;
-      });
-    }
   }
 
   // Load league members
@@ -162,49 +119,6 @@ class _FixturesScreenState extends State<FixturesScreen> {
     }
   }
 
-  // Called when tab changes
-  void _onTabChanged(int index) {
-    setState(() {
-      _selectedTabIndex = index;
-    });
-
-    // Load data based on selected tab
-    if (index == 1) {
-      _loadStandings();
-    } else if (index == 2) {
-      _loadLeagueInfo();
-    }
-  }
-
-  // Load league info
-  Future<void> _loadLeagueInfo() async {
-    setState(() {
-      _isLoadingLeagueInfo = true;
-      _leagueInfoErrorMessage = null;
-    });
-
-    try {
-      final result = await GetLeagueInfoApi.getLeagueInfo(widget.league['id']);
-
-      if (result['return_code'] == 'SUCCESS') {
-        setState(() {
-          _leagueInfo = result['league'];
-          _isLoadingLeagueInfo = false;
-        });
-      } else {
-        setState(() {
-          _leagueInfoErrorMessage = result['message'];
-          _isLoadingLeagueInfo = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _leagueInfoErrorMessage = 'Failed to load league info: $e';
-        _isLoadingLeagueInfo = false;
-      });
-    }
-  }
-
   // Load user data from secure storage
   Future<void> _loadUserData() async {
     try {
@@ -227,6 +141,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
 
     try {
       // Call get league fixtures API
+      print('Loading fixtures for league ID: ${widget.league['id']} (${widget.league['name']})');
       final response = await GetLeagueFixturesApi.getLeagueFixtures(widget.league['id']);
 
       // Check response
@@ -576,121 +491,20 @@ class _FixturesScreenState extends State<FixturesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.league['name']),
+        title: const Text('Fixtures'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          // Reduce horizontal padding to fix overflow
-          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 24.0),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Removed league name as it's now in the app bar
-              const SizedBox(height: 8),
-
-              // Tab selection
-              Container(
-                padding: const EdgeInsets.all(2),
-                decoration: AppStyles.tabContainerDecoration,
-                child: Row(
-                  children: [
-                    // Fixtures tab
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => _onTabChanged(0),
-                        style: _selectedTabIndex == 0
-                            ? AppStyles.activeTabButtonStyle
-                            : AppStyles.tabButtonStyle,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.sports_soccer,
-                              size: 14,
-                              color: _selectedTabIndex == 0 ? Colors.white : AppStyles.secondaryTextColor,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Fixtures',
-                              style: TextStyle(
-                                fontWeight: _selectedTabIndex == 0 ? FontWeight.bold : FontWeight.normal,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Standings tab (moved to second position)
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => _onTabChanged(1),
-                        style: _selectedTabIndex == 1
-                            ? AppStyles.activeTabButtonStyle
-                            : AppStyles.tabButtonStyle,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.leaderboard,
-                              size: 14,
-                              color: _selectedTabIndex == 1 ? Colors.white : AppStyles.secondaryTextColor,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Standings',
-                              style: TextStyle(
-                                fontWeight: _selectedTabIndex == 1 ? FontWeight.bold : FontWeight.normal,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Details tab (moved to third position)
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => _onTabChanged(2),
-                        style: _selectedTabIndex == 2
-                            ? AppStyles.activeTabButtonStyle
-                            : AppStyles.tabButtonStyle,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.info_outline,
-                              size: 14,
-                              color: _selectedTabIndex == 2 ? Colors.white : AppStyles.secondaryTextColor,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Details',
-                              style: TextStyle(
-                                fontWeight: _selectedTabIndex == 2 ? FontWeight.bold : FontWeight.normal,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              // League name
+              Text(
+                widget.league['name'],
+                style: AppStyles.headingStyle,
               ),
               const SizedBox(height: 24),
-
-              // Tab content
-              if (_selectedTabIndex == 1) // Standings tab
-                _buildStandingsTab()
-              else if (_selectedTabIndex == 2) // Details tab
-                _buildDetailsTab()
-              else // Fixtures tab (default)
 
               // Generate fixtures section (only for league creator and if no fixtures exist)
               if (_isCreator && _fixtures.isEmpty && !_isLoadingFixtures) ...[
@@ -787,86 +601,92 @@ class _FixturesScreenState extends State<FixturesScreen> {
                 ),
               if (_successMessage != null) const SizedBox(height: 24),
 
-              // Fixtures section (only shown when fixtures exist)
+              // Fixtures section header (only shown when fixtures exist)
               if (_fixtures.isNotEmpty) ...[
-                // Removed Fixtures header text as we have tab buttons now
+                const Text(
+                  'Fixtures',
+                  style: AppStyles.subheadingStyle,
+                ),
 
                 // Filter controls in a separate row
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Filter menu button
-                      IconButton(
-                        icon: Icon(
-                          Icons.filter_list,
-                          color: _filterPlayerId != null ? AppStyles.primaryColor : null,
-                        ),
-                        onPressed: () {
-                          _showFilterMenu(context);
-                        },
-                        tooltip: 'Filter fixtures',
-                        constraints: const BoxConstraints(
-                          minWidth: 36,  // Reduced from 40
-                          minHeight: 36, // Reduced from 40
-                        ),
-                      ),
-                      // Filter indicator with Expanded
-                      Expanded(
-                        child: Container(
-                          constraints: const BoxConstraints(maxWidth: 200),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          margin: const EdgeInsets.only(left: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppStyles.primaryColor.withAlpha(100)),
+                      // Filter indicator and button
+                      Row(
+                        children: [
+                          // Filter menu button - moved to the left
+                          IconButton(
+                            icon: Icon(
+                              Icons.filter_list,
+                              color: _filterPlayerId != null ? AppStyles.primaryColor : null,
+                            ),
+                            onPressed: () {
+                              _showFilterMenu(context);
+                            },
+                            tooltip: 'Filter fixtures',
+                            constraints: const BoxConstraints(
+                              minWidth: 40,
+                              minHeight: 40,
+                            ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  _filterPlayerName ?? 'All Fixtures',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: _filterPlayerId != null ? AppStyles.primaryColor : Colors.grey.shade700,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ),
-                              if (_filterPlayerId != null) ...[
-                                const SizedBox(width: 4),
-                                InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      _filterPlayerId = null;
-                                      _filterPlayerName = 'All Fixtures';
-                                    });
-                                  },
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: const Icon(
-                                    Icons.close,
-                                    size: 14,
-                                    color: AppStyles.primaryColor,
+                          // Filter indicator - always shown
+                          Container(
+                            constraints: const BoxConstraints(maxWidth: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            margin: const EdgeInsets.only(left: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppStyles.primaryColor.withAlpha(100)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Filter name with ellipsis (no icon)
+                                Flexible(
+                                  child: Text(
+                                    _filterPlayerName ?? 'All Fixtures',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: _filterPlayerId != null ? AppStyles.primaryColor : Colors.grey.shade700,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
                                   ),
                                 ),
+                                // Only show clear button if not showing "All Fixtures"
+                                if (_filterPlayerId != null) ...[
+                                  const SizedBox(width: 4),
+                                  InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        _filterPlayerId = null;
+                                        _filterPlayerName = 'All Fixtures';
+                                      });
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: const Icon(
+                                      Icons.close,
+                                      size: 14,
+                                      color: AppStyles.primaryColor,
+                                    ),
+                                  ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
+
                       // Refresh button
                       IconButton(
                         icon: const Icon(Icons.refresh),
                         onPressed: _loadFixtures,
                         tooltip: 'Refresh fixtures',
-                        constraints: const BoxConstraints(
-                          minWidth: 36,  // Reduced from default
-                          minHeight: 36, // Reduced from default
-                        ),
                       ),
                     ],
                   ),
@@ -1108,795 +928,5 @@ class _FixturesScreenState extends State<FixturesScreen> {
         ),
       ),
     );
-  }
-
-  // Build the standings tab
-  Widget _buildStandingsTab() {
-    // Load standings if not already loaded
-    if (_standings.isEmpty && !_isLoadingStandings && _standingsErrorMessage == null) {
-      _loadStandings();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Loading indicator
-        if (_isLoadingStandings)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(32.0),
-              child: SpinKitCircle(color: AppStyles.primaryColor, size: 50.0),
-            ),
-          )
-        // Error message
-        else if (_standingsErrorMessage != null)
-          Container(
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(
-              color: AppStyles.errorColor.withAlpha(25),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.error_outline, color: AppStyles.errorColor),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    _standingsErrorMessage!,
-                    style: const TextStyle(color: AppStyles.errorColor),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.refresh, color: AppStyles.primaryColor),
-                  onPressed: _loadStandings,
-                  tooltip: 'Retry',
-                ),
-              ],
-            ),
-          )
-        // Empty standings
-        else if (_standings.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.leaderboard_outlined,
-                    size: 64,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No standings available',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Play some matches to see the standings',
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
-                ],
-              ),
-            ),
-          )
-        // Standings table
-        else
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withAlpha(40),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
-              children: [
-                // Table header
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: AppStyles.primaryColor,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 24, child: Text('#', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        flex: 3,
-                        child: Text('Player', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                      ),
-                      const SizedBox(width: 8),
-                      const SizedBox(width: 30, child: Text('P', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
-                      const SizedBox(width: 30, child: Text('W', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
-                      if (_standings.first.containsKey('drawn'))
-                        const SizedBox(width: 30, child: Text('D', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
-                      const SizedBox(width: 30, child: Text('L', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
-                      if (_standings.first.containsKey('score_for')) ...[
-                        const SizedBox(width: 30, child: Text('F', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
-                        const SizedBox(width: 30, child: Text('A', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
-                        const SizedBox(width: 30, child: Text('+/-', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
-                      ],
-                      const SizedBox(width: 8),
-                      const SizedBox(width: 30, child: Text('Pts', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
-                    ],
-                  ),
-                ),
-
-                // Table rows
-                ...List.generate(_standings.length, (index) {
-                  final player = _standings[index];
-                  final isCurrentUser = player['user_id'] == _userData?['id'];
-
-                  return Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: isCurrentUser ? AppStyles.primaryColor.withAlpha(15) : Colors.white,
-                      border: Border(
-                        bottom: BorderSide(
-                          color: index < _standings.length - 1 ? Colors.grey.shade200 : Colors.transparent,
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        // Position
-                        SizedBox(
-                          width: 24,
-                          child: Text(
-                            '${index + 1}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: index < 3 ? AppStyles.primaryColor : AppStyles.textColor,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-
-                        // Player name
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            player['nickname'] ?? player['name'],
-                            style: TextStyle(
-                              fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.normal,
-                              color: isCurrentUser ? AppStyles.primaryColor : AppStyles.textColor,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-
-                        // Played
-                        SizedBox(width: 30, child: Text('${player['played']}', textAlign: TextAlign.center)),
-
-                        // Won
-                        SizedBox(
-                          width: 30,
-                          child: Text(
-                            '${player['won']}',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: AppStyles.successColor, fontWeight: FontWeight.w500),
-                          ),
-                        ),
-
-                        // Drawn (only for WDL leagues)
-                        if (player.containsKey('drawn'))
-                          SizedBox(width: 30, child: Text('${player['drawn']}', textAlign: TextAlign.center)),
-
-                        // Lost
-                        SizedBox(
-                          width: 30,
-                          child: Text(
-                            '${player['lost']}',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: AppStyles.errorColor, fontWeight: FontWeight.w500),
-                          ),
-                        ),
-
-                        // Score stats (only for PTS leagues)
-                        if (player.containsKey('score_for')) ...[
-                          SizedBox(width: 30, child: Text('${player['score_for']}', textAlign: TextAlign.center)),
-                          SizedBox(width: 30, child: Text('${player['score_against']}', textAlign: TextAlign.center)),
-                          SizedBox(
-                            width: 30,
-                            child: Text(
-                              '${player['score_diff'] > 0 ? '+' : ''}${player['score_diff']}',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: player['score_diff'] > 0
-                                    ? AppStyles.successColor
-                                    : player['score_diff'] < 0
-                                        ? AppStyles.errorColor
-                                        : AppStyles.textColor,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(width: 8),
-
-                        // Points
-                        SizedBox(
-                          width: 30,
-                          child: Text(
-                            '${player['points']}',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-
-  // Build the details tab
-  Widget _buildDetailsTab() {
-    // Load league info if not already loaded
-    if (_leagueInfo.isEmpty && !_isLoadingLeagueInfo && _leagueInfoErrorMessage == null) {
-      _loadLeagueInfo();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Loading indicator
-        if (_isLoadingLeagueInfo)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(32.0),
-              child: SpinKitCircle(color: AppStyles.primaryColor, size: 50.0),
-            ),
-          )
-        // Error message
-        else if (_leagueInfoErrorMessage != null)
-          Container(
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(
-              color: AppStyles.errorColor.withAlpha(25),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.error_outline, color: AppStyles.errorColor),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    _leagueInfoErrorMessage!,
-                    style: const TextStyle(color: AppStyles.errorColor),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.refresh, color: AppStyles.primaryColor),
-                  onPressed: _loadLeagueInfo,
-                  tooltip: 'Retry',
-                ),
-              ],
-            ),
-          )
-        // Empty league info
-        else if (_leagueInfo.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 64,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No league information available',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Unable to load league details',
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
-                ],
-              ),
-            ),
-          )
-        // League info
-        else
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // League name and code section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withAlpha(40),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // League name
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppStyles.primaryColor.withAlpha(25),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.emoji_events,
-                              color: AppStyles.primaryColor,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'League Name',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppStyles.secondaryTextColor,
-                                  ),
-                                ),
-                                Text(
-                                  _leagueInfo['name'] ?? 'Unknown',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Public code
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppStyles.accentColor.withAlpha(25),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.key,
-                              color: AppStyles.accentColor,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Public Code',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppStyles.secondaryTextColor,
-                                ),
-                              ),
-                              Text(
-                                _leagueInfo['public_code'] ?? 'N/A',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: _leagueInfo['active'] == true
-                                  ? AppStyles.successColor.withAlpha(25)
-                                  : AppStyles.errorColor.withAlpha(25),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Text(
-                              _leagueInfo['active'] == true ? 'Active' : 'Inactive',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: _leagueInfo['active'] == true
-                                    ? AppStyles.successColor
-                                    : AppStyles.errorColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Dates section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withAlpha(40),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'League Dates',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Start date
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.calendar_today,
-                              color: Colors.green.shade700,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Start Date',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppStyles.secondaryTextColor,
-                                ),
-                              ),
-                              Text(
-                                _leagueInfo['start_date'] ?? 'Not set',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // End date
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.event,
-                              color: Colors.red.shade700,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'End Date',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppStyles.secondaryTextColor,
-                                ),
-                              ),
-                              Text(
-                                _leagueInfo['end_date'] ?? 'Not set',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Created at
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.history,
-                              color: Colors.blue.shade700,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Created On',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppStyles.secondaryTextColor,
-                                ),
-                              ),
-                              Text(
-                                _formatDate(_leagueInfo['created_at']),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Points rules section
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withAlpha(40),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Text(
-                            'Points Rules',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: _getWinTypeColor(_leagueInfo['win_type']).withAlpha(25),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              _getWinTypeLabel(_leagueInfo['win_type']),
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: _getWinTypeColor(_leagueInfo['win_type']),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Points rules grid
-                      Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: [
-                          // Win points
-                          _buildPointsCard(
-                            'Win',
-                            '${_leagueInfo['points_for_win'] ?? 0}',
-                            Icons.emoji_events,
-                            Colors.amber,
-                          ),
-
-                          // Draw points (only for WDL)
-                          if (_leagueInfo['win_type'] == 'WDL')
-                            _buildPointsCard(
-                              'Draw',
-                              '${_leagueInfo['points_for_draw'] ?? 0}',
-                              Icons.handshake,
-                              Colors.blue,
-                            ),
-
-                          // Win margin bonus
-                          _buildPointsCard(
-                            'Win Margin Bonus',
-                            '${_leagueInfo['points_for_win_margin'] ?? 0}',
-                            Icons.add_circle,
-                            Colors.green,
-                          ),
-
-                          // Close loss points
-                          _buildPointsCard(
-                            'Lose within margin',
-                            '${_leagueInfo['points_for_close_loss'] ?? 0}',
-                            Icons.remove_circle,
-                            Colors.orange,
-                          ),
-
-                          // Margin threshold
-                          _buildPointsCard(
-                            'Margin Threshold',
-                            '${_leagueInfo['win_margin_threshold'] ?? 0}',
-                            Icons.speed,
-                            Colors.purple,
-                          ),
-
-                          // Play each other
-                          _buildPointsCard(
-                            'Play Each Other',
-                            '${_leagueInfo['play_each_other'] ?? 1} time${_leagueInfo['play_each_other'] == 1 ? '' : 's'}',
-                            Icons.repeat,
-                            Colors.teal,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-
-  // Helper method to build points rule card
-  Widget _buildPointsCard(String label, String value, IconData icon, Color color) {
-    return Container(
-      width: 150,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withAlpha(50)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: color.withAlpha(200),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Helper method to format date
-  String _formatDate(String? dateString) {
-    if (dateString == null) return 'Not available';
-
-    try {
-      final date = DateTime.parse(dateString);
-      return '${date.day}/${date.month}/${date.year}';
-    } catch (e) {
-      return dateString;
-    }
-  }
-
-  // Helper method to get win type label
-  String _getWinTypeLabel(String? winType) {
-    switch (winType) {
-      case 'PTS':
-        return 'Points Based';
-      case 'WIN':
-        return 'Win Only';
-      case 'WDL':
-        return 'Win/Draw/Loss';
-      default:
-        return winType ?? 'Unknown';
-    }
-  }
-
-  // Helper method to get win type color
-  Color _getWinTypeColor(String? winType) {
-    switch (winType) {
-      case 'PTS':
-        return Colors.blue;
-      case 'WIN':
-        return Colors.green;
-      case 'WDL':
-        return Colors.purple;
-      default:
-        return Colors.grey;
-    }
   }
 }

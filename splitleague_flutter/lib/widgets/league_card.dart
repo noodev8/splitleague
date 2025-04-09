@@ -23,12 +23,12 @@ class LeagueCard extends StatelessWidget {
     final bool isCreator = league['is_creator'] ?? false;
     final bool isActive = league['active'] ?? false;
     final String publicCode = league['public_code'] ?? '';
-    
+
     // Get points data
     final Map<String, dynamic> points = league['points'] ?? {};
     final int pointsForWin = points['points_for_win'] ?? 3;
     final int pointsForDraw = points['points_for_draw'] ?? 1;
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
@@ -94,7 +94,7 @@ class LeagueCard extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // League details
             Padding(
               padding: const EdgeInsets.all(16),
@@ -110,7 +110,7 @@ class LeagueCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // League code
                   Row(
                     children: [
@@ -137,7 +137,7 @@ class LeagueCard extends StatelessWidget {
       ),
     );
   }
-  
+
   // Helper method to build points item
   Widget _buildPointsItem(String label, String value) {
     return Container(

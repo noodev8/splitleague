@@ -6,17 +6,14 @@ Contains colors, text styles, and other UI elements
 import 'package:flutter/material.dart';
 
 class AppStyles {
-  // Colors - Modern scheme
-  static const Color primaryColor = Color(0xFF4361EE); // Vibrant blue
-  static const Color accentColor = Color(0xFF3A0CA3); // Deep purple
-  static const Color backgroundColor = Color(0xFFF8F9FA); // Light gray background
-  static const Color textColor = Color(0xFF212529); // Dark text
-  static const Color secondaryTextColor = Color(0xFF6C757D); // Medium gray text
-  static const Color errorColor = Color(0xFFE63946); // Bright red
-  static const Color successColor = Color(0xFF2A9D8F); // Teal green
-  static const Color cardColor = Color(0xFFFFFFFF); // White
-  static const Color highlightColor = Color(0xFF4CC9F0); // Light blue
-  static const Color warningColor = Color(0xFFF77F00); // Orange
+  // Colors
+  static const Color primaryColor = Color(0xFF3F51B5);
+  static const Color accentColor = Color(0xFF536DFE);
+  static const Color backgroundColor = Color(0xFFF5F5F5);
+  static const Color textColor = Color(0xFF212121);
+  static const Color secondaryTextColor = Color(0xFF757575);
+  static const Color errorColor = Color(0xFFD32F2F);
+  static const Color successColor = Color(0xFF388E3C);
 
   // Text Styles
   static const TextStyle headingStyle = TextStyle(
@@ -47,9 +44,8 @@ class AppStyles {
     foregroundColor: Colors.white,
     padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
     ),
-    elevation: 2,
   );
 
   static final ButtonStyle secondaryButtonStyle = OutlinedButton.styleFrom(
@@ -57,38 +53,8 @@ class AppStyles {
     side: const BorderSide(color: primaryColor),
     padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
-  );
-
-  static final ButtonStyle subtleButtonStyle = TextButton.styleFrom(
-    foregroundColor: primaryColor,
-    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-    shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(8),
     ),
-  );
-
-  static final ButtonStyle tabButtonStyle = ElevatedButton.styleFrom(
-    backgroundColor: Colors.white,
-    foregroundColor: secondaryTextColor,
-    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
-    ),
-    elevation: 0,
-    minimumSize: const Size(10, 36),
-  );
-
-  static final ButtonStyle activeTabButtonStyle = ElevatedButton.styleFrom(
-    backgroundColor: primaryColor,
-    foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
-    ),
-    elevation: 2,
-    minimumSize: const Size(10, 36),
   );
 
   // Input Decoration
@@ -119,35 +85,15 @@ class AppStyles {
 
   // Card Decoration
   static final BoxDecoration cardDecoration = BoxDecoration(
-    color: cardColor,
-    borderRadius: BorderRadius.circular(16),
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(10),
     boxShadow: [
       BoxShadow(
-        color: Colors.grey.withAlpha(38), // 0.15 opacity
+        color: Colors.grey.withOpacity(0.2),
         spreadRadius: 1,
-        blurRadius: 8,
-        offset: const Offset(0, 3),
+        blurRadius: 5,
+        offset: const Offset(0, 2),
       ),
     ],
-  );
-
-  // Selection Card Decoration
-  static final BoxDecoration selectionCardDecoration = BoxDecoration(
-    color: cardColor,
-    borderRadius: BorderRadius.circular(12),
-    border: Border.all(color: Colors.grey.shade300, width: 1),
-  );
-
-  static final BoxDecoration selectedCardDecoration = BoxDecoration(
-    color: primaryColor.withAlpha(13), // 0.05 opacity
-    borderRadius: BorderRadius.circular(12),
-    border: Border.all(color: primaryColor, width: 2),
-  );
-
-  // Tab Container Decoration
-  static final BoxDecoration tabContainerDecoration = BoxDecoration(
-    color: Colors.grey.shade100,
-    borderRadius: BorderRadius.circular(12),
-    border: Border.all(color: Colors.grey.shade200),
   );
 }

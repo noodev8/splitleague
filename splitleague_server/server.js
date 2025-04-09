@@ -28,7 +28,6 @@ const get_league_fixtures = require('./routes/get_league_fixtures');
 const get_league_members = require('./routes/get_league_members');
 const update_fixture_score = require('./routes/update_fixture_score');
 const get_league_info = require('./routes/get_league_info');
-const get_league_table = require('./routes/get_league_table');
 
 // Use routes
 app.use('/register', register);
@@ -41,7 +40,6 @@ app.use('/get_league_fixtures', get_league_fixtures);
 app.use('/get_league_members', get_league_members);
 app.use('/update_fixture_score', update_fixture_score);
 app.use('/get_league_info', get_league_info);
-app.use('/get_league_table', get_league_table);
 
 // Root route
 app.get('/', (req, res) => {

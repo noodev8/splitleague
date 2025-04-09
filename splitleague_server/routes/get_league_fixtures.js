@@ -51,6 +51,9 @@ router.post('/', verifyToken, async (req, res) => {
     // Extract league ID from request body and convert to integer
     const league_id = parseInt(req.body.league_id);
 
+    // Debug log to see what league ID is being requested
+    console.log('Requested league ID:', league_id, 'Type:', typeof league_id);
+
     if (!league_id) {
       return res.status(400).json({
         return_code: 'MISSING_FIELDS',
@@ -63,6 +66,9 @@ router.post('/', verifyToken, async (req, res) => {
       'SELECT * FROM league WHERE id = $1',
       [league_id]
     );
+
+    // Debug log to see what league was found
+    console.log('League query result:', leagueResult.rows.map(row => ({ id: row.id, name: row.name })));
 
     if (leagueResult.rows.length === 0) {
       return res.status(404).json({
