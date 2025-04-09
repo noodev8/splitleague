@@ -134,6 +134,44 @@ Updates the score for a specific fixture
 Only the league creator or the players involved can update the score
 ======================================
 
+== Get League Info ==============================
+URL: http://localhost:3000/get_league_info
+Method: POST
+Headers:
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+Body:
+{
+  "league_id": 1
+}
+
+Response example:
+{
+  "return_code": "SUCCESS",
+  "league": {
+    "id": 1,
+    "name": "Premier League 2025",
+    "created_by": 123,
+    "public_code": "1234",
+    "active": true,
+    "start_date": "2025-05-01",
+    "end_date": "2025-08-31",
+    "created_at": "2025-04-06T12:00:00.000Z",
+    "is_creator": true,
+    "points_for_win": 3,
+    "points_for_draw": 1,
+    "points_for_win_margin": 1,
+    "points_for_close_loss": 1,
+    "win_margin_threshold": 15,
+    "play_each_other": 2,
+    "win_type": "POINTS"
+  }
+}
+
+Retrieves detailed information about a specific league
+Only league members or the creator can access the league info
+======================================
+
 == Test User 1 ==============================
 Email: test1@test.com
 Password: 1234
