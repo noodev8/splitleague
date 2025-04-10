@@ -252,6 +252,24 @@ For authenticated routes, add this header:
 Authorization: Bearer YOUR_JWT_TOKEN
 ======================================
 
+== Remove Player From League ==============================
+URL: http://localhost:3000/remove_player_from_league
+Method: POST
+Headers:
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+Body:
+{
+  "league_id": 1,
+  "player_id": 2
+}
+
+Allows a league organizer to remove a player from their league
+Will fail if fixtures have already been generated
+Only the league creator can remove players
+Organizers cannot remove themselves from the league
+======================================
+
 == Common Response Codes ==============================
 SUCCESS - Operation completed successfully
 MISSING_FIELDS - Required fields are missing
@@ -260,6 +278,9 @@ EMAIL_ALREADY_EXISTS - Email is already registered
 INVALID_CODE - The provided public code is invalid
 LEAGUE_INACTIVE - The league is not active
 CODE_GENERATION_FAILED - Failed to generate a unique code
+FIXTURES_EXIST - Cannot perform operation because fixtures already exist
+PLAYER_NOT_FOUND - The specified player was not found
+INVALID_OPERATION - The requested operation is not allowed
 SERVER_ERROR - Server encountered an error
 UNAUTHORIZED - Authentication token is missing or invalid
 ======================================
