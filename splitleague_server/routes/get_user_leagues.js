@@ -15,7 +15,8 @@ Success Response:
   "return_code": "SUCCESS",
   "leagues": [
     {
-      "id": 1,                            // integer - Unique league ID
+      "id": 1,                            // integer - Database row ID
+      "league_id": 1,                     // integer - League ID (matches id)
       "name": "Premier League 2025",      // string - League name
       "created_by": 123,                  // integer - User ID of creator
       "public_code": "1234",              // string - Unique 4-digit code for joining the league
@@ -58,6 +59,7 @@ router.post('/', verifyToken, async (req, res) => {
     // Query to get all leagues the user is a member of (including leagues they created)
     const result = await pool.query(`
       SELECT 
+        l.id as league_id,  -- Explicitly name this as league_id
         l.*,
         CASE WHEN l.created_by = $1 THEN true ELSE false END as is_creator,
         lm.joined_at,
@@ -66,7 +68,7 @@ router.post('/', verifyToken, async (req, res) => {
           SELECT COUNT(*) 
           FROM league_members lm2 
           WHERE lm2.league_id = l.id
-        ) + 1 as player_count  -- Add 1 to include the creator
+        ) as player_count
       FROM league l
       LEFT JOIN league_members lm ON l.id = lm.league_id AND lm.user_id = $1
       LEFT JOIN league_points lp ON l.id = lp.league_id
@@ -79,16 +81,17 @@ router.post('/', verifyToken, async (req, res) => {
     
     for (const row of result.rows) {
       // Skip if we've already processed this league
-      if (processedLeagueIds.has(row.id)) {
+      if (processedLeagueIds.has(row.league_id)) {
         continue;
       }
       
       // Mark this league as processed
-      processedLeagueIds.add(row.id);
+      processedLeagueIds.add(row.league_id);
       
       // Format the league data
       const league = {
         id: row.id,
+        league_id: row.league_id,  // This will now be different from id
         name: row.name,
         created_by: row.created_by,
         public_code: row.public_code,
@@ -98,7 +101,7 @@ router.post('/', verifyToken, async (req, res) => {
         created_at: row.created_at,
         is_creator: row.is_creator,
         joined_at: row.joined_at,
-        player_count: parseInt(row.player_count),  // Add player count to response
+        player_count: parseInt(row.player_count),
         points: {
           points_for_win: row.points_for_win,
           points_for_draw: row.points_for_draw,

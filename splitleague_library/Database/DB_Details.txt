@@ -3,6 +3,8 @@ app_user
 league
 league_members
 fixture
+league_points
+
 
 == Get Table Schema ==
 SELECT column_name, data_type, is_nullable, character_maximum_length

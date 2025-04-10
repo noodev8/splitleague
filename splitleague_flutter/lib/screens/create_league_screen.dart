@@ -26,8 +26,8 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
   final _nameController = TextEditingController();
   final _pointsForWinController = TextEditingController(text: '3');
   final _pointsForDrawController = TextEditingController(text: '1');
-  final _pointsForWinMarginController = TextEditingController(text: '1');
-  final _pointsForCloseLossController = TextEditingController(text: '1');
+  final _pointsForWinMarginController = TextEditingController(text: '0');
+  final _pointsForCloseLossController = TextEditingController(text: '0');
   final _winMarginThresholdController = TextEditingController(text: '15');
   final _playEachOtherController = TextEditingController(text: '2');
 
@@ -62,23 +62,22 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
       return;
     }
 
-    // Set loading state
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      // Get form values
+      // Get form values - remove the ?? defaults since we want to send actual form values
       String name = _nameController.text.trim();
-      int pointsForWin = int.tryParse(_pointsForWinController.text) ?? 3;
-      int pointsForDraw = int.tryParse(_pointsForDrawController.text) ?? 1;
-      int pointsForWinMargin = int.tryParse(_pointsForWinMarginController.text) ?? 1;
-      int pointsForCloseLoss = int.tryParse(_pointsForCloseLossController.text) ?? 1;
-      int winMarginThreshold = int.tryParse(_winMarginThresholdController.text) ?? 15;
-      int playEachOther = int.tryParse(_playEachOtherController.text) ?? 2;
+      int pointsForWin = int.parse(_pointsForWinController.text);
+      int pointsForDraw = int.parse(_pointsForDrawController.text);
+      int pointsForWinMargin = int.parse(_pointsForWinMarginController.text);
+      int pointsForCloseLoss = int.parse(_pointsForCloseLossController.text);
+      int winMarginThreshold = int.parse(_winMarginThresholdController.text);
+      int playEachOther = int.parse(_playEachOtherController.text);
 
-      // Call create league API
+      // Call create league API with required values
       Map<String, dynamic> response = await CreateLeagueApi.createLeague(
         name: name,
         winType: _selectedWinType,
@@ -295,44 +294,40 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                 Visibility(
                   visible: _selectedWinType != 'WIN', // Hide for WIN type
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _pointsForWinController,
-                              decoration: AppStyles.inputDecoration('Points for Win'),
-                              keyboardType: TextInputType.number,
-                              validator: _selectedWinType == 'WIN' ? null : (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Required';
-                                }
-                                if (int.tryParse(value) == null) {
-                                  return 'Enter a number';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _pointsForDrawController,
-                              decoration: AppStyles.inputDecoration('Points for Draw'),
-                              keyboardType: TextInputType.number,
-                              enabled: _selectedWinType != 'WIN',
-                              validator: _selectedWinType == 'WIN' ? null : (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Required';
-                                }
-                                if (int.tryParse(value) == null) {
-                                  return 'Enter a number';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                        ],
+                      // Points for Win
+                      TextFormField(
+                        controller: _pointsForWinController,
+                        decoration: AppStyles.inputDecoration('Points for Win'),
+                        keyboardType: TextInputType.number,
+                        validator: _selectedWinType == 'WIN' ? null : (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Required';
+                          }
+                          if (int.tryParse(value) == null) {
+                            return 'Enter a number';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Points for Draw
+                      TextFormField(
+                        controller: _pointsForDrawController,
+                        decoration: AppStyles.inputDecoration('Points for Draw'),
+                        keyboardType: TextInputType.number,
+                        enabled: _selectedWinType != 'WIN',
+                        validator: _selectedWinType == 'WIN' ? null : (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Required';
+                          }
+                          if (int.tryParse(value) == null) {
+                            return 'Enter a number';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 16),
                     ],
@@ -343,53 +338,60 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                 Visibility(
                   visible: _selectedWinType == 'PTS',
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _pointsForWinMarginController,
-                              decoration: AppStyles.inputDecoration('Win Margin Bonus'),
-                              keyboardType: TextInputType.number,
-                              validator: _selectedWinType != 'PTS' ? null : (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Required';
-                                }
-                                if (int.tryParse(value) == null) {
-                                  return 'Enter a number';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _pointsForCloseLossController,
-                              decoration: AppStyles.inputDecoration('Lose within margin Bonus'),
-                              keyboardType: TextInputType.number,
-                              validator: _selectedWinType != 'PTS' ? null : (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Required';
-                                }
-                                if (int.tryParse(value) == null) {
-                                  return 'Enter a number';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                        ],
+                      // Win Margin Bonus
+                      TextFormField(
+                        controller: _pointsForWinMarginController,
+                        decoration: AppStyles.inputDecoration('Win Margin Bonus'),
+                        keyboardType: TextInputType.number,
+                        validator: _selectedWinType != 'PTS' ? null : (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Required';
+                          }
+                          if (int.tryParse(value) == null) {
+                            return 'Enter a number';
+                          }
+                          return null;
+                        },
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 12, top: 4),
+                        child: Text(
+                          'Beat your opponent by the win threshold amount or more, to get the bonus',
+                          style: TextStyle(fontSize: 12, color: AppStyles.secondaryTextColor),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Lose within margin Bonus
+                      TextFormField(
+                        controller: _pointsForCloseLossController,
+                        decoration: AppStyles.inputDecoration('Lose within margin Bonus'),
+                        keyboardType: TextInputType.number,
+                        validator: _selectedWinType != 'PTS' ? null : (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Required';
+                          }
+                          if (int.tryParse(value) == null) {
+                            return 'Enter a number';
+                          }
+                          return null;
+                        },
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 12, top: 4),
+                        child: Text(
+                          'If you lose but manage to stay under the win margin threshold, you get the bonus',
+                          style: TextStyle(fontSize: 12, color: AppStyles.secondaryTextColor),
+                        ),
                       ),
                       const SizedBox(height: 16),
 
                       // Win margin threshold field
                       TextFormField(
                         controller: _winMarginThresholdController,
-                        decoration: AppStyles.inputDecoration(
-                          'Win Margin Threshold',
-                          hint: 'Points difference to qualify for bonus',
-                        ),
+                        decoration: AppStyles.inputDecoration('Win Margin Threshold'),
                         keyboardType: TextInputType.number,
                         validator: _selectedWinType != 'PTS' ? null : (value) {
                           if (value == null || value.isEmpty) {
@@ -400,6 +402,13 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                           }
                           return null;
                         },
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 12, top: 4),
+                        child: Text(
+                          'The points at which any win bonuses are determined at',
+                          style: TextStyle(fontSize: 12, color: AppStyles.secondaryTextColor),
+                        ),
                       ),
                       const SizedBox(height: 16),
                     ],

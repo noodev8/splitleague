@@ -17,7 +17,7 @@ class GetLeagueFixturesApi {
     try {
       // Get the JWT token
       final token = await AuthHelper.getToken();
-
+      
       if (token == null) {
         return {
           'return_code': 'UNAUTHORIZED',
@@ -33,7 +33,7 @@ class GetLeagueFixturesApi {
           'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
-          'league_id': leagueId,
+          'league_id': leagueId, // This parameter name stays the same as it matches the server API
         }),
       );
 

@@ -82,6 +82,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       // Call the API to get user leagues
       final response = await GetUserLeaguesApi.getUserLeagues();
 
+
       // Check response
       if (response['return_code'] == 'SUCCESS') {
         // Get leagues from response
@@ -89,6 +90,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         // Convert to List<Map<String, dynamic>>
         final leagues = leaguesData.map((league) => league as Map<String, dynamic>).toList();
+
 
         setState(() {
           _leagues = leagues;
@@ -110,6 +112,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -256,7 +259,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             return LeagueCard(
                               league: _leagues[index],
                               onTap: () {
-                                // Navigate to fixtures screen
+                                // Navigate to fixtures screen with league_id instead of id
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (context) => FixturesScreen(

@@ -95,7 +95,7 @@ router.post('/', verifyToken, async (req, res) => {
 
     // Add user to the league
     await pool.query(
-      'INSERT INTO league_members (league_id, user_id) VALUES ($1, $2)',
+      'INSERT INTO league_members (league_id, user_id, active, joined_at) VALUES ($1, $2, true, CURRENT_TIMESTAMP)',
       [league.id, userId]
     );
 

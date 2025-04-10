@@ -101,16 +101,17 @@ class _FixturesScreenState extends State<FixturesScreen> {
     });
 
     try {
-      final result = await getLeagueTable(widget.league['id']);
+      // Use GetLeagueTableApi instead of direct getLeagueTable call
+      final response = await GetLeagueTableApi.getLeagueTable(widget.league['league_id']);
 
-      if (result['success']) {
+      if (response['return_code'] == 'SUCCESS') {
         setState(() {
-          _standings = List<Map<String, dynamic>>.from(result['standings']);
+          _standings = List<Map<String, dynamic>>.from(response['standings'] ?? []);
           _isLoadingStandings = false;
         });
       } else {
         setState(() {
-          _standingsErrorMessage = result['message'];
+          _standingsErrorMessage = response['message'];
           _isLoadingStandings = false;
         });
       }
@@ -129,16 +130,12 @@ class _FixturesScreenState extends State<FixturesScreen> {
       _membersErrorMessage = null;
     });
 
+
     try {
-      // Call get league members API
-      final response = await GetLeagueMembersApi.getLeagueMembers(widget.league['id']);
+      final response = await GetLeagueMembersApi.getLeagueMembers(widget.league['league_id']); // Changed from 'id'
 
-      // Check response
       if (response['return_code'] == 'SUCCESS') {
-        // Get members from response
         final List<dynamic> membersData = response['members'] ?? [];
-
-        // Convert to List<Map<String, dynamic>>
         final members = membersData.map((member) => member as Map<String, dynamic>).toList();
 
         setState(() {
@@ -147,14 +144,12 @@ class _FixturesScreenState extends State<FixturesScreen> {
           _membersErrorMessage = null;
         });
       } else {
-        // Handle error
         setState(() {
           _isLoadingMembers = false;
           _membersErrorMessage = response['message'] ?? 'Failed to load league members';
         });
       }
     } catch (e) {
-      // Handle exception
       setState(() {
         _isLoadingMembers = false;
         _membersErrorMessage = 'An error occurred while loading league members';
@@ -184,7 +179,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
     });
 
     try {
-      final result = await GetLeagueInfoApi.getLeagueInfo(widget.league['id']);
+      final result = await GetLeagueInfoApi.getLeagueInfo(widget.league['league_id']); // Changed from 'id'
 
       if (result['return_code'] == 'SUCCESS') {
         setState(() {
@@ -226,38 +221,22 @@ class _FixturesScreenState extends State<FixturesScreen> {
     });
 
     try {
-      // Call get league fixtures API
-      final response = await GetLeagueFixturesApi.getLeagueFixtures(widget.league['id']);
+      final response = await GetLeagueFixturesApi.getLeagueFixtures(widget.league['league_id']);
 
-      // Check response
       if (response['return_code'] == 'SUCCESS') {
-        // Get fixtures from response
         final List<dynamic> fixturesData = response['fixtures'] ?? [];
-
-        // Convert to List<Map<String, dynamic>>
-        final fixtures = fixturesData.map((fixture) => fixture as Map<String, dynamic>).toList();
-
         setState(() {
-          _fixtures = fixtures;
-          _isLoadingFixtures = false;
-          _fixturesErrorMessage = null;
-        });
-      } else if (response['return_code'] == 'NO_FIXTURES_FOUND') {
-        // No fixtures found is not an error
-        setState(() {
-          _fixtures = [];
+          _fixtures = List<Map<String, dynamic>>.from(fixturesData);
           _isLoadingFixtures = false;
           _fixturesErrorMessage = null;
         });
       } else {
-        // Handle error
         setState(() {
           _isLoadingFixtures = false;
           _fixturesErrorMessage = response['message'] ?? 'Failed to load fixtures';
         });
       }
     } catch (e) {
-      // Handle exception
       setState(() {
         _isLoadingFixtures = false;
         _fixturesErrorMessage = 'An error occurred while loading fixtures';
@@ -265,50 +244,18 @@ class _FixturesScreenState extends State<FixturesScreen> {
     }
   }
 
-  // Handle generate fixtures button press
-  Future<void> _handleGenerateFixtures() async {
-    // Show confirmation dialog
-    bool confirm = await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Generate Fixtures'),
-        content: const Text(
-          'This will generate fixtures for all members of the league. '
-          'This action cannot be undone. Do you want to continue?'
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: AppStyles.primaryColor,
-            ),
-            child: const Text('Generate'),
-          ),
-        ],
-      ),
-    ) ?? false;
-
-    if (!confirm) return;
-
-    // Set loading state
+  // Generate fixtures
+  Future<void> _generateFixtures() async {
     setState(() {
       _isGeneratingFixtures = true;
       _generateErrorMessage = null;
       _successMessage = null;
-      _fixturesCount = null;
     });
 
     try {
-      // Call generate fixtures API
-      final response = await GenerateFixturesApi.generateFixtures(widget.league['id']);
+      final response = await GenerateFixturesApi.generateFixtures(widget.league['league_id']);
 
-      // Check response
       if (response['return_code'] == 'SUCCESS') {
-        // Show success message
         setState(() {
           _isGeneratingFixtures = false;
           _successMessage = response['message'];
@@ -316,13 +263,9 @@ class _FixturesScreenState extends State<FixturesScreen> {
           _generateErrorMessage = null;
         });
 
-        // Show success toast
         ErrorHelper.showSuccessToast(_successMessage ?? 'Fixtures generated successfully');
-
-        // Reload fixtures
         _loadFixtures();
       } else {
-        // Show error message
         setState(() {
           _isGeneratingFixtures = false;
           _generateErrorMessage = response['message'];
@@ -330,12 +273,46 @@ class _FixturesScreenState extends State<FixturesScreen> {
         });
       }
     } catch (e) {
-      // Show error message
       setState(() {
         _isGeneratingFixtures = false;
-        _generateErrorMessage = 'An error occurred. Please try again.';
+        _generateErrorMessage = 'An error occurred while generating fixtures';
         _successMessage = null;
       });
+    }
+  }
+
+  // When navigating to UpdateScoreScreen
+  void _navigateToUpdateScore(Map<String, dynamic> fixture) async {
+    try {
+      final response = await GetLeagueInfoApi.getLeagueInfo(widget.league['league_id']);
+
+      if (response['return_code'] == 'SUCCESS') {
+        final updatedFixture = Map<String, dynamic>.from(fixture);
+        updatedFixture['win_type'] = response['league']['win_type'];
+
+        if (mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => UpdateScoreScreen(
+                fixture: updatedFixture,
+                onScoreUpdated: () {
+                  _loadFixtures();
+                },
+              ),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ErrorHelper.showErrorToast(
+            response['message'] ?? 'Failed to get league info',
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorHelper.showErrorToast('Failed to load league info');
+      }
     }
   }
 
@@ -709,7 +686,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
 
                 // Generate fixtures button
                 ElevatedButton.icon(
-                  onPressed: _isGeneratingFixtures ? null : _handleGenerateFixtures,
+                  onPressed: _isGeneratingFixtures ? null : _generateFixtures,
                   style: AppStyles.primaryButtonStyle,
                   icon: const Icon(Icons.sports),
                   label: _isGeneratingFixtures
@@ -876,7 +853,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
               const SizedBox(height: 16),
 
               // Fixtures error message
-              if (_fixturesErrorMessage != null)
+              if (!_isCreator && _fixturesErrorMessage != null)
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -898,10 +875,10 @@ class _FixturesScreenState extends State<FixturesScreen> {
                     ],
                   ),
                 ),
-              if (_fixturesErrorMessage != null) const SizedBox(height: 16),
+              if (!_isCreator && _fixturesErrorMessage != null) const SizedBox(height: 16),
 
               // Fixtures list
-              if (_isLoadingFixtures)
+              if (_isLoadingFixtures || _isLoadingMembers)
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 32),
@@ -912,108 +889,71 @@ class _FixturesScreenState extends State<FixturesScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // League members section
-                    const Text(
-                      'League Members',
-                      style: AppStyles.subheadingStyle,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _isCreator
-                        ? 'Check that all players have joined before generating fixtures.'
-                        : 'Waiting for the organiser to generate fixtures.',
-                      style: AppStyles.bodyStyle,
-                    ),
-                    const SizedBox(height: 16),
+                    if (_isCreator) ...[
+                      // League members section for creator
+                      const Text(
+                        'League Members',
+                        style: AppStyles.subheadingStyle,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Check that all players have joined before generating fixtures.',
+                        style: AppStyles.bodyStyle,
+                      ),
+                      const SizedBox(height: 16),
 
-                    // Members list
-                    if (_isLoadingMembers)
-                      const Center(
+                      // Show league members list
+                      if (_leagueMembers.isNotEmpty)
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _leagueMembers.length,
+                          itemBuilder: (context, index) {
+                            final member = _leagueMembers[index];
+                            return ListTile(
+                              leading: const Icon(Icons.person),
+                              title: Text(member['nickname'] ?? member['name'] ?? 'Unknown Player'),
+                            );
+                          },
+                        )
+                      else if (_membersErrorMessage != null)
+                        Text(
+                          _membersErrorMessage!,
+                          style: TextStyle(color: Colors.red.shade700),
+                        ),
+                    ] else ...[
+                      // Message for non-creator members
+                      Center(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    else if (_membersErrorMessage != null)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppStyles.errorColor.withAlpha(25),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: AppStyles.errorColor),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _membersErrorMessage!,
-                                style: const TextStyle(
-                                  color: AppStyles.errorColor,
-                                ),
+                          padding: const EdgeInsets.symmetric(vertical: 32),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.sports_soccer,
+                                size: 64,
+                                color: Colors.grey.shade400,
                               ),
-                            ),
-                          ],
-                        ),
-                      )
-                    else if (_leagueMembers.isEmpty)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 24),
-                          child: Text(
-                            'No members have joined this league yet.',
-                            style: AppStyles.bodyStyle,
-                          ),
-                        ),
-                      )
-                    else
-                      ListView.builder(
-                        // Disable scrolling on the inner ListView
-                        physics: const NeverScrollableScrollPhysics(),
-                        // Shrink the ListView to fit its content
-                        shrinkWrap: true,
-                        itemCount: _leagueMembers.length,
-                        itemBuilder: (context, index) {
-                          final member = _leagueMembers[index];
-                          final name = member['name'] ?? 'Unknown';
-                          final nickname = member['nickname'] ?? '';
-                          final displayName = nickname.isNotEmpty ? nickname : name;
-                          final isCreator = member['is_creator'] ?? false;
-
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: isCreator ? AppStyles.primaryColor : Colors.grey.shade200,
-                                child: Icon(
-                                  Icons.person,
-                                  color: isCreator ? Colors.white : Colors.grey.shade700,
-                                ),
-                              ),
-                              title: Text(
-                                displayName,
-                                style: const TextStyle(
+                              const SizedBox(height: 16),
+                              const Text(
+                                'No Fixtures Yet',
+                                style: TextStyle(
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              trailing: isCreator
-                                ? Chip(
-                                    label: const Text(
-                                      'Organiser',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    backgroundColor: AppStyles.primaryColor,
-                                    padding: EdgeInsets.zero,
-                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  )
-                                : null,
-                            ),
-                          );
-                        },
+                              const SizedBox(height: 8),
+                              Text(
+                                'Waiting for the organizer to generate fixtures',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
+                    ],
                   ],
                 )
               else if (_filterPlayerId != null && _filteredFixtures.isEmpty)
@@ -1033,73 +973,12 @@ class _FixturesScreenState extends State<FixturesScreen> {
                   // Shrink the ListView to fit its content
                   shrinkWrap: true,
                   itemCount: _filterPlayerId != null ? _filteredFixtures.length : _fixtures.length,
-                  itemBuilder: (context, index) {
-                    final fixture = _filterPlayerId != null ? _filteredFixtures[index] : _fixtures[index];
+                  itemBuilder: (BuildContext context, int index) {
+                    final Map<String, dynamic> fixture =
+                        _filterPlayerId != null ? _filteredFixtures[index] : _fixtures[index];
                     return FixtureCard(
                       fixture: fixture,
-                      onTap: (fixture) async {
-                        // Show loading indicator
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (context) => const AlertDialog(
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                CircularProgressIndicator(),
-                                SizedBox(height: 16),
-                                Text('Loading league info...'),
-                              ],
-                            ),
-                          ),
-                        );
-
-                        try {
-                          // Get league info to get the win_type
-                          final response = await GetLeagueInfoApi.getLeagueInfo(widget.league['id']);
-
-                          // Close loading dialog
-                          if (context.mounted) {
-                            Navigator.of(context).pop();
-                          }
-
-                          if (response['return_code'] == 'SUCCESS') {
-                            // Add win_type to fixture data
-                            final updatedFixture = Map<String, dynamic>.from(fixture);
-                            updatedFixture['win_type'] = response['league']['win_type'];
-
-                            // Debug info is logged in the console
-
-                            // Navigate to update score screen with updated fixture data
-                            if (context.mounted) {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => UpdateScoreScreen(
-                                    fixture: updatedFixture,
-                                    onScoreUpdated: () {
-                                      // Reload fixtures when score is updated
-                                      _loadFixtures();
-                                    },
-                                  ),
-                                ),
-                              );
-                            }
-                          } else {
-                            // Show error message
-                            if (context.mounted) {
-                              ErrorHelper.showErrorToast(
-                                response['message'] ?? 'Failed to get league info',
-                              );
-                            }
-                          }
-                        } catch (e) {
-                          // Close loading dialog
-                          if (context.mounted) {
-                            Navigator.of(context).pop();
-                            ErrorHelper.showErrorToast('An error occurred: $e');
-                          }
-                        }
-                      },
+                      onTap: _navigateToUpdateScore,
                     );
                   },
                 ),

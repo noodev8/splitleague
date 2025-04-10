@@ -44,6 +44,8 @@ router.post('/', verifyToken, async (req, res) => {
     // Extract league ID from request body and convert to integer
     const league_id = parseInt(req.body.league_id);
     
+    console.log('Received league_id:', league_id, 'Type:', typeof league_id);
+    
     if (!league_id) {
       return res.status(400).json({
         return_code: 'MISSING_FIELDS',
@@ -56,6 +58,8 @@ router.post('/', verifyToken, async (req, res) => {
       'SELECT * FROM league WHERE id = $1',
       [league_id]
     );
+    
+    console.log('League query result:', leagueResult.rows);
     
     if (leagueResult.rows.length === 0) {
       return res.status(404).json({
@@ -82,32 +86,31 @@ router.post('/', verifyToken, async (req, res) => {
       });
     }
     
-    // Get all members of the league including the creator
+    const creator_id = leagueResult.rows[0].created_by;
+
     const membersResult = await pool.query(
       `SELECT 
         u.id, 
         u.name, 
         u.nickname,
-        CASE WHEN l.created_by = u.id THEN true ELSE false END as is_creator,
-        COALESCE(lm.joined_at, l.created_at) as joined_at
-       FROM 
-        app_user u
-       LEFT JOIN 
-        league_members lm ON u.id = lm.user_id AND lm.league_id = $1
-       LEFT JOIN
-        league l ON l.id = $1 AND l.created_by = u.id
-       WHERE 
-        lm.league_id = $1 OR l.created_by = u.id
-       ORDER BY 
-        is_creator DESC,
-        u.name ASC`,
+        lm.joined_at
+       FROM league_members lm
+       JOIN app_user u ON u.id = lm.user_id
+       WHERE lm.league_id = $1
+       ORDER BY u.name ASC`,
       [league_id]
     );
+
+    // Add is_creator flag to each member
+    const members = membersResult.rows.map(member => ({
+      ...member,
+      is_creator: member.id === creator_id
+    }));
     
     // Return success response with members data
     return res.status(200).json({
       return_code: 'SUCCESS',
-      members: membersResult.rows
+      members: members
     });
   } catch (error) {
     console.error('Error in get_league_members route:', error);

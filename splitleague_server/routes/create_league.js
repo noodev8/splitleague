@@ -166,6 +166,17 @@ router.post('/', verifyToken, async (req, res) => {
     // Get the newly created league
     const league = leagueInsertResult.rows[0];
 
+    // Add creator as a member
+    await client.query(
+      `INSERT INTO league_members (
+        league_id,
+        user_id,
+        active,
+        joined_at
+      ) VALUES ($1, $2, true, CURRENT_TIMESTAMP)`,
+      [league.id, userId]
+    );
+
     // Insert the points settings into the league_points table
     const pointsInsertResult = await client.query(
       `INSERT INTO league_points (
@@ -181,13 +192,13 @@ router.post('/', verifyToken, async (req, res) => {
       RETURNING *`,
       [
         league.id,
-        points_for_win || 3,
-        points_for_draw || 1,
-        points_for_win_margin || 1,
-        points_for_close_loss || 1,
-        win_margin_threshold || 15,
-        play_each_other || 2,  // Default to 2 if not provided
-        win_type || 'PTS'      // Default to PTS if not provided
+        points_for_win,         // Remove || 3
+        points_for_draw,        // Remove || 1
+        points_for_win_margin,  // Remove || 1
+        points_for_close_loss,  // Remove || 1
+        win_margin_threshold,   // Remove || 15
+        play_each_other,        // Remove || 2
+        win_type               // Remove || 'PTS'
       ]
     );
 

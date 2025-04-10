@@ -18,7 +18,7 @@ class LeagueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get league data
+    // Get league data using league_id instead of id where needed
     final String name = league['name'] ?? 'Unnamed League';
     final bool isCreator = league['is_creator'] ?? false;
     final bool isActive = league['active'] ?? false;

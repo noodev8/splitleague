@@ -8,13 +8,13 @@ import '../styles/app_styles.dart';
 
 class FixtureCard extends StatelessWidget {
   final Map<String, dynamic> fixture;
-  final Function(Map<String, dynamic>)? onTap;
+  final void Function(Map<String, dynamic>)? onTap;
 
   const FixtureCard({
-    super.key,
+    Key? key,
     required this.fixture,
     this.onTap,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
