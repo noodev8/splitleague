@@ -111,7 +111,16 @@ class _FixturesScreenState extends State<FixturesScreen> {
           _standings = List<Map<String, dynamic>>.from(response['standings'] ?? []);
           _isLoadingStandings = false;
         });
+      } else if (response['return_code'] == 'NO_STANDINGS_FOUND' ||
+                response['return_code'] == 'NO_FIXTURES_PLAYED') {
+        // Don't set error message for no standings, just set empty standings list
+        setState(() {
+          _standings = [];
+          _isLoadingStandings = false;
+          _standingsErrorMessage = null;
+        });
       } else {
+        // Only set error message for actual errors
         setState(() {
           _standingsErrorMessage = response['message'];
           _isLoadingStandings = false;
@@ -188,7 +197,15 @@ class _FixturesScreenState extends State<FixturesScreen> {
           _leagueInfo = result['league'];
           _isLoadingLeagueInfo = false;
         });
+      } else if (result['return_code'] == 'LEAGUE_NOT_FOUND') {
+        // Don't set error message for league not found, just set empty league info
+        setState(() {
+          _leagueInfo = {};
+          _isLoadingLeagueInfo = false;
+          _leagueInfoErrorMessage = null;
+        });
       } else {
+        // Only set error message for actual errors
         setState(() {
           _leagueInfoErrorMessage = result['message'];
           _isLoadingLeagueInfo = false;
@@ -232,7 +249,15 @@ class _FixturesScreenState extends State<FixturesScreen> {
           _isLoadingFixtures = false;
           _fixturesErrorMessage = null;
         });
+      } else if (response['return_code'] == 'NO_FIXTURES_FOUND') {
+        // Don't set error message for no fixtures, just set empty fixtures list
+        setState(() {
+          _fixtures = [];
+          _isLoadingFixtures = false;
+          _fixturesErrorMessage = null;
+        });
       } else {
+        // Only set error message for actual errors
         setState(() {
           _isLoadingFixtures = false;
           _fixturesErrorMessage = response['message'] ?? 'Failed to load fixtures';
@@ -946,7 +971,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Waiting for the organizer to generate fixtures',
+                                'Waiting for the organiser to generate fixtures',
                                 style: TextStyle(
                                   color: Colors.grey.shade600,
                                 ),
@@ -1319,11 +1344,8 @@ class _FixturesScreenState extends State<FixturesScreen> {
                                   ),
                                 );
                               }
-                              // Debug info
-                              print('League Info: $_leagueInfo');
-                              print('Created By: ${_leagueInfo['created_by']}');
-                              print('Members: $_leagueMembers');
-                              
+                              // Debug info removed
+
                               return Text(
                                 snapshot.data ?? 'Unknown',
                                 style: const TextStyle(
@@ -1630,7 +1652,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
 
     // Check if the organizer is in the league members list
     for (var member in _leagueMembers) {
-      if (member['user_id'] == userId) {
+      if (member['id'] == userId) {  // Changed from user_id to id
         return member['nickname'] ?? member['name'] ?? 'Unknown';
       }
     }
