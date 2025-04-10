@@ -5,7 +5,7 @@
 -- Dumped from database version 11.18 (Debian 11.18-0+deb10u1)
 -- Dumped by pg_dump version 17.1
 
--- Started on 2025-04-09 09:42:54
+-- Started on 2025-04-10 22:18:05
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -173,7 +173,9 @@ CREATE TABLE public.league_members (
     id integer NOT NULL,
     league_id integer,
     user_id integer,
-    joined_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    joined_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    active boolean,
+    last_accessed timestamp with time zone
 );
 
 
@@ -354,7 +356,7 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 GRANT ALL ON SCHEMA public TO splitleague_user;
 
 
--- Completed on 2025-04-09 09:42:55
+-- Completed on 2025-04-10 22:18:06
 
 --
 -- PostgreSQL database dump complete

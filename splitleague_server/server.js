@@ -30,6 +30,7 @@ const update_fixture_score = require('./routes/update_fixture_score');
 const get_league_info = require('./routes/get_league_info');
 const get_league_table = require('./routes/get_league_table');
 const remove_player_from_league = require('./routes/remove_player_from_league');
+const update_last_accessed = require('./routes/update_last_accessed');
 
 // Use routes
 app.use('/register', register);
@@ -44,6 +45,7 @@ app.use('/update_fixture_score', update_fixture_score);
 app.use('/get_league_info', get_league_info);
 app.use('/get_league_table', get_league_table);
 app.use('/remove_player_from_league', remove_player_from_league);
+app.use('/update_last_accessed', update_last_accessed);
 
 // Root route
 app.get('/', (req, res) => {

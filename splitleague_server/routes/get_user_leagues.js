@@ -26,6 +26,7 @@ Success Response:
       "created_at": "2025-04-06T12:00:00.000Z", // timestamp - Creation date
       "is_creator": true,                 // boolean - Whether the user created this league
       "joined_at": "2025-04-06T12:00:00.000Z", // timestamp - When the user joined the league
+      "last_accessed": "2025-04-10T15:30:00.000Z", // timestamp - When the user last accessed the league
       "player_count": 10,                 // integer - Number of players in the league
       "points": {
         "points_for_win": 3,              // integer - Points for win
@@ -55,18 +56,19 @@ router.post('/', verifyToken, async (req, res) => {
   try {
     // Get the user ID from the authenticated token
     const userId = req.userId;
-    
+
     // Query to get all leagues the user is a member of (including leagues they created)
     const result = await pool.query(`
-      SELECT 
+      SELECT
         l.id as league_id,  -- Explicitly name this as league_id
         l.*,
         CASE WHEN l.created_by = $1 THEN true ELSE false END as is_creator,
         lm.joined_at,
+        lm.last_accessed,
         lp.*,
         (
-          SELECT COUNT(*) 
-          FROM league_members lm2 
+          SELECT COUNT(*)
+          FROM league_members lm2
           WHERE lm2.league_id = l.id
         ) as player_count
       FROM league l
@@ -74,20 +76,20 @@ router.post('/', verifyToken, async (req, res) => {
       LEFT JOIN league_points lp ON l.id = lp.league_id
       WHERE l.created_by = $1 OR lm.user_id = $1
     `, [userId]);
-    
+
     // Process the results to format them properly
     const leagues = [];
     const processedLeagueIds = new Set();
-    
+
     for (const row of result.rows) {
       // Skip if we've already processed this league
       if (processedLeagueIds.has(row.league_id)) {
         continue;
       }
-      
+
       // Mark this league as processed
       processedLeagueIds.add(row.league_id);
-      
+
       // Format the league data
       const league = {
         id: row.id,
@@ -101,6 +103,7 @@ router.post('/', verifyToken, async (req, res) => {
         created_at: row.created_at,
         is_creator: row.is_creator,
         joined_at: row.joined_at,
+        last_accessed: row.last_accessed,
         player_count: parseInt(row.player_count),
         points: {
           points_for_win: row.points_for_win,
@@ -110,10 +113,10 @@ router.post('/', verifyToken, async (req, res) => {
           win_margin_threshold: row.win_margin_threshold
         }
       };
-      
+
       leagues.push(league);
     }
-    
+
     // Return success response with leagues data
     return res.status(200).json({
       return_code: 'SUCCESS',
@@ -121,7 +124,7 @@ router.post('/', verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error in get_user_leagues route:', error);
-    
+
     // Return server error response
     return res.status(500).json({
       return_code: 'SERVER_ERROR',

@@ -7,6 +7,7 @@ Provides options to create or join leagues
 import 'package:flutter/material.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import '../api/get_user_leagues_api.dart';
+import '../api/update_last_accessed_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
@@ -91,6 +92,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // Convert to List<Map<String, dynamic>>
         final leagues = leaguesData.map((league) => league as Map<String, dynamic>).toList();
 
+        // Sort leagues by last_accessed date (most recent first)
+        leagues.sort((a, b) {
+          final DateTime? lastAccessedA = a['last_accessed'] != null
+              ? DateTime.parse(a['last_accessed'])
+              : null;
+          final DateTime? lastAccessedB = b['last_accessed'] != null
+              ? DateTime.parse(b['last_accessed'])
+              : null;
+
+          // If both have last_accessed dates, compare them
+          if (lastAccessedA != null && lastAccessedB != null) {
+            return lastAccessedB.compareTo(lastAccessedA); // Descending order
+          }
+          // If only one has a last_accessed date, prioritize the one with a date
+          else if (lastAccessedA != null) {
+            return -1; // A comes first
+          }
+          else if (lastAccessedB != null) {
+            return 1; // B comes first
+          }
+          // If neither has a last_accessed date, sort by joined_at date
+          else {
+            final DateTime joinedAtA = a['joined_at'] != null
+                ? DateTime.parse(a['joined_at'])
+                : DateTime(1970);
+            final DateTime joinedAtB = b['joined_at'] != null
+                ? DateTime.parse(b['joined_at'])
+                : DateTime(1970);
+            return joinedAtB.compareTo(joinedAtA); // Descending order
+          }
+        });
 
         setState(() {
           _leagues = leagues;
@@ -258,15 +290,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           itemBuilder: (context, index) {
                             return LeagueCard(
                               league: _leagues[index],
-                              onTap: () {
+                              onTap: () async {
+                                // Update the last_accessed timestamp
+                                final leagueId = _leagues[index]['league_id'];
+
+                                // Call the API to update last_accessed (don't wait for response)
+                                UpdateLastAccessedApi.updateLastAccessed(leagueId);
+
                                 // Navigate to fixtures screen with league_id instead of id
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => FixturesScreen(
-                                      league: _leagues[index],
+                                if (mounted) {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => FixturesScreen(
+                                        league: _leagues[index],
+                                      ),
                                     ),
-                                  ),
-                                );
+                                  ).then((_) {
+                                    // Reload leagues when returning from fixtures screen
+                                    _loadUserLeagues();
+                                  });
+                                }
                               },
                             );
                           },
