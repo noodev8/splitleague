@@ -44,7 +44,7 @@ router.post('/', verifyToken, async (req, res) => {
     // Extract league ID from request body and convert to integer
     const league_id = parseInt(req.body.league_id);
     
-    console.log('Received league_id:', league_id, 'Type:', typeof league_id);
+    // console.log('Received league_id:', league_id, 'Type:', typeof league_id);
     
     if (!league_id) {
       return res.status(400).json({
@@ -59,7 +59,7 @@ router.post('/', verifyToken, async (req, res) => {
       [league_id]
     );
     
-    console.log('League query result:', leagueResult.rows);
+    // console.log('League query result:', leagueResult.rows);
     
     if (leagueResult.rows.length === 0) {
       return res.status(404).json({

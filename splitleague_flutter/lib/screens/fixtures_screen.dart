@@ -1370,8 +1370,8 @@ class _FixturesScreenState extends State<FixturesScreen> {
                           color: AppStyles.primaryColor.withAlpha(25),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
-                          Icons.key,
+                        child: Icon(
+                          _fixtures.isNotEmpty ? Icons.check_circle : Icons.key,
                           color: AppStyles.primaryColor,
                           size: 20,
                         ),
@@ -1381,9 +1381,9 @@ class _FixturesScreenState extends State<FixturesScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'League Code',
-                              style: TextStyle(
+                            Text(
+                              _fixtures.isNotEmpty ? 'Join Status' : 'Join Code',
+                              style: const TextStyle(
                                 fontSize: 12,
                                 color: AppStyles.secondaryTextColor,
                               ),
@@ -1391,21 +1391,25 @@ class _FixturesScreenState extends State<FixturesScreen> {
                             Row(
                               children: [
                                 Text(
-                                  _leagueInfo['public_code'] ?? 'Unknown',
+                                  _fixtures.isNotEmpty
+                                    ? 'Complete'
+                                    : (_leagueInfo['public_code'] ?? 'Unknown'),
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                GestureDetector(
-                                  onTap: () => _copyToClipboard(_leagueInfo['public_code']),
-                                  child: const Icon(
-                                    Icons.copy,
-                                    size: 18,
-                                    color: AppStyles.primaryColor,
+                                // Only show copy button if league hasn't started
+                                if (_fixtures.isEmpty)
+                                  GestureDetector(
+                                    onTap: () => _copyToClipboard(_leagueInfo['public_code']),
+                                    child: const Icon(
+                                      Icons.copy,
+                                      size: 18,
+                                      color: AppStyles.primaryColor,
+                                    ),
                                   ),
-                                ),
                               ],
                             ),
                           ],
