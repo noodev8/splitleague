@@ -4,6 +4,7 @@ API Route: join_league
 =======================================================================================================================================
 Method: POST
 Purpose: Allows a user to join a league using a 4-digit public code. If the user is already a member, returns success without adding them again.
+         Will fail if fixtures have already been generated.
 =======================================================================================================================================
 Request Payload:
 {
@@ -27,6 +28,7 @@ Return Codes:
 "MISSING_FIELDS"
 "INVALID_CODE"
 "LEAGUE_INACTIVE"
+"FIXTURES_EXIST"
 "UNAUTHORIZED"
 "SERVER_ERROR"
 =======================================================================================================================================
@@ -90,6 +92,20 @@ router.post('/', verifyToken, async (req, res) => {
       return res.status(200).json({
         return_code: 'SUCCESS',
         message: 'You are already a member of this league'
+      });
+    }
+
+    // Check if fixtures have been generated for this league
+    const fixturesResult = await pool.query(
+      'SELECT COUNT(*) FROM fixture WHERE league_id = $1',
+      [league.id]
+    );
+
+    // If fixtures exist, return error
+    if (parseInt(fixturesResult.rows[0].count) > 0) {
+      return res.status(400).json({
+        return_code: 'FIXTURES_EXIST',
+        message: 'Cannot join this league because fixtures have already been generated'
       });
     }
 
