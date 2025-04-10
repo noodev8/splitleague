@@ -108,7 +108,7 @@ class LeagueCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
-                        'Creator',
+                        'Organiser',
                         style: TextStyle(
                           color: AppStyles.primaryColor,
                           fontSize: 11,

@@ -5,6 +5,7 @@ Once created, it returns to the dashboard screen
 */
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/create_league_api.dart';
 import '../helpers/error_helper.dart';
@@ -55,6 +56,77 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
 
 
 
+  // Show dialog with league code
+  void _showLeagueCodeDialog(String leagueCode) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('League Created!'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Your league has been created successfully. Share this code with others so they can join:',
+                style: TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                decoration: BoxDecoration(
+                  color: AppStyles.primaryColor.withAlpha(30),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppStyles.primaryColor.withAlpha(100)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      leagueCode,
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 4,
+                        color: AppStyles.primaryColor,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    IconButton(
+                      icon: const Icon(Icons.copy, color: AppStyles.primaryColor),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: leagueCode)).then((_) {
+                          ErrorHelper.showSuccessToast('Code copied to clipboard');
+                        });
+                      },
+                      tooltip: 'Copy code',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Players can join your league by entering this code in the Join League screen.',
+                style: TextStyle(fontSize: 14, color: AppStyles.secondaryTextColor),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Continue to Dashboard'),
+              onPressed: () {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // Handle create league button press
   Future<void> _handleCreateLeague() async {
     // Validate form
@@ -91,14 +163,23 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
 
       // Check response
       if (response['return_code'] == 'SUCCESS') {
-        // Show success message
-        ErrorHelper.showSuccessToast('League created successfully!');
+        // Extract league data from response
+        final leagueData = response['league'] as Map<String, dynamic>;
+        final leagueCode = leagueData['public_code'] as String?;
 
-        // Navigate back to dashboard
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const DashboardScreen()),
-          );
+        // Show success message with code
+        ErrorHelper.showSuccessToast('League "$name" created successfully!');
+
+        // Show dialog with league code
+        if (mounted && leagueCode != null) {
+          _showLeagueCodeDialog(leagueCode);
+        } else {
+          // Navigate back to dashboard if no code available
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const DashboardScreen()),
+            );
+          }
         }
       } else {
         // Show error message
