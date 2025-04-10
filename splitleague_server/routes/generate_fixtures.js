@@ -113,6 +113,13 @@ router.post('/', verifyToken, async (req, res) => {
       for (let j = i + 1; j < members.length; j++) {
         // For each pair, create fixtures based on playEachOther setting
         for (let k = 0; k < playEachOther; k++) {
+          // Alternate home and away for each iteration
+          // Even iterations: player i is home (player_1_id)
+          // Odd iterations: player j is home (player_1_id)
+          const isPlayerIHome = k % 2 === 0;
+          const player1Id = isPlayerIHome ? members[i] : members[j];
+          const player2Id = isPlayerIHome ? members[j] : members[i];
+
           await client.query(
             `INSERT INTO fixture (
               league_id,
@@ -123,8 +130,8 @@ router.post('/', verifyToken, async (req, res) => {
             ) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)`,
             [
               league_id,
-              members[i],
-              members[j],
+              player1Id,
+              player2Id,
               false
             ]
           );
