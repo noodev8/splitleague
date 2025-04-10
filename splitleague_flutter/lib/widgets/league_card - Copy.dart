@@ -23,6 +23,7 @@ class LeagueCard extends StatelessWidget {
     // Get league data using league_id instead of id where needed
     final String name = league['name'] ?? 'Unnamed League';
     final bool isCreator = league['is_creator'] ?? false;
+    final bool isActive = league['active'] ?? false;
     final int playerCount = league['player_count'] ?? 0;
 
     return Card(
@@ -70,6 +71,22 @@ class LeagueCard extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: AppStyles.secondaryTextColor,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: isActive ? AppStyles.successColor.withAlpha(25) : Colors.grey.withAlpha(25),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                isActive ? 'Active' : 'Inactive',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: isActive ? AppStyles.successColor : Colors.grey,
+                                ),
                               ),
                             ),
                           ],

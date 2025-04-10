@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import '../api/get_user_leagues_api.dart';
 import '../api/update_last_accessed_api.dart';
+import '../api/deactivate_league_membership_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
@@ -74,6 +75,68 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _isLoadingUser = false;
       });
       ErrorHelper.showErrorToast('Failed to load user data');
+    }
+  }
+
+  // Handle removing a league from dashboard
+  Future<void> _handleRemoveLeague(int leagueId) async {
+    // Show confirmation dialog
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Remove League'),
+          content: const Text('Are you sure you want to remove this league from your dashboard?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // If user cancelled, do nothing
+    if (confirm != true) return;
+
+    try {
+      // Call the API to deactivate league membership
+      final response = await DeactivateLeagueMembershipApi.deactivateLeagueMembership(leagueId);
+
+      if (response['return_code'] == 'SUCCESS') {
+        // Show success message
+        if (mounted) {
+          ErrorHelper.showSuccessToast(response['message'] ?? 'League removed from dashboard');
+        }
+
+        // Reload the leagues list
+        _loadUserLeagues();
+      } else if (response['return_code'] == 'LEAGUE_CREATOR') {
+        // Show error message for league creator
+        if (mounted) {
+          ErrorHelper.showErrorToast(
+            'League creators cannot remove themselves from their own leagues',
+          );
+        }
+      } else {
+        // Show generic error message
+        if (mounted) {
+          ErrorHelper.showErrorToast(
+            response['message'] ?? 'Failed to remove league',
+          );
+        }
+      }
+    } catch (e) {
+      // Show error message for exceptions
+      if (mounted) {
+        ErrorHelper.showErrorToast('An error occurred while removing the league');
+      }
     }
   }
 
@@ -311,6 +374,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   });
                                 }
                               },
+                              onRemove: _handleRemoveLeague,
                             );
                           },
                         ),

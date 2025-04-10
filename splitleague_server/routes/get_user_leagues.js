@@ -72,9 +72,9 @@ router.post('/', verifyToken, async (req, res) => {
           WHERE lm2.league_id = l.id
         ) as player_count
       FROM league l
-      LEFT JOIN league_members lm ON l.id = lm.league_id AND lm.user_id = $1
+      LEFT JOIN league_members lm ON l.id = lm.league_id AND lm.user_id = $1 AND (lm.active = true OR lm.active IS NULL)
       LEFT JOIN league_points lp ON l.id = lp.league_id
-      WHERE l.created_by = $1 OR lm.user_id = $1
+      WHERE l.created_by = $1 OR (lm.user_id = $1 AND lm.active = true)
     `, [userId]);
 
     // Process the results to format them properly

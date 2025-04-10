@@ -31,6 +31,7 @@ const get_league_info = require('./routes/get_league_info');
 const get_league_table = require('./routes/get_league_table');
 const remove_player_from_league = require('./routes/remove_player_from_league');
 const update_last_accessed = require('./routes/update_last_accessed');
+const deactivate_league_membership = require('./routes/deactivate_league_membership');
 
 // Use routes
 app.use('/register', register);
@@ -46,6 +47,7 @@ app.use('/get_league_info', get_league_info);
 app.use('/get_league_table', get_league_table);
 app.use('/remove_player_from_league', remove_player_from_league);
 app.use('/update_last_accessed', update_last_accessed);
+app.use('/deactivate_league_membership', deactivate_league_membership);
 
 // Root route
 app.get('/', (req, res) => {
