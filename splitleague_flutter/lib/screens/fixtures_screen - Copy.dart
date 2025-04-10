@@ -1488,8 +1488,10 @@ class _FixturesScreenState extends State<FixturesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Points rules list
-                  Column(
+                  // Points rules grid
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
                     children: [
                       // Win points
                       _buildPointsCard(
@@ -1498,18 +1500,15 @@ class _FixturesScreenState extends State<FixturesScreen> {
                         Icons.emoji_events,
                         AppStyles.primaryColor,
                       ),
-                      const SizedBox(height: 12),
 
                       // Draw points (only for WDL)
-                      if (_leagueInfo['win_type'] == 'WDL') ...[
+                      if (_leagueInfo['win_type'] == 'WDL')
                         _buildPointsCard(
                           'Draw',
                           '${_leagueInfo['points_for_draw'] ?? 0}',
                           Icons.handshake,
                           AppStyles.primaryColor,
                         ),
-                        const SizedBox(height: 12),
-                      ],
 
                       // Win margin bonus
                       _buildPointsCard(
@@ -1518,7 +1517,6 @@ class _FixturesScreenState extends State<FixturesScreen> {
                         Icons.add_circle,
                         AppStyles.primaryColor,
                       ),
-                      const SizedBox(height: 12),
 
                       // Close loss points
                       _buildPointsCard(
@@ -1527,7 +1525,6 @@ class _FixturesScreenState extends State<FixturesScreen> {
                         Icons.remove_circle,
                         AppStyles.primaryColor,
                       ),
-                      const SizedBox(height: 12),
 
                       // Margin threshold
                       _buildPointsCard(
@@ -1536,7 +1533,6 @@ class _FixturesScreenState extends State<FixturesScreen> {
                         Icons.speed,
                         AppStyles.primaryColor,
                       ),
-                      const SizedBox(height: 12),
 
                       // Play each other
                       _buildPointsCard(
@@ -1559,8 +1555,8 @@ class _FixturesScreenState extends State<FixturesScreen> {
   // Helper method to build points rule card
   Widget _buildPointsCard(String label, String value, IconData icon, Color color) {
     return Container(
-      width: double.infinity, // Make container take full width
-      padding: const EdgeInsets.all(16),
+      width: 150,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withAlpha(25),
         borderRadius: BorderRadius.circular(8),
@@ -1580,22 +1576,29 @@ class _FixturesScreenState extends State<FixturesScreen> {
               size: 20,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                color: color.withAlpha(200),
-              ),
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: color.withAlpha(200),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

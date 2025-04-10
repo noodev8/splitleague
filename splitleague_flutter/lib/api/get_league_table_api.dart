@@ -13,7 +13,7 @@ class GetLeagueTableApi {
 
     try {
       final token = await AuthHelper.getToken();
-      
+
       if (token == null) {
         return {
           'return_code': 'UNAUTHORIZED',
@@ -37,18 +37,18 @@ class GetLeagueTableApi {
 
       if (response.statusCode == 200 && data['return_code'] == 'SUCCESS') {
         return {
-          'success': true,
+          'return_code': 'SUCCESS',
           'standings': data['standings'],
         };
       } else {
         return {
-          'success': false,
+          'return_code': 'ERROR',
           'message': data['message'] ?? 'Failed to get league table',
         };
       }
     } catch (e) {
       return {
-        'success': false,
+        'return_code': 'ERROR',
         'message': 'An error occurred: $e',
       };
     }
