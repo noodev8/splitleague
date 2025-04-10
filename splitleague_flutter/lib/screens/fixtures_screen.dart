@@ -11,6 +11,7 @@ import '../api/get_league_fixtures_api.dart';
 import '../api/get_league_members_api.dart';
 import '../api/get_league_info_api.dart';
 import '../api/get_league_table_api.dart';
+import '../api/remove_player_from_league_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
@@ -937,9 +938,24 @@ class _FixturesScreenState extends State<FixturesScreen> {
                           itemCount: _leagueMembers.length,
                           itemBuilder: (context, index) {
                             final member = _leagueMembers[index];
+                            final bool isCreatorMember = member['is_creator'] == true;
+                            final int memberId = member['id'];
+                            final String memberName = member['nickname'] ?? member['name'] ?? 'Unknown Player';
+
                             return ListTile(
-                              leading: const Icon(Icons.person),
-                              title: Text(member['nickname'] ?? member['name'] ?? 'Unknown Player'),
+                              leading: Icon(
+                                isCreatorMember ? Icons.star : Icons.person,
+                                color: isCreatorMember ? Colors.amber : null,
+                              ),
+                              title: Text(memberName),
+                              // Only show delete button for non-creator members and if current user is creator
+                              trailing: _isCreator && !isCreatorMember
+                                ? IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () => _removePlayerFromLeague(memberId, memberName),
+                                    tooltip: 'Remove player',
+                                  )
+                                : null,
                             );
                           },
                         )
@@ -1668,6 +1684,71 @@ class _FixturesScreenState extends State<FixturesScreen> {
 
     // If still not found, return the user ID
     return 'User #$userId';
+  }
+
+  // Remove a player from the league
+  Future<void> _removePlayerFromLeague(int playerId, String playerName) async {
+    // Show confirmation dialog
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Remove Player'),
+          content: Text('Are you sure you want to remove $playerName from the league?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // If user cancelled, do nothing
+    if (confirm != true) return;
+
+    try {
+      // Call the API to remove the player
+      final response = await RemovePlayerFromLeagueApi.removePlayerFromLeague(
+        widget.league['league_id'],
+        playerId,
+      );
+
+      if (response['return_code'] == 'SUCCESS') {
+        // Show success message
+        if (mounted) {
+          ErrorHelper.showSuccessToast(response['message'] ?? 'Player removed successfully');
+        }
+
+        // Reload the league members list
+        _loadLeagueMembers();
+      } else if (response['return_code'] == 'FIXTURES_EXIST') {
+        // Show error message for fixtures exist
+        if (mounted) {
+          ErrorHelper.showErrorToast(
+            'Cannot remove player because fixtures have already been generated',
+          );
+        }
+      } else {
+        // Show generic error message
+        if (mounted) {
+          ErrorHelper.showErrorToast(
+            response['message'] ?? 'Failed to remove player',
+          );
+        }
+      }
+    } catch (e) {
+      // Show error message for exceptions
+      if (mounted) {
+        ErrorHelper.showErrorToast('An error occurred while removing the player');
+      }
+    }
   }
 
   // Helper method to get points type display
