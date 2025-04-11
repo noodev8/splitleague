@@ -32,6 +32,9 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
   final _winMarginThresholdController = TextEditingController(text: '15');
   final _playEachOtherController = TextEditingController(text: '2');
 
+  // Win Only points controller (separate to maintain different default)
+  final _winOnlyPointsController = TextEditingController(text: '1');
+
   // Win type selection
   String _selectedWinType = 'PTS'; // Default to Points-based scoring
 
@@ -51,10 +54,9 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     _pointsForCloseLossController.dispose();
     _winMarginThresholdController.dispose();
     _playEachOtherController.dispose();
+    _winOnlyPointsController.dispose();
     super.dispose();
   }
-
-
 
   // Show dialog with league code
   void _showLeagueCodeDialog(String leagueCode) {
@@ -142,7 +144,9 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     try {
       // Get form values - remove the ?? defaults since we want to send actual form values
       String name = _nameController.text.trim();
-      int pointsForWin = int.parse(_pointsForWinController.text);
+      int pointsForWin = _selectedWinType == 'WIN'
+          ? int.parse(_winOnlyPointsController.text)
+          : int.parse(_pointsForWinController.text);
       int pointsForDraw = int.parse(_pointsForDrawController.text);
       int pointsForWinMargin = int.parse(_pointsForWinMarginController.text);
       int pointsForCloseLoss = int.parse(_pointsForCloseLossController.text);
@@ -258,15 +262,6 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                                   color: _selectedWinType == 'PTS' ? AppStyles.primaryColor : AppStyles.textColor,
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Like Snooker',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: _selectedWinType == 'PTS' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
                             ],
                           ),
                         ),
@@ -299,15 +294,6 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                                   fontWeight: FontWeight.bold,
                                   color: _selectedWinType == 'WIN' ? AppStyles.primaryColor : AppStyles.textColor,
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Like Pool',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: _selectedWinType == 'WIN' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
-                                ),
-                                textAlign: TextAlign.center,
                               ),
                             ],
                           ),
@@ -347,14 +333,6 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                                   color: _selectedWinType == 'WDL' ? AppStyles.primaryColor : AppStyles.textColor,
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Like Football',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: _selectedWinType == 'WDL' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
-                                ),
-                              ),
                             ],
                           ),
                         ),
@@ -372,35 +350,33 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                 const SizedBox(height: 16),
 
                 // Points for win field
+                TextFormField(
+                  controller: _selectedWinType == 'WIN' ? _winOnlyPointsController : _pointsForWinController,
+                  decoration: AppStyles.inputDecoration('Points for Win'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Required';
+                    }
+                    if (int.tryParse(value) == null) {
+                      return 'Enter a number';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Points for Draw - visible for PTS and WDL types
                 Visibility(
-                  visible: _selectedWinType != 'WIN', // Hide for WIN type
+                  visible: _selectedWinType != 'WIN',
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Points for Win
-                      TextFormField(
-                        controller: _pointsForWinController,
-                        decoration: AppStyles.inputDecoration('Points for Win'),
-                        keyboardType: TextInputType.number,
-                        validator: _selectedWinType == 'WIN' ? null : (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Required';
-                          }
-                          if (int.tryParse(value) == null) {
-                            return 'Enter a number';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Points for Draw
                       TextFormField(
                         controller: _pointsForDrawController,
                         decoration: AppStyles.inputDecoration('Points for Draw'),
                         keyboardType: TextInputType.number,
-                        enabled: _selectedWinType != 'WIN',
-                        validator: _selectedWinType == 'WIN' ? null : (value) {
+                        validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Required';
                           }
@@ -426,7 +402,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                         controller: _pointsForWinMarginController,
                         decoration: AppStyles.inputDecoration('Win Margin Bonus'),
                         keyboardType: TextInputType.number,
-                        validator: _selectedWinType != 'PTS' ? null : (value) {
+                        validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Required';
                           }
@@ -450,7 +426,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                         controller: _pointsForCloseLossController,
                         decoration: AppStyles.inputDecoration('Lose within margin Bonus'),
                         keyboardType: TextInputType.number,
-                        validator: _selectedWinType != 'PTS' ? null : (value) {
+                        validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Required';
                           }
@@ -474,7 +450,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                         controller: _winMarginThresholdController,
                         decoration: AppStyles.inputDecoration('Win Margin Threshold'),
                         keyboardType: TextInputType.number,
-                        validator: _selectedWinType != 'PTS' ? null : (value) {
+                        validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter a threshold value';
                           }
