@@ -89,7 +89,7 @@ router.post('/', verifyToken, async (req, res) => {
       });
     }
 
-    // Get all fixtures for the league with player names and league win_type
+    // Get all fixtures for the league with player names and league settings
     const fixturesResult = await pool.query(
       `SELECT
         f.*,
@@ -97,7 +97,10 @@ router.post('/', verifyToken, async (req, res) => {
         p1.nickname as player_1_nickname,
         p2.name as player_2_name,
         p2.nickname as player_2_nickname,
-        COALESCE(lp.win_type, 'PTS') as win_type
+        COALESCE(lp.win_type, 'PTS') as win_type,
+        lp.win_margin_threshold,
+        lp.points_for_win_margin,
+        lp.points_for_close_loss
        FROM
         fixture f
        JOIN

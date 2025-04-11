@@ -8,7 +8,6 @@ import '../api/get_hidden_leagues_api.dart';
 import '../api/reactivate_league_membership_api.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
-import '../widgets/league_card.dart';
 
 class HiddenLeaguesScreen extends StatefulWidget {
   const HiddenLeaguesScreen({super.key});
@@ -20,10 +19,10 @@ class HiddenLeaguesScreen extends StatefulWidget {
 class _HiddenLeaguesScreenState extends State<HiddenLeaguesScreen> {
   // Hidden leagues data
   List<Map<String, dynamic>> _hiddenLeagues = [];
-  
+
   // Loading state
   bool _isLoading = true;
-  
+
   // Error message
   String? _errorMessage;
 
@@ -201,13 +200,71 @@ class _HiddenLeaguesScreenState extends State<HiddenLeaguesScreen> {
                                   color: Colors.grey.shade600,
                                 ),
                               ),
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.withAlpha(30),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.amber.withAlpha(100)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.warning_amber_rounded,
+                                      size: 20,
+                                      color: Colors.amber.shade800,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Non-accessed leagues are permanently deleted after 30 days',
+                                        style: TextStyle(
+                                          color: Colors.amber.shade800,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
                         ),
                       ),
 
-                    // Hidden leagues list
-                    if (_hiddenLeagues.isNotEmpty)
+                    // Warning message for non-empty list
+                    if (_hiddenLeagues.isNotEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withAlpha(30),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.amber.withAlpha(100)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              size: 20,
+                              color: Colors.amber.shade800,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Non-accessed leagues are permanently deleted after 30 days',
+                                style: TextStyle(
+                                  color: Colors.amber.shade800,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Hidden leagues list
                       ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
@@ -236,7 +293,7 @@ class _HiddenLeaguesScreenState extends State<HiddenLeaguesScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 8),
-                                    
+
                                     // League details
                                     Row(
                                       children: [
@@ -255,7 +312,7 @@ class _HiddenLeaguesScreenState extends State<HiddenLeaguesScreen> {
                                           ),
                                         ),
                                         const SizedBox(width: 16),
-                                        
+
                                         // Creator badge
                                         if (league['is_creator'] == true)
                                           Container(
@@ -279,7 +336,7 @@ class _HiddenLeaguesScreenState extends State<HiddenLeaguesScreen> {
                                       ],
                                     ),
                                     const SizedBox(height: 16),
-                                    
+
                                     // Restore button
                                     SizedBox(
                                       width: double.infinity,
@@ -300,6 +357,7 @@ class _HiddenLeaguesScreenState extends State<HiddenLeaguesScreen> {
                           );
                         },
                       ),
+                    ],
                   ],
                 ),
               ),
