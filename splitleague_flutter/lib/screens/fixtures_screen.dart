@@ -1174,7 +1174,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       const SizedBox(width: 8),
                       const SizedBox(width: 30, child: Text('P', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white), textAlign: TextAlign.center)),
                       const SizedBox(width: 30, child: Text('W', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white), textAlign: TextAlign.center)),
-                      if (_standings.isNotEmpty && _standings.first.containsKey('drawn'))
+                      if (_standings.isNotEmpty && _standings.first.containsKey('drawn') && _leagueInfo['win_type'] != 'WIN')
                         const SizedBox(width: 30, child: Text('D', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white), textAlign: TextAlign.center)),
                       const SizedBox(width: 30, child: Text('L', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white), textAlign: TextAlign.center)),
                       const SizedBox(width: 8),
@@ -1241,8 +1241,8 @@ class _FixturesScreenState extends State<FixturesScreen> {
                           ),
                         ),
 
-                        // Drawn (only for WDL leagues)
-                        if (player.containsKey('drawn'))
+                        // Drawn (only for PTS and WDL leagues)
+                        if (player.containsKey('drawn') && _leagueInfo['win_type'] != 'WIN')
                           SizedBox(width: 30, child: Text('${player['drawn']}', textAlign: TextAlign.center)),
 
                         // Lost
