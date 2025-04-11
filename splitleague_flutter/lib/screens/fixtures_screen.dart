@@ -274,6 +274,34 @@ class _FixturesScreenState extends State<FixturesScreen> {
 
   // Generate fixtures
   Future<void> _generateFixtures() async {
+    // Show confirmation dialog
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Generate Fixtures'),
+          content: const Text(
+            'Once fixtures are generated, no new members can join the league. '
+            'Are you sure you want to generate fixtures now?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: AppStyles.primaryColor),
+              child: const Text('Generate'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // If user cancelled, do nothing
+    if (confirm != true) return;
+
     setState(() {
       _isGeneratingFixtures = true;
       _generateErrorMessage = null;
