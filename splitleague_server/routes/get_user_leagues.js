@@ -57,7 +57,7 @@ router.post('/', verifyToken, async (req, res) => {
     // Get the user ID from the authenticated token
     const userId = req.userId;
 
-    // Query to get all leagues the user is a member of (including leagues they created)
+    // Query to get all leagues the user is a member of (including leagues they created but haven't hidden)
     const result = await pool.query(`
       SELECT
         l.id as league_id,  -- Explicitly name this as league_id
@@ -65,16 +65,21 @@ router.post('/', verifyToken, async (req, res) => {
         CASE WHEN l.created_by = $1 THEN true ELSE false END as is_creator,
         lm.joined_at,
         lm.last_accessed,
+        lm.active,
         lp.*,
         (
           SELECT COUNT(*)
           FROM league_members lm2
-          WHERE lm2.league_id = l.id
+          WHERE lm2.league_id = l.id AND lm2.active = true
         ) as player_count
       FROM league l
-      LEFT JOIN league_members lm ON l.id = lm.league_id AND lm.user_id = $1 AND (lm.active = true OR lm.active IS NULL)
+      LEFT JOIN league_members lm ON l.id = lm.league_id AND lm.user_id = $1
       LEFT JOIN league_points lp ON l.id = lp.league_id
-      WHERE l.created_by = $1 OR (lm.user_id = $1 AND lm.active = true)
+      WHERE (l.created_by = $1 AND NOT EXISTS (
+              SELECT 1 FROM league_members
+              WHERE league_id = l.id AND user_id = $1 AND active = false
+            ))
+            OR (lm.user_id = $1 AND lm.active = true)
     `, [userId]);
 
     // Process the results to format them properly

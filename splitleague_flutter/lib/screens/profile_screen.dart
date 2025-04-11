@@ -8,6 +8,7 @@ import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
 import 'login_user_screen.dart';
+import 'hidden_leagues_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -19,7 +20,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   // User data
   Map<String, dynamic>? _userData;
-  
+
   // Loading state
   bool _isLoading = true;
 
@@ -114,7 +115,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             // Avatar
                             CircleAvatar(
                               radius: 50,
-                              backgroundColor: AppStyles.primaryColor.withOpacity(0.1),
+                              backgroundColor: AppStyles.primaryColor.withAlpha(25),
                               child: Text(
                                 _getInitials(_userData!['name']),
                                 style: TextStyle(
@@ -125,7 +126,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            
+
                             // Name
                             Text(
                               _userData!['name'],
@@ -134,7 +135,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            
+
                             // Nickname
                             Text(
                               '@${_userData!['nickname']}',
@@ -147,14 +148,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      
+
                       // User info section
                       const Text(
                         'Account Information',
                         style: AppStyles.subheadingStyle,
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Email
                       _buildInfoItem(
                         icon: Icons.email,
@@ -162,16 +163,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         value: _userData!['email'],
                       ),
                       const Divider(),
-                      
+
                       const SizedBox(height: 32),
-                      
+
                       // Actions section
                       const Text(
                         'Actions',
                         style: AppStyles.subheadingStyle,
                       ),
                       const SizedBox(height: 16),
-                      
+
+                      // Hidden Leagues button
+                      ListTile(
+                        leading: const Icon(
+                          Icons.visibility_off,
+                          color: AppStyles.primaryColor,
+                        ),
+                        title: const Text(
+                          'Hidden Leagues',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const HiddenLeaguesScreen(),
+                            ),
+                          );
+                        },
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        tileColor: AppStyles.primaryColor.withAlpha(20),
+                      ),
+
+                      const SizedBox(height: 16),
+
                       // Logout button
                       ListTile(
                         leading: const Icon(
@@ -189,14 +217,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        tileColor: Colors.red.withOpacity(0.1),
+                        tileColor: Colors.red.withAlpha(25),
                       ),
                     ],
                   ),
                 ),
     );
   }
-  
+
   // Helper method to build info items
   Widget _buildInfoItem({
     required IconData icon,
@@ -236,11 +264,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-  
+
   // Helper method to get initials from name
   String _getInitials(String name) {
     if (name.isEmpty) return '';
-    
+
     List<String> nameParts = name.split(' ');
     if (nameParts.length > 1) {
       return nameParts[0][0].toUpperCase() + nameParts[1][0].toUpperCase();
