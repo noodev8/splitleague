@@ -32,8 +32,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
   final _winMarginThresholdController = TextEditingController(text: '15');
   final _playEachOtherController = TextEditingController(text: '2');
 
-  // Win Only points controller (separate to maintain different default)
-  final _winOnlyPointsController = TextEditingController(text: '1');
+  // Win Only mode always uses 1 point for win
 
   // Win type selection
   String _selectedWinType = 'PTS'; // Default to Points-based scoring
@@ -54,7 +53,6 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     _pointsForCloseLossController.dispose();
     _winMarginThresholdController.dispose();
     _playEachOtherController.dispose();
-    _winOnlyPointsController.dispose();
     super.dispose();
   }
 
@@ -144,8 +142,9 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     try {
       // Get form values - remove the ?? defaults since we want to send actual form values
       String name = _nameController.text.trim();
+      // For WIN type, always use 1 point for win
       int pointsForWin = _selectedWinType == 'WIN'
-          ? int.parse(_winOnlyPointsController.text)
+          ? 1
           : int.parse(_pointsForWinController.text);
       int pointsForDraw = int.parse(_pointsForDrawController.text);
       int pointsForWinMargin = int.parse(_pointsForWinMarginController.text);
@@ -349,22 +348,30 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Points for win field
-                TextFormField(
-                  controller: _selectedWinType == 'WIN' ? _winOnlyPointsController : _pointsForWinController,
-                  decoration: AppStyles.inputDecoration('Points for Win'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Required';
-                    }
-                    if (int.tryParse(value) == null) {
-                      return 'Enter a number';
-                    }
-                    return null;
-                  },
+                // Points for win field - only visible for PTS and WDL types
+                Visibility(
+                  visible: _selectedWinType != 'WIN',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: _pointsForWinController,
+                        decoration: AppStyles.inputDecoration('Points for Win'),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Required';
+                          }
+                          if (int.tryParse(value) == null) {
+                            return 'Enter a number';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
 
                 // Points for Draw - visible for PTS and WDL types
                 Visibility(

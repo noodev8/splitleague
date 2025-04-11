@@ -1176,12 +1176,20 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       ),
                       const SizedBox(width: 8),
                       const SizedBox(width: 30, child: Text('P', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white), textAlign: TextAlign.center)),
-                      const SizedBox(width: 30, child: Text('W', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white), textAlign: TextAlign.center)),
+                      if (_leagueInfo['win_type'] != 'WIN')
+                        const SizedBox(width: 30, child: Text('W', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white), textAlign: TextAlign.center)),
                       if (_standings.isNotEmpty && _standings.first.containsKey('drawn') && _leagueInfo['win_type'] != 'WIN')
                         const SizedBox(width: 30, child: Text('D', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white), textAlign: TextAlign.center)),
                       const SizedBox(width: 30, child: Text('L', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white), textAlign: TextAlign.center)),
                       const SizedBox(width: 8),
-                      const SizedBox(width: 30, child: Text('Pts', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white), textAlign: TextAlign.center)),
+                      SizedBox(
+                        width: 30,
+                        child: Text(
+                          _leagueInfo['win_type'] == 'WIN' ? 'Won' : 'Pts',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                          textAlign: TextAlign.center
+                        )
+                      ),
                     ],
                   ),
                 ),
@@ -1234,15 +1242,16 @@ class _FixturesScreenState extends State<FixturesScreen> {
                         // Played
                         SizedBox(width: 30, child: Text('${player['played']}', textAlign: TextAlign.center)),
 
-                        // Won
-                        SizedBox(
-                          width: 30,
-                          child: Text(
-                            '${player['won']}',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: AppStyles.successColor, fontWeight: FontWeight.w500),
+                        // Won (only for PTS and WDL leagues)
+                        if (_leagueInfo['win_type'] != 'WIN')
+                          SizedBox(
+                            width: 30,
+                            child: Text(
+                              '${player['won']}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: AppStyles.successColor, fontWeight: FontWeight.w500),
+                            ),
                           ),
-                        ),
 
                         // Drawn (only for PTS and WDL leagues)
                         if (player.containsKey('drawn') && _leagueInfo['win_type'] != 'WIN')
@@ -1259,13 +1268,16 @@ class _FixturesScreenState extends State<FixturesScreen> {
                         ),
                         const SizedBox(width: 8),
 
-                        // Points
+                        // Points or Won
                         SizedBox(
                           width: 30,
                           child: Text(
                             '${player['points']}',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: _leagueInfo['win_type'] == 'WIN' ? AppStyles.successColor : null,
+                            ),
                           ),
                         ),
                       ],
