@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/update_fixture_score_api.dart';
+import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
 
@@ -44,6 +45,12 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
   // Win type from the league
   String? _winType;
 
+  // User data
+  Map<String, dynamic>? _userData;
+
+  // Authorization flag
+  bool _isAuthorized = false;
+
   @override
   void initState() {
     super.initState();
@@ -69,6 +76,35 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
           _selectedResult = 'DRAW';
         }
       }
+    }
+
+    // Load user data and check authorization
+    _loadUserDataAndCheckAuth();
+  }
+
+  // Load user data and check if user is authorized to update this fixture
+  Future<void> _loadUserDataAndCheckAuth() async {
+    try {
+      // Load user data from secure storage
+      _userData = await AuthHelper.getUserData();
+
+      if (_userData != null) {
+        final int userId = _userData!['id'];
+        final int player1Id = widget.fixture['player_1_id'];
+        final int player2Id = widget.fixture['player_2_id'];
+        final bool isCreator = widget.fixture['is_creator'] ?? false;
+
+        // User is authorized if they are the league creator or one of the players
+        _isAuthorized = isCreator || userId == player1Id || userId == player2Id;
+      }
+
+      // Update UI
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      // Handle error silently
+      // This is not critical functionality
     }
   }
 
@@ -539,7 +575,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isSubmitting ? null : _handleSubmit,
+                    onPressed: _isSubmitting || !_isAuthorized ? null : _handleSubmit,
                     style: AppStyles.primaryButtonStyle,
                     child: _isSubmitting
                         ? const SpinKitThreeBounce(

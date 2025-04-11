@@ -346,6 +346,9 @@ class _FixturesScreenState extends State<FixturesScreen> {
         final updatedFixture = Map<String, dynamic>.from(fixture);
         updatedFixture['win_type'] = response['league']['win_type'];
 
+        // Add is_creator flag to check authorization
+        updatedFixture['is_creator'] = _isCreator;
+
         if (mounted) {
           Navigator.of(context).push(
             MaterialPageRoute(
