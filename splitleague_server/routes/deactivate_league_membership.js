@@ -3,8 +3,9 @@
 API Route: deactivate_league_membership
 =======================================================================================================================================
 Method: POST
-Purpose: Allows a user to remove themselves from a league by setting their active status to false.
+Purpose: Allows a user to remove a league from their dashboard by setting their active status to false.
          This will hide the league from their dashboard without actually deleting the membership record.
+         League organizers can also use this to hide leagues from their dashboard.
 =======================================================================================================================================
 Request Payload:
 {
@@ -22,7 +23,6 @@ Return Codes:
 "MISSING_FIELDS"
 "LEAGUE_NOT_FOUND"
 "NOT_A_MEMBER"
-"LEAGUE_CREATOR"
 "SERVER_ERROR"
 =======================================================================================================================================
 */
@@ -62,14 +62,11 @@ router.post('/', verifyToken, async (req, res) => {
       });
     }
 
-    // Check if the user is the creator of the league
+    // Get the league details
     const league = leagueResult.rows[0];
-    if (parseInt(league.created_by) === parseInt(userId)) {
-      return res.status(400).json({
-        return_code: 'LEAGUE_CREATOR',
-        message: 'League creators cannot remove themselves from their own leagues'
-      });
-    }
+
+    // Check if the user is the creator of the league
+    const isCreator = parseInt(league.created_by) === parseInt(userId);
 
     // Check if the user is a member of the league
     const membershipResult = await pool.query(
@@ -77,18 +74,29 @@ router.post('/', verifyToken, async (req, res) => {
       [league_id, userId]
     );
 
-    if (membershipResult.rows.length === 0) {
+    const isMember = membershipResult.rows.length > 0;
+
+    // If user is neither the creator nor a member, return error
+    if (!isCreator && !isMember) {
       return res.status(404).json({
         return_code: 'NOT_A_MEMBER',
         message: 'You are not a member of this league'
       });
     }
 
-    // Update the active status to false
-    await pool.query(
-      'UPDATE league_members SET active = false WHERE league_id = $1 AND user_id = $2',
-      [league_id, userId]
-    );
+    // For creators who are not in the league_members table, add them first
+    if (isCreator && !isMember) {
+      await pool.query(
+        'INSERT INTO league_members (league_id, user_id, active, joined_at, last_accessed) VALUES ($1, $2, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
+        [league_id, userId]
+      );
+    } else {
+      // Update the active status to false for existing members
+      await pool.query(
+        'UPDATE league_members SET active = false WHERE league_id = $1 AND user_id = $2',
+        [league_id, userId]
+      );
+    }
 
     // Return success response
     return res.status(200).json({

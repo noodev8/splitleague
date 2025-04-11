@@ -117,13 +117,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         // Reload the leagues list
         _loadUserLeagues();
-      } else if (response['return_code'] == 'LEAGUE_CREATOR') {
-        // Show error message for league creator
-        if (mounted) {
-          ErrorHelper.showErrorToast(
-            'League creators cannot remove themselves from their own leagues',
-          );
-        }
       } else {
         // Show generic error message
         if (mounted) {

@@ -102,8 +102,8 @@ class LeagueCard extends StatelessWidget {
                       ),
                     ),
 
-                  // Only show remove option for non-creators
-                  if (!isCreator && onRemove != null)
+                  // Show remove option for all users
+                  if (onRemove != null)
                     PopupMenuButton<String>(
                       padding: EdgeInsets.zero,
                       icon: const Icon(

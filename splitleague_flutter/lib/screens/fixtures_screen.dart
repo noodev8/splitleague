@@ -724,334 +724,338 @@ class _FixturesScreenState extends State<FixturesScreen> {
               else if (_selectedTabIndex == 2) // Details tab
                 _buildDetailsTab()
               else // Fixtures tab (default)
-
-              // Generate fixtures section (only for league creator and if no fixtures exist)
-              if (_isCreator && _fixtures.isEmpty && !_isLoadingFixtures) ...[
-                const Text(
-                  'Generate Fixtures',
-                  style: AppStyles.subheadingStyle,
-                ),
-                const SizedBox(height: 16),
-
-                const Text(
-                  'As the league organiser, you can generate fixtures for all members of the league. '
-                  'This will create matches based on the "Play Each Other" setting.',
-                  style: AppStyles.bodyStyle,
-                ),
-                const SizedBox(height: 24),
-
-                // Generate fixtures button
-                ElevatedButton.icon(
-                  onPressed: _isGeneratingFixtures ? null : _generateFixtures,
-                  style: AppStyles.primaryButtonStyle,
-                  icon: const Icon(Icons.sports),
-                  label: _isGeneratingFixtures
-                      ? const SpinKitThreeBounce(
-                          color: Colors.white,
-                          size: 24,
-                        )
-                      : const Text('Generate Fixtures'),
-                ),
-                const SizedBox(height: 24),
-              ],
-
-              // Generate error message
-              if (_generateErrorMessage != null)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppStyles.errorColor.withAlpha(25),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.error_outline, color: AppStyles.errorColor),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _generateErrorMessage!,
-                          style: const TextStyle(
-                            color: AppStyles.errorColor,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              if (_generateErrorMessage != null) const SizedBox(height: 24),
-
-              // Success message
-              if (_successMessage != null)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppStyles.successColor.withAlpha(25),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.check_circle_outline, color: AppStyles.successColor),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _successMessage!,
-                              style: const TextStyle(
-                                color: AppStyles.successColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_fixturesCount != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          'Created $_fixturesCount fixtures',
-                          style: TextStyle(
-                            color: AppStyles.successColor.withAlpha(204), // 0.8 opacity
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              if (_successMessage != null) const SizedBox(height: 24),
-
-              // Fixtures section (only shown when fixtures exist)
-              if (_fixtures.isNotEmpty) ...[
-                // Removed Fixtures header text as we have tab buttons now
-
-                // Filter controls in a separate row
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Row(
-                    children: [
-                      // Filter menu button
-                      IconButton(
-                        icon: Icon(
-                          Icons.filter_list,
-                          color: _filterPlayerId != null ? AppStyles.primaryColor : null,
-                        ),
-                        onPressed: () {
-                          _showFilterMenu(context);
-                        },
-                        tooltip: 'Filter fixtures',
-                        constraints: const BoxConstraints(
-                          minWidth: 36,  // Reduced from 40
-                          minHeight: 36, // Reduced from 40
-                        ),
-                      ),
-                      // Filter indicator with Expanded
-                      Expanded(
-                        child: Container(
-                          constraints: const BoxConstraints(maxWidth: 200),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          margin: const EdgeInsets.only(left: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppStyles.primaryColor.withAlpha(100)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  _filterPlayerName ?? 'All Fixtures',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: _filterPlayerId != null ? AppStyles.primaryColor : Colors.grey.shade700,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ),
-                              if (_filterPlayerId != null) ...[
-                                const SizedBox(width: 4),
-                                InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      _filterPlayerId = null;
-                                      _filterPlayerName = 'All Fixtures';
-                                    });
-                                  },
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: const Icon(
-                                    Icons.close,
-                                    size: 14,
-                                    color: AppStyles.primaryColor,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                      // Refresh button
-                      IconButton(
-                        icon: const Icon(Icons.refresh),
-                        onPressed: _loadFixtures,
-                        tooltip: 'Refresh fixtures',
-                        constraints: const BoxConstraints(
-                          minWidth: 36,  // Reduced from default
-                          minHeight: 36, // Reduced from default
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-
-              const SizedBox(height: 16),
-
-              // Fixtures error message
-              if (!_isCreator && _fixturesErrorMessage != null)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppStyles.errorColor.withAlpha(25),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.error_outline, color: AppStyles.errorColor),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _fixturesErrorMessage!,
-                          style: const TextStyle(
-                            color: AppStyles.errorColor,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              if (!_isCreator && _fixturesErrorMessage != null) const SizedBox(height: 16),
-
-              // Fixtures list
-              if (_isLoadingFixtures || _isLoadingMembers)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 32),
-                    child: CircularProgressIndicator(),
-                  ),
-                )
-              else if (_fixtures.isEmpty)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (_isCreator) ...[
-                      // League members section for creator
+                    // Generate fixtures section (only for league creator and if no fixtures exist)
+                    if (_isCreator && _fixtures.isEmpty && !_isLoadingFixtures) ...[
                       const Text(
-                        'League Members',
+                        'Generate Fixtures',
                         style: AppStyles.subheadingStyle,
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Check that all players have joined before generating fixtures.',
-                        style: AppStyles.bodyStyle,
                       ),
                       const SizedBox(height: 16),
 
-                      // Show league members list
-                      if (_leagueMembers.isNotEmpty)
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _leagueMembers.length,
-                          itemBuilder: (context, index) {
-                            final member = _leagueMembers[index];
-                            final bool isCreatorMember = member['is_creator'] == true;
-                            final int memberId = member['id'];
-                            final String memberName = member['nickname'] ?? member['name'] ?? 'Unknown Player';
+                      const Text(
+                        'As the league organiser, you can generate fixtures for all members of the league. '
+                        'This will create matches based on the "Play Each Other" setting.',
+                        style: AppStyles.bodyStyle,
+                      ),
+                      const SizedBox(height: 24),
 
-                            return ListTile(
-                              leading: Icon(
-                                isCreatorMember ? Icons.star : Icons.person,
-                                color: isCreatorMember ? Colors.amber : null,
-                              ),
-                              title: Text(memberName),
-                              // Only show delete button for non-creator members and if current user is creator
-                              trailing: _isCreator && !isCreatorMember
-                                ? IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.red),
-                                    onPressed: () => _removePlayerFromLeague(memberId, memberName),
-                                    tooltip: 'Remove player',
-                                  )
-                                : null,
-                            );
-                          },
-                        )
-                      else if (_membersErrorMessage != null)
-                        Text(
-                          _membersErrorMessage!,
-                          style: TextStyle(color: Colors.red.shade700),
+                      // Generate fixtures button
+                      ElevatedButton.icon(
+                        onPressed: _isGeneratingFixtures ? null : _generateFixtures,
+                        style: AppStyles.primaryButtonStyle,
+                        icon: const Icon(Icons.sports),
+                        label: _isGeneratingFixtures
+                            ? const SpinKitThreeBounce(
+                                color: Colors.white,
+                                size: 24,
+                              )
+                            : const Text('Generate Fixtures'),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Generate error message
+                    if (_generateErrorMessage != null)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppStyles.errorColor.withAlpha(25),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                    ] else ...[
-                      // Message for non-creator members
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 32),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.sports_soccer,
-                                size: 64,
-                                color: Colors.grey.shade400,
-                              ),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'No Fixtures Yet',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: AppStyles.errorColor),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _generateErrorMessage!,
+                                style: const TextStyle(
+                                  color: AppStyles.errorColor,
                                 ),
                               ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (_generateErrorMessage != null) const SizedBox(height: 24),
+
+                    // Success message
+                    if (_successMessage != null)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppStyles.successColor.withAlpha(25),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.check_circle_outline, color: AppStyles.successColor),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _successMessage!,
+                                    style: const TextStyle(
+                                      color: AppStyles.successColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_fixturesCount != null) ...[
                               const SizedBox(height: 8),
                               Text(
-                                'Waiting for the organiser to generate fixtures',
+                                'Created $_fixturesCount fixtures',
                                 style: TextStyle(
-                                  color: Colors.grey.shade600,
+                                  color: AppStyles.successColor.withAlpha(204), // 0.8 opacity
                                 ),
                               ),
                             ],
-                          ),
+                          ],
+                        ),
+                      ),
+                    if (_successMessage != null) const SizedBox(height: 24),
+
+                    // Fixtures section (only shown when fixtures exist)
+                    if (_fixtures.isNotEmpty) ...[
+                      // Removed Fixtures header text as we have tab buttons now
+
+                      // Filter controls in a separate row
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Row(
+                          children: [
+                            // Filter menu button
+                            IconButton(
+                              icon: Icon(
+                                Icons.filter_list,
+                                color: _filterPlayerId != null ? AppStyles.primaryColor : null,
+                              ),
+                              onPressed: () {
+                                _showFilterMenu(context);
+                              },
+                              tooltip: 'Filter fixtures',
+                              constraints: const BoxConstraints(
+                                minWidth: 36,  // Reduced from 40
+                                minHeight: 36, // Reduced from 40
+                              ),
+                            ),
+                            // Filter indicator with Expanded
+                            Expanded(
+                              child: Container(
+                                constraints: const BoxConstraints(maxWidth: 200),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                margin: const EdgeInsets.only(left: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: AppStyles.primaryColor.withAlpha(100)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        _filterPlayerName ?? 'All Fixtures',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: _filterPlayerId != null ? AppStyles.primaryColor : Colors.grey.shade700,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                    if (_filterPlayerId != null) ...[
+                                      const SizedBox(width: 4),
+                                      InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            _filterPlayerId = null;
+                                            _filterPlayerName = 'All Fixtures';
+                                          });
+                                        },
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: const Icon(
+                                          Icons.close,
+                                          size: 14,
+                                          color: AppStyles.primaryColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                            // Refresh button
+                            IconButton(
+                              icon: const Icon(Icons.refresh),
+                              onPressed: _loadFixtures,
+                              tooltip: 'Refresh fixtures',
+                              constraints: const BoxConstraints(
+                                minWidth: 36,  // Reduced from default
+                                minHeight: 36, // Reduced from default
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
+
+                    const SizedBox(height: 16),
+
+                    // Fixtures error message
+                    if (!_isCreator && _fixturesErrorMessage != null)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppStyles.errorColor.withAlpha(25),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: AppStyles.errorColor),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _fixturesErrorMessage!,
+                                style: const TextStyle(
+                                  color: AppStyles.errorColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (!_isCreator && _fixturesErrorMessage != null) const SizedBox(height: 16),
+
+                    // Fixtures list
+                    if (_isLoadingFixtures || _isLoadingMembers)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 32),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    else if (_fixtures.isEmpty)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_isCreator) ...[
+                            // League members section for creator
+                            const Text(
+                              'League Members',
+                              style: AppStyles.subheadingStyle,
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Check that all players have joined before generating fixtures.',
+                              style: AppStyles.bodyStyle,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Show league members list
+                            if (_leagueMembers.isNotEmpty)
+                              ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: _leagueMembers.length,
+                                itemBuilder: (context, index) {
+                                  final member = _leagueMembers[index];
+                                  final bool isCreatorMember = member['is_creator'] == true;
+                                  final int memberId = member['id'];
+                                  final String memberName = member['nickname'] ?? member['name'] ?? 'Unknown Player';
+
+                                  return ListTile(
+                                    leading: Icon(
+                                      isCreatorMember ? Icons.star : Icons.person,
+                                      color: isCreatorMember ? Colors.amber : null,
+                                    ),
+                                    title: Text(memberName),
+                                    // Only show delete button for non-creator members and if current user is creator
+                                    trailing: _isCreator && !isCreatorMember
+                                      ? IconButton(
+                                          icon: const Icon(Icons.delete, color: Colors.red),
+                                          onPressed: () => _removePlayerFromLeague(memberId, memberName),
+                                          tooltip: 'Remove player',
+                                        )
+                                      : null,
+                                  );
+                                },
+                              )
+                            else if (_membersErrorMessage != null)
+                              Text(
+                                _membersErrorMessage!,
+                                style: TextStyle(color: Colors.red.shade700),
+                              ),
+                          ] else ...[
+                            // Message for non-creator members
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 32),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.sports_soccer,
+                                      size: 64,
+                                      color: Colors.grey.shade400,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    const Text(
+                                      'No Fixtures Yet',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Waiting for the organiser to generate fixtures',
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      )
+                    else if (_filterPlayerId != null && _filteredFixtures.isEmpty)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 32),
+                          child: Text(
+                            'No fixtures found for ${_filterPlayerName ?? "selected player"}.',
+                            style: AppStyles.bodyStyle,
+                          ),
+                        ),
+                      )
+                    else
+                      ListView.builder(
+                        // Disable scrolling on the inner ListView
+                        physics: const NeverScrollableScrollPhysics(),
+                        // Shrink the ListView to fit its content
+                        shrinkWrap: true,
+                        itemCount: _filterPlayerId != null ? _filteredFixtures.length : _fixtures.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          final Map<String, dynamic> fixture =
+                              _filterPlayerId != null ? _filteredFixtures[index] : _fixtures[index];
+                          return FixtureCard(
+                            fixture: fixture,
+                            onTap: _navigateToUpdateScore,
+                          );
+                        },
+                      ),
                   ],
-                )
-              else if (_filterPlayerId != null && _filteredFixtures.isEmpty)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 32),
-                    child: Text(
-                      'No fixtures found for ${_filterPlayerName ?? "selected player"}.',
-                      style: AppStyles.bodyStyle,
-                    ),
-                  ),
-                )
-              else
-                ListView.builder(
-                  // Disable scrolling on the inner ListView
-                  physics: const NeverScrollableScrollPhysics(),
-                  // Shrink the ListView to fit its content
-                  shrinkWrap: true,
-                  itemCount: _filterPlayerId != null ? _filteredFixtures.length : _fixtures.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final Map<String, dynamic> fixture =
-                        _filterPlayerId != null ? _filteredFixtures[index] : _fixtures[index];
-                    return FixtureCard(
-                      fixture: fixture,
-                      onTap: _navigateToUpdateScore,
-                    );
-                  },
                 ),
             ],
           ),
