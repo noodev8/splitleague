@@ -218,9 +218,10 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                 TextFormField(
                   controller: _nameController,
                   decoration: AppStyles.inputDecoration(
-                    'League Name',
+                    'League Name (max 30 characters)',
                     prefixIcon: const Icon(Icons.sports_soccer),
                   ),
+                  maxLength: 30,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter a league name';

@@ -86,19 +86,11 @@ class LeagueCard extends StatelessWidget {
                 children: [
                   if (isCreator)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       margin: const EdgeInsets.only(right: 8),
-                      decoration: BoxDecoration(
-                        color: AppStyles.primaryColor.withAlpha(30),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'Organiser',
-                        style: TextStyle(
-                          color: AppStyles.primaryColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: const Icon(
+                        Icons.star,
+                        color: Colors.amber,
+                        size: 20,
                       ),
                     ),
 
@@ -133,11 +125,7 @@ class LeagueCard extends StatelessWidget {
                       },
                     ),
 
-                  const SizedBox(width: 4),
-                  const Icon(
-                    Icons.chevron_right,
-                    color: AppStyles.secondaryTextColor,
-                  ),
+                  // Removed chevron icon to save space
                 ],
               ),
             ],

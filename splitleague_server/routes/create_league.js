@@ -50,6 +50,7 @@ Success Response:
 Return Codes:
 "SUCCESS"
 "MISSING_FIELDS"
+"INVALID_NAME"           // When league name exceeds 30 characters
 "UNAUTHORIZED"
 "SERVER_ERROR"
 "CODE_GENERATION_FAILED"
@@ -122,6 +123,14 @@ router.post('/', verifyToken, async (req, res) => {
       return res.status(400).json({
         return_code: 'MISSING_FIELDS',
         message: 'League name is required'
+      });
+    }
+
+    // Check if league name is within the allowed length (30 characters)
+    if (name.length > 30) {
+      return res.status(400).json({
+        return_code: 'INVALID_NAME',
+        message: 'League name must be 30 characters or less'
       });
     }
 

@@ -315,22 +315,12 @@ class _HiddenLeaguesScreenState extends State<HiddenLeaguesScreen> {
 
                                         // Creator badge
                                         if (league['is_creator'] == true)
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: AppStyles.primaryColor.withAlpha(30),
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            child: const Text(
-                                              'Organiser',
-                                              style: TextStyle(
-                                                color: AppStyles.primaryColor,
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                          Padding(
+                                            padding: const EdgeInsets.only(left: 4),
+                                            child: const Icon(
+                                              Icons.star,
+                                              color: Colors.amber,
+                                              size: 18,
                                             ),
                                           ),
                                       ],
