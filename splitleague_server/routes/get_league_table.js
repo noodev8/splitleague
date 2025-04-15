@@ -231,13 +231,15 @@ router.post('/', verifyToken, async (req, res) => {
       } else if (winType === 'WIN') {
         // Win-only league (like Pool)
 
-        // In WIN type, we store the result in player_1_score as 1 (player 1 wins) or 2 (player 2 wins)
-        if (fixture.player_1_score === 1) {
+        // In WIN type, we store the result as:
+        // player_1_score = 1, player_2_score = 0 (player 1 wins)
+        // player_1_score = 0, player_2_score = 1 (player 2 wins)
+        if (fixture.player_1_score === 1 && fixture.player_2_score === 0) {
           // Player 1 wins
           standings[player1Index].won++;
           standings[player2Index].lost++;
           standings[player1Index].points += league.points_for_win;
-        } else if (fixture.player_1_score === 2) {
+        } else if (fixture.player_1_score === 0 && fixture.player_2_score === 1) {
           // Player 2 wins
           standings[player2Index].won++;
           standings[player1Index].lost++;
@@ -246,19 +248,21 @@ router.post('/', verifyToken, async (req, res) => {
       } else if (winType === 'WDL') {
         // Win/Draw/Loss league (like Football)
 
-        // In WDL type, we store the result in player_1_score as:
-        // 1 (player 1 wins), 2 (player 2 wins), or 0 (draw)
-        if (fixture.player_1_score === 1) {
+        // In WDL type, we store the result as:
+        // player_1_score = 1, player_2_score = 0 (player 1 wins)
+        // player_1_score = 0, player_2_score = 1 (player 2 wins)
+        // player_1_score = 1, player_2_score = 1 (draw)
+        if (fixture.player_1_score === 1 && fixture.player_2_score === 0) {
           // Player 1 wins
           standings[player1Index].won++;
           standings[player2Index].lost++;
           standings[player1Index].points += league.points_for_win;
-        } else if (fixture.player_1_score === 2) {
+        } else if (fixture.player_1_score === 0 && fixture.player_2_score === 1) {
           // Player 2 wins
           standings[player2Index].won++;
           standings[player1Index].lost++;
           standings[player2Index].points += league.points_for_win;
-        } else if (fixture.player_1_score === 0) {
+        } else if (fixture.player_1_score === 1 && fixture.player_2_score === 1) {
           // Draw
           standings[player1Index].drawn++;
           standings[player2Index].drawn++;

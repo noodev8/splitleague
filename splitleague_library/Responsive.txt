@@ -1,0 +1,6 @@
+Screen Size (px)
+Mobile phones: 320–480
+Large phones/small tablets: 480–768
+Tablets: 768–1024
+Large tablets/desktop: 1024+
+
