@@ -6,6 +6,7 @@ Provides options like logout
 import 'package:flutter/material.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
+import '../styles/app_styles.dart';
 import 'login_user_screen.dart';
 import 'hidden_leagues_screen.dart';
 
