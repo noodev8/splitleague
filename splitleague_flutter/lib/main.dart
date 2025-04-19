@@ -4,10 +4,12 @@ Sets up the MaterialApp and handles initial routing based on authentication stat
 */
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'screens/login_user_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'helpers/auth_helper.dart';
 import 'styles/app_styles.dart';
+import 'providers/league_provider.dart';
 
 void main() {
   // Ensure Flutter is initialized
@@ -22,7 +24,11 @@ class SplitLeagueApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LeagueProvider()),
+      ],
+      child: MaterialApp(
       title: 'SplitLeague',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -39,6 +45,7 @@ class SplitLeagueApp extends StatelessWidget {
         ),
       ),
       home: const AuthCheckScreen(),
+    ),
     );
   }
 }

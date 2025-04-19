@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import '../widgets/error_display.dart';
 
 class StandingsTabContent extends StatelessWidget {
   final bool isLoadingStandings;
@@ -32,73 +33,21 @@ class StandingsTabContent extends StatelessWidget {
           )
         // Error message
         else if (standingsErrorMessage != null)
-          Container(
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(
-              color: Colors.red.withAlpha(25),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.red),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    standingsErrorMessage!,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.refresh, color: Colors.blue),
-                  onPressed: onLoadStandings,
-                  tooltip: 'Refresh standings',
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: ErrorDisplay(
+              message: standingsErrorMessage!,
+              onRetry: onLoadStandings,
+              retryText: 'Refresh Standings',
             ),
           )
         // Empty standings
         else if (standings.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.leaderboard,
-                    size: 64,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No Standings Yet',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Standings will appear once matches have been played',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: onLoadStandings,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Refresh'),
-                  ),
-                ],
-              ),
-            ),
+          EmptyStateDisplay(
+            message: 'No Standings Yet\nStandings will appear once matches have been played',
+            icon: Icons.leaderboard,
+            actionText: 'Refresh',
+            onAction: onLoadStandings,
           )
         // Standings table
         else

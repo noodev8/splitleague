@@ -1,22 +1,20 @@
 /*
 Show the fixtures screen for a league
 This screen shows fixtures, standings, and league details
+Uses Provider for state management
 */
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../api/generate_fixtures_api.dart';
-import '../api/get_fixtures_api.dart';
-import '../api/get_league_info_api.dart';
-import '../api/get_league_members_api.dart';
-import '../api/get_standings_api.dart';
-import '../api/remove_player_from_league_api.dart';
-import '../helpers/auth_helper.dart';
-import '../helpers/error_helper.dart';
+
+import 'package:provider/provider.dart';
+import '../providers/league_provider.dart';
 import '../widgets/tab_selector.dart';
 import '../widgets/fixtures_tab_content.dart';
 import '../widgets/standings_tab_content.dart';
 import '../widgets/details_tab_content.dart';
+import '../helpers/auth_helper.dart';
+import '../widgets/error_display.dart';
 import 'update_score_screen.dart';
 
 class FixturesScreen extends StatefulWidget {
@@ -35,246 +33,58 @@ class _FixturesScreenState extends State<FixturesScreen> {
   // Selected tab index
   int _selectedTabIndex = 0;
 
-
-
-  // League info
-  Map<String, dynamic> _leagueInfo = {};
-
-  // Fixtures
-  List<Map<String, dynamic>> _fixtures = [];
-  List<Map<String, dynamic>> _filteredFixtures = [];
-  bool _isLoadingFixtures = true;
-  String? _fixturesErrorMessage;
-
-  // Standings
-  List<Map<String, dynamic>> _standings = [];
-  bool _isLoadingStandings = false;
-  String? _standingsErrorMessage;
-
-  // League members
-  List<Map<String, dynamic>> _leagueMembers = [];
-  bool _isLoadingMembers = true;
-  String? _membersErrorMessage;
-
-  // Generate fixtures
-  bool _isGeneratingFixtures = false;
-  String? _generateErrorMessage;
-  String? _successMessage;
-  int? _fixturesCount;
-
-  // Filter
-  String? _filterPlayerId;
-  String? _filterPlayerName;
-
-  // Is creator flag
-  bool _isCreator = false;
+  // Reference to the league provider
+  late LeagueProvider _leagueProvider;
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
-    _loadLeagueInfo();
-    _loadLeagueMembers();
-    _loadFixtures();
-  }
-
-  // Load user data from secure storage
-  Future<void> _loadUserData() async {
-    try {
-      Map<String, dynamic>? userData = await AuthHelper.getUserData();
-      setState(() {
-        // Check if current user is the creator
-        _isCreator = userData != null &&
-            widget.league['creator_id'] != null &&
-            userData['id'].toString() == widget.league['creator_id'].toString();
-      });
-    } catch (e) {
-      // Handle error
-    }
-  }
-
-  // Load league info
-  Future<void> _loadLeagueInfo() async {
-    try {
-      final response = await GetLeagueInfoApi.getLeagueInfo(widget.league['league_id']);
-
-      if (response['return_code'] == 'SUCCESS') {
-        setState(() {
-          _leagueInfo = response['league_info'] ?? {};
-        });
+    // Start initialization after the first build
+    Future.microtask(() {
+      if (mounted) {
+        _initializeLeagueProvider();
       }
-    } catch (e) {
-      // Handle error
-    }
-  }
-
-  // Load fixtures
-  Future<void> _loadFixtures() async {
-    setState(() {
-      _isLoadingFixtures = true;
-      _fixturesErrorMessage = null;
     });
+  }
 
-    try {
-      final response = await GetFixturesApi.getFixtures(widget.league['league_id']);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Store reference to the provider and reset it
+    _leagueProvider = Provider.of<LeagueProvider>(context, listen: false);
+    // Reset the provider to allow reuse
+    _leagueProvider.reset();
+  }
 
-      if (response['return_code'] == 'SUCCESS') {
-        setState(() {
-          _fixtures = List<Map<String, dynamic>>.from(response['fixtures'] ?? []);
-          _isLoadingFixtures = false;
-          _fixturesErrorMessage = null;
+  // Initialize the league provider with the current league
+  Future<void> _initializeLeagueProvider() async {
+    // Check if current user is the creator
+    final userData = await AuthHelper.getUserData();
+    final isCreator = userData != null &&
+        widget.league['creator_id'] != null &&
+        userData['id'].toString() == widget.league['creator_id'].toString();
 
-          // Apply filter if set
-          if (_filterPlayerId != null) {
-            _applyFilter(_filterPlayerId!, _filterPlayerName);
-          }
-        });
-      } else {
-        setState(() {
-          _fixtures = [];
-          _isLoadingFixtures = false;
-          _fixturesErrorMessage = response['message'] ?? 'Failed to load fixtures';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _fixtures = [];
-        _isLoadingFixtures = false;
-        _fixturesErrorMessage = 'An error occurred while loading fixtures';
-      });
+    // Initialize the league provider using the stored reference
+    // Only if the widget is still mounted and not disposing
+    if (mounted && !_isDisposing) {
+      _leagueProvider.initLeague(widget.league['league_id'], isCreator);
     }
   }
 
-  // Load league members
-  Future<void> _loadLeagueMembers() async {
-    setState(() {
-      _isLoadingMembers = true;
-      _membersErrorMessage = null;
-    });
-
-    try {
-      final response = await GetLeagueMembersApi.getLeagueMembers(widget.league['league_id']);
-
-      if (response['return_code'] == 'SUCCESS') {
-        setState(() {
-          _leagueMembers = List<Map<String, dynamic>>.from(response['members'] ?? []);
-          _isLoadingMembers = false;
-          _membersErrorMessage = null;
-        });
-      } else {
-        setState(() {
-          _leagueMembers = [];
-          _isLoadingMembers = false;
-          _membersErrorMessage = response['message'] ?? 'Failed to load league members';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _leagueMembers = [];
-        _isLoadingMembers = false;
-        _membersErrorMessage = 'An error occurred while loading league members';
-      });
-    }
-  }
-
-  // Load standings
-  Future<void> _loadStandings() async {
-    setState(() {
-      _isLoadingStandings = true;
-      _standingsErrorMessage = null;
-    });
-
-    try {
-      final response = await GetStandingsApi.getStandings(widget.league['league_id']);
-
-      if (response['return_code'] == 'SUCCESS') {
-        setState(() {
-          _standings = List<Map<String, dynamic>>.from(response['standings'] ?? []);
-          _isLoadingStandings = false;
-          _standingsErrorMessage = null;
-        });
-      } else {
-        setState(() {
-          _standings = [];
-          _isLoadingStandings = false;
-          _standingsErrorMessage = response['message'] ?? 'Failed to load standings';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _standings = [];
-        _isLoadingStandings = false;
-        _standingsErrorMessage = 'An error occurred while loading standings';
-      });
-    }
-  }
-
-  // Generate fixtures
-  Future<void> _generateFixtures() async {
-    // Show confirmation dialog
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Generate Fixtures'),
-          content: const Text(
-            'Are you sure you want to generate fixtures? '
-            'This will create matches for all current members. '
-            'No more members can be added after fixtures are generated.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(foregroundColor: Colors.blue),
-              child: const Text('Generate'),
-            ),
-          ],
-        );
-      },
-    );
-
-    // If user cancelled, do nothing
-    if (confirm != true) return;
+  // Handle tab change
+  void _onTabChanged(int index) {
+    // Don't update state if we're disposing
+    if (_isDisposing) return;
 
     setState(() {
-      _isGeneratingFixtures = true;
-      _generateErrorMessage = null;
-      _successMessage = null;
-      _fixturesCount = null;
+      _selectedTabIndex = index;
     });
 
-    try {
-      final response = await GenerateFixturesApi.generateFixtures(widget.league['league_id']);
-
-      if (response['return_code'] == 'SUCCESS') {
-        setState(() {
-          _isGeneratingFixtures = false;
-          _generateErrorMessage = null;
-          _successMessage = 'Fixtures generated successfully';
-          _fixturesCount = response['fixtures_count'];
-        });
-
-        // Reload fixtures
-        _loadFixtures();
-      } else {
-        setState(() {
-          _isGeneratingFixtures = false;
-          _generateErrorMessage = response['message'] ?? 'Failed to generate fixtures';
-          _successMessage = null;
-          _fixturesCount = null;
-        });
+    // Load standings if switching to standings tab
+    if (index == 1) {
+      if (_leagueProvider.standings.isEmpty && !_leagueProvider.isLoadingStandings) {
+        _leagueProvider.loadStandings();
       }
-    } catch (e) {
-      setState(() {
-        _isGeneratingFixtures = false;
-        _generateErrorMessage = 'An error occurred while generating fixtures';
-        _successMessage = null;
-        _fixturesCount = null;
-      });
     }
   }
 
@@ -290,16 +100,19 @@ class _FixturesScreenState extends State<FixturesScreen> {
     );
 
     // If score was updated, reload fixtures and standings
-    if (result == true) {
-      _loadFixtures();
+    // Only if the widget is still mounted and not disposing
+    if (result == true && mounted && !_isDisposing) {
+      _leagueProvider.loadFixtures();
       if (_selectedTabIndex == 1) {
-        _loadStandings();
+        _leagueProvider.loadStandings();
       }
     }
   }
 
   // Show filter menu
   void _showFilterMenu(BuildContext context) {
+    // Use the stored reference to the provider
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -336,10 +149,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                 leading: const Icon(Icons.people),
                 title: const Text('All Fixtures'),
                 onTap: () {
-                  setState(() {
-                    _filterPlayerId = null;
-                    _filterPlayerName = 'All Fixtures';
-                  });
+                  _leagueProvider.clearFilter();
                   Navigator.of(context).pop();
                 },
               ),
@@ -347,9 +157,9 @@ class _FixturesScreenState extends State<FixturesScreen> {
               Expanded(
                 child: ListView.builder(
                   shrinkWrap: true,
-                  itemCount: _leagueMembers.length,
+                  itemCount: _leagueProvider.leagueMembers.length,
                   itemBuilder: (context, index) {
-                    final member = _leagueMembers[index];
+                    final member = _leagueProvider.leagueMembers[index];
                     final memberId = member['id'].toString();
                     final memberName = member['nickname'] ?? member['name'] ?? 'Unknown Player';
 
@@ -357,7 +167,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       leading: const Icon(Icons.person),
                       title: Text(memberName),
                       onTap: () {
-                        _applyFilter(memberId, memberName);
+                        _leagueProvider.applyFilter(memberId, memberName);
                         Navigator.of(context).pop();
                       },
                     );
@@ -371,209 +181,110 @@ class _FixturesScreenState extends State<FixturesScreen> {
     );
   }
 
-  // Apply filter
-  void _applyFilter(String playerId, String? playerName) {
-    setState(() {
-      _filterPlayerId = playerId;
-      _filterPlayerName = playerName ?? 'Selected Player';
-      _filteredFixtures = _fixtures.where((fixture) {
-        return fixture['player_1_id'].toString() == playerId ||
-            fixture['player_2_id'].toString() == playerId;
-      }).toList();
-    });
-  }
+  // Flag to track if we're disposing
+  bool _isDisposing = false;
 
-  // Clear filter
-  void _clearFilter() {
-    setState(() {
-      _filterPlayerId = null;
-      _filterPlayerName = 'All Fixtures';
-    });
-  }
+  @override
+  void dispose() {
+    _isDisposing = true;
 
-  // Handle tab change
-  void _onTabChanged(int index) {
-    setState(() {
-      _selectedTabIndex = index;
-    });
+    // Clear the league provider data when leaving the screen without notifying listeners
+    // This prevents the "setState() called when widget tree was locked" error
+    // Use fullDispose: false to allow the provider to be reused when returning to the screen
+    _leagueProvider.clearData(notify: false, fullDispose: false);
 
-    // Load standings if switching to standings tab
-    if (index == 1 && _standings.isEmpty && !_isLoadingStandings) {
-      _loadStandings();
-    }
-  }
-
-  // Remove a player from the league
-  Future<void> _removePlayerFromLeague(int playerId, String playerName) async {
-    // Show confirmation dialog
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Remove Player'),
-          content: Text('Are you sure you want to remove $playerName from the league?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Remove'),
-            ),
-          ],
-        );
-      },
-    );
-
-    // If user cancelled, do nothing
-    if (confirm != true) return;
-
-    try {
-      // Call the API to remove the player
-      final response = await RemovePlayerFromLeagueApi.removePlayerFromLeague(
-        widget.league['league_id'],
-        playerId,
-      );
-
-      if (response['return_code'] == 'SUCCESS') {
-        // Show success message
-        if (mounted) {
-          ErrorHelper.showSuccessToast(response['message'] ?? 'Player removed successfully');
-        }
-
-        // Reload the league members list
-        _loadLeagueMembers();
-      } else if (response['return_code'] == 'FIXTURES_EXIST') {
-        // Show error message for fixtures exist
-        if (mounted) {
-          ErrorHelper.showErrorToast(
-            'Cannot remove player because fixtures have already been generated',
-          );
-        }
-      } else {
-        // Show generic error message
-        if (mounted) {
-          ErrorHelper.showErrorToast(
-            response['message'] ?? 'Failed to remove player',
-          );
-        }
-      }
-    } catch (e) {
-      // Show error message for exceptions
-      if (mounted) {
-        ErrorHelper.showErrorToast('An error occurred while removing the player');
-      }
-    }
-  }
-
-  // Copy to clipboard
-  void _copyToClipboard(String? text) {
-    if (text == null || text.isEmpty) return;
-
-    Clipboard.setData(ClipboardData(text: text)).then((_) {
-      ErrorHelper.showSuccessToast('Code copied to clipboard');
-    });
-  }
-
-  // Helper method to format date
-  String _formatDate(String? dateString) {
-    if (dateString == null) return 'Not available';
-
-    try {
-      final date = DateTime.parse(dateString);
-      return '${date.day}/${date.month}/${date.year}';
-    } catch (e) {
-      return dateString;
-    }
-  }
-
-  // Helper method to get points type display
-  String _getPointsTypeDisplay(String? winType) {
-    switch (winType) {
-      case 'PTS':
-        return 'Points Based';
-      case 'WIN':
-        return 'Win Only';
-      case 'WDL':
-        return 'Win/Draw/Loss';
-      default:
-        return 'Points Based';
-    }
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Access the league provider with listen: true only for UI updates
+    // This prevents unnecessary rebuilds when the provider changes state
+    final leagueProvider = Provider.of<LeagueProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.league['name']),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade100,
-              Colors.white,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Tab selector
-                TabSelector(
-                  selectedIndex: _selectedTabIndex,
-                  onTabChanged: _onTabChanged,
-                ),
-                const SizedBox(height: 24),
-
-                // Tab content
-                if (_selectedTabIndex == 0) // Fixtures tab
-                  FixturesTabContent(
-                    isCreator: _isCreator,
-                    isLoadingFixtures: _isLoadingFixtures,
-                    isLoadingMembers: _isLoadingMembers,
-                    isGeneratingFixtures: _isGeneratingFixtures,
-                    fixtures: _fixtures,
-                    filteredFixtures: _filteredFixtures,
-                    leagueMembers: _leagueMembers,
-                    filterPlayerId: _filterPlayerId,
-                    filterPlayerName: _filterPlayerName,
-                    generateErrorMessage: _generateErrorMessage,
-                    fixturesErrorMessage: _fixturesErrorMessage,
-                    membersErrorMessage: _membersErrorMessage,
-                    successMessage: _successMessage,
-                    fixturesCount: _fixturesCount,
-                    onGenerateFixtures: _generateFixtures,
-                    onLoadFixtures: _loadFixtures,
-                    onShowFilterMenu: _showFilterMenu,
-                    onNavigateToUpdateScore: _navigateToUpdateScore,
-                    onRemovePlayerFromLeague: _removePlayerFromLeague,
-                    onClearFilter: _clearFilter,
-                  )
-                else if (_selectedTabIndex == 1) // Standings tab
-                  StandingsTabContent(
-                    isLoadingStandings: _isLoadingStandings,
-                    standings: _standings,
-                    standingsErrorMessage: _standingsErrorMessage,
-                    winType: _leagueInfo['win_type'],
-                    onLoadStandings: _loadStandings,
-                  )
-                else // Details tab
-                  DetailsTabContent(
-                    leagueInfo: _leagueInfo,
-                    hasFixtures: _fixtures.isNotEmpty,
-                    onCopyToClipboard: _copyToClipboard,
-                    formatDate: _formatDate,
-                    getPointsTypeDisplay: _getPointsTypeDisplay,
-                  ),
+      body: LoadingOverlay(
+        isLoading: leagueProvider.isGeneratingFixtures,
+        loadingText: 'Generating fixtures...',
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.blue.shade100,
+                Colors.white,
               ],
+            ),
+          ),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Tab selector
+                  TabSelector(
+                    selectedIndex: _selectedTabIndex,
+                    onTabChanged: _onTabChanged,
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Tab content
+                  if (_selectedTabIndex == 0) // Fixtures tab
+                    FixturesTabContent(
+                      isCreator: leagueProvider.isCreator,
+                      isLoadingFixtures: leagueProvider.isLoadingFixtures,
+                      isLoadingMembers: leagueProvider.isLoadingMembers,
+                      isGeneratingFixtures: leagueProvider.isGeneratingFixtures,
+                      fixtures: leagueProvider.fixtures,
+                      filteredFixtures: leagueProvider.filteredFixtures,
+                      leagueMembers: leagueProvider.leagueMembers,
+                      filterPlayerId: leagueProvider.filterPlayerId,
+                      filterPlayerName: leagueProvider.filterPlayerName,
+                      generateErrorMessage: leagueProvider.generateErrorMessage,
+                      fixturesErrorMessage: leagueProvider.fixturesErrorMessage,
+                      membersErrorMessage: leagueProvider.membersErrorMessage,
+                      successMessage: leagueProvider.successMessage,
+                      fixturesCount: leagueProvider.fixturesCount,
+                      onGenerateFixtures: () => leagueProvider.generateFixtures(context),
+                      onLoadFixtures: leagueProvider.loadFixtures,
+                      onShowFilterMenu: _showFilterMenu,
+                      onNavigateToUpdateScore: _navigateToUpdateScore,
+                      onRemovePlayerFromLeague: (playerId, playerName) =>
+                          leagueProvider.removePlayerFromLeague(context, playerId, playerName),
+                      onClearFilter: leagueProvider.clearFilter,
+                    )
+                  else if (_selectedTabIndex == 1) // Standings tab
+                    StandingsTabContent(
+                      isLoadingStandings: leagueProvider.isLoadingStandings,
+                      standings: leagueProvider.standings,
+                      standingsErrorMessage: leagueProvider.standingsErrorMessage,
+                      winType: leagueProvider.leagueInfo['win_type'],
+                      onLoadStandings: leagueProvider.loadStandings,
+                    )
+                  else // Details tab
+                    DetailsTabContent(
+                      leagueInfo: leagueProvider.leagueInfo,
+                      hasFixtures: leagueProvider.fixtures.isNotEmpty,
+                      onCopyToClipboard: (text) {
+                        final scaffoldMessenger = ScaffoldMessenger.of(context);
+                        Clipboard.setData(ClipboardData(text: text ?? '')).then((_) {
+                          if (mounted && !_isDisposing) {
+                            scaffoldMessenger.showSnackBar(
+                              const SnackBar(content: Text('Code copied to clipboard')),
+                            );
+                          }
+                        });
+                      },
+                      formatDate: leagueProvider.formatDate,
+                      getPointsTypeDisplay: leagueProvider.getPointsTypeDisplay,
+                    ),
+                ],
+              ),
             ),
           ),
         ),

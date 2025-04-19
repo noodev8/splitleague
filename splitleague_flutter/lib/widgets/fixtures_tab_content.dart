@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../widgets/fixture_card.dart';
+import '../widgets/error_display.dart';
 
 class FixturesTabContent extends StatelessWidget {
   final bool isCreator;
@@ -17,7 +18,7 @@ class FixturesTabContent extends StatelessWidget {
   final String? membersErrorMessage;
   final String? successMessage;
   final int? fixturesCount;
-  
+
   final Function() onGenerateFixtures;
   final Function() onLoadFixtures;
   final Function(BuildContext) onShowFilterMenu;
@@ -92,69 +93,24 @@ class FixturesTabContent extends StatelessWidget {
         ],
 
         // Generate error message
-        if (generateErrorMessage != null)
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.red.withAlpha(25),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.red),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    generateErrorMessage!,
-                    style: const TextStyle(
-                      color: Colors.red,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+        if (generateErrorMessage != null) ...[
+          ErrorDisplay(
+            message: generateErrorMessage!,
+            onRetry: onGenerateFixtures,
+            retryText: 'Try Again',
           ),
-        if (generateErrorMessage != null) const SizedBox(height: 24),
+          const SizedBox(height: 24),
+        ],
 
         // Success message
-        if (successMessage != null)
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.green.withAlpha(25),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.check_circle_outline, color: Colors.green),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        successMessage!,
-                        style: const TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (fixturesCount != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Created $fixturesCount fixtures',
-                    style: TextStyle(
-                      color: Colors.green.withAlpha(204), // 0.8 opacity
-                    ),
-                  ),
-                ],
-              ],
-            ),
+        if (successMessage != null) ...[
+          SuccessDisplay(
+            message: fixturesCount != null
+              ? '$successMessage\nCreated $fixturesCount fixtures'
+              : successMessage!,
           ),
-        if (successMessage != null) const SizedBox(height: 24),
+          const SizedBox(height: 24),
+        ],
 
         // Fixtures section (only shown when fixtures exist)
         if (fixtures.isNotEmpty) ...[
@@ -235,30 +191,14 @@ class FixturesTabContent extends StatelessWidget {
 
         const SizedBox(height: 16),
 
-        // Fixtures error message
-        if (!isCreator && fixturesErrorMessage != null)
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.red.withAlpha(25),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.red),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    fixturesErrorMessage!,
-                    style: const TextStyle(
-                      color: Colors.red,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+        // Fixtures error message - only show for actual errors, not just empty fixtures
+        if (!isCreator && fixturesErrorMessage != null && !fixturesErrorMessage!.contains('No fixtures')) ...[
+          ErrorDisplay(
+            message: fixturesErrorMessage!,
+            onRetry: onLoadFixtures,
           ),
-        if (!isCreator && fixturesErrorMessage != null) const SizedBox(height: 16),
+          const SizedBox(height: 16),
+        ],
 
         // Fixtures list
         if (isLoadingFixtures || isLoadingMembers)
@@ -324,48 +264,21 @@ class FixturesTabContent extends StatelessWidget {
                   ),
               ] else ...[
                 // Message for non-creator members
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 32),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.sports_soccer,
-                          size: 64,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'No Fixtures Yet',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Waiting for the organiser to generate fixtures',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                EmptyStateDisplay(
+                  message: 'No Fixtures Yet',
+                  icon: Icons.sports_soccer,
+                  actionText: 'Refresh',
+                  onAction: onLoadFixtures,
                 ),
               ],
             ],
           )
         else if (filterPlayerId != null && filteredFixtures.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 32),
-              child: Text(
-                'No fixtures found for ${filterPlayerName ?? "selected player"}.',
-                style: const TextStyle(fontSize: 16),
-              ),
-            ),
+          EmptyStateDisplay(
+            message: 'No fixtures found for ${filterPlayerName ?? "selected player"}',
+            icon: Icons.filter_alt_off,
+            actionText: 'Clear Filter',
+            onAction: onClearFilter,
           )
         else
           ListView.builder(

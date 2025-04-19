@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/error_display.dart';
 
 class DetailsTabContent extends StatelessWidget {
   final Map<String, dynamic> leagueInfo;
