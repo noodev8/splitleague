@@ -15,6 +15,8 @@ import '../widgets/standings_tab_content.dart';
 import '../widgets/details_tab_content.dart';
 import '../helpers/auth_helper.dart';
 import '../widgets/error_display.dart';
+import '../widgets/skeleton_loading.dart';
+import '../helpers/animation_helper.dart';
 import 'update_score_screen.dart';
 
 class FixturesScreen extends StatefulWidget {
@@ -233,56 +235,63 @@ class _FixturesScreenState extends State<FixturesScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Tab content
-                  if (_selectedTabIndex == 0) // Fixtures tab
-                    FixturesTabContent(
-                      isCreator: leagueProvider.isCreator,
-                      isLoadingFixtures: leagueProvider.isLoadingFixtures,
-                      isLoadingMembers: leagueProvider.isLoadingMembers,
-                      isGeneratingFixtures: leagueProvider.isGeneratingFixtures,
-                      fixtures: leagueProvider.fixtures,
-                      filteredFixtures: leagueProvider.filteredFixtures,
-                      leagueMembers: leagueProvider.leagueMembers,
-                      filterPlayerId: leagueProvider.filterPlayerId,
-                      filterPlayerName: leagueProvider.filterPlayerName,
-                      generateErrorMessage: leagueProvider.generateErrorMessage,
-                      fixturesErrorMessage: leagueProvider.fixturesErrorMessage,
-                      membersErrorMessage: leagueProvider.membersErrorMessage,
-                      successMessage: leagueProvider.successMessage,
-                      fixturesCount: leagueProvider.fixturesCount,
-                      onGenerateFixtures: () => leagueProvider.generateFixtures(context),
-                      onLoadFixtures: leagueProvider.loadFixtures,
-                      onShowFilterMenu: _showFilterMenu,
-                      onNavigateToUpdateScore: _navigateToUpdateScore,
-                      onRemovePlayerFromLeague: (playerId, playerName) =>
-                          leagueProvider.removePlayerFromLeague(context, playerId, playerName),
-                      onClearFilter: leagueProvider.clearFilter,
-                    )
-                  else if (_selectedTabIndex == 1) // Standings tab
-                    StandingsTabContent(
-                      isLoadingStandings: leagueProvider.isLoadingStandings,
-                      standings: leagueProvider.standings,
-                      standingsErrorMessage: leagueProvider.standingsErrorMessage,
-                      winType: leagueProvider.leagueInfo['win_type'],
-                      onLoadStandings: leagueProvider.loadStandings,
-                    )
-                  else // Details tab
-                    DetailsTabContent(
-                      leagueInfo: leagueProvider.leagueInfo,
-                      hasFixtures: leagueProvider.fixtures.isNotEmpty,
-                      onCopyToClipboard: (text) {
-                        final scaffoldMessenger = ScaffoldMessenger.of(context);
-                        Clipboard.setData(ClipboardData(text: text ?? '')).then((_) {
-                          if (mounted && !_isDisposing) {
-                            scaffoldMessenger.showSnackBar(
-                              const SnackBar(content: Text('Code copied to clipboard')),
-                            );
-                          }
-                        });
-                      },
-                      formatDate: leagueProvider.formatDate,
-                      getPointsTypeDisplay: leagueProvider.getPointsTypeDisplay,
-                    ),
+                  // Tab content with animation
+                  AnimatedTabTransition(
+                    selectedIndex: _selectedTabIndex,
+                    children: [
+                      // Fixtures tab
+                      FixturesTabContent(
+                        isCreator: leagueProvider.isCreator,
+                        isLoadingFixtures: leagueProvider.isLoadingFixtures,
+                        isLoadingMembers: leagueProvider.isLoadingMembers,
+                        isGeneratingFixtures: leagueProvider.isGeneratingFixtures,
+                        fixtures: leagueProvider.fixtures,
+                        filteredFixtures: leagueProvider.filteredFixtures,
+                        leagueMembers: leagueProvider.leagueMembers,
+                        filterPlayerId: leagueProvider.filterPlayerId,
+                        filterPlayerName: leagueProvider.filterPlayerName,
+                        generateErrorMessage: leagueProvider.generateErrorMessage,
+                        fixturesErrorMessage: leagueProvider.fixturesErrorMessage,
+                        membersErrorMessage: leagueProvider.membersErrorMessage,
+                        successMessage: leagueProvider.successMessage,
+                        fixturesCount: leagueProvider.fixturesCount,
+                        onGenerateFixtures: () => leagueProvider.generateFixtures(context),
+                        onLoadFixtures: leagueProvider.loadFixtures,
+                        onShowFilterMenu: _showFilterMenu,
+                        onNavigateToUpdateScore: _navigateToUpdateScore,
+                        onRemovePlayerFromLeague: (playerId, playerName) =>
+                            leagueProvider.removePlayerFromLeague(context, playerId, playerName),
+                        onClearFilter: leagueProvider.clearFilter,
+                      ),
+                      // Standings tab
+                      StandingsTabContent(
+                        isLoadingStandings: leagueProvider.isLoadingStandings,
+                        standings: leagueProvider.standings,
+                        standingsErrorMessage: leagueProvider.standingsErrorMessage,
+                        winType: leagueProvider.leagueInfo['win_type'],
+                        onLoadStandings: leagueProvider.loadStandings,
+                      ),
+                      // Details tab
+                      leagueProvider.isLoadingLeagueInfo
+                        ? const SkeletonLeagueDetails()
+                        : DetailsTabContent(
+                            leagueInfo: leagueProvider.leagueInfo,
+                            hasFixtures: leagueProvider.fixtures.isNotEmpty,
+                            onCopyToClipboard: (text) {
+                              final scaffoldMessenger = ScaffoldMessenger.of(context);
+                              Clipboard.setData(ClipboardData(text: text ?? '')).then((_) {
+                                if (mounted && !_isDisposing) {
+                                  scaffoldMessenger.showSnackBar(
+                                    const SnackBar(content: Text('Code copied to clipboard')),
+                                  );
+                                }
+                              });
+                            },
+                            formatDate: leagueProvider.formatDate,
+                            getPointsTypeDisplay: leagueProvider.getPointsTypeDisplay,
+                          ),
+                    ],
+                  ),
                 ],
               ),
             ),

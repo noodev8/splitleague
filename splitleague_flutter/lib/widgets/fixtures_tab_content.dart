@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../widgets/fixture_card.dart';
 import '../widgets/error_display.dart';
+import '../widgets/skeleton_loading.dart';
+import '../helpers/animation_helper.dart';
 
 class FixturesTabContent extends StatelessWidget {
   final bool isCreator;
@@ -202,10 +204,16 @@ class FixturesTabContent extends StatelessWidget {
 
         // Fixtures list
         if (isLoadingFixtures || isLoadingMembers)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 32),
-              child: CircularProgressIndicator(),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              children: List.generate(
+                3,
+                (index) => const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: SkeletonFixtureCard(),
+                ),
+              ),
             ),
           )
         else if (fixtures.isEmpty)
@@ -281,20 +289,26 @@ class FixturesTabContent extends StatelessWidget {
             onAction: onClearFilter,
           )
         else
-          ListView.builder(
-            // Disable scrolling on the inner ListView
-            physics: const NeverScrollableScrollPhysics(),
-            // Shrink the ListView to fit its content
-            shrinkWrap: true,
-            itemCount: filterPlayerId != null ? filteredFixtures.length : fixtures.length,
-            itemBuilder: (BuildContext context, int index) {
-              final Map<String, dynamic> fixture =
-                  filterPlayerId != null ? filteredFixtures[index] : fixtures[index];
-              return FixtureCard(
-                fixture: fixture,
-                onTap: onNavigateToUpdateScore,
-              );
-            },
+          Column(
+            children: List.generate(
+              (filterPlayerId != null ? filteredFixtures : fixtures).length,
+              (index) {
+                final fixture = (filterPlayerId != null ? filteredFixtures : fixtures)[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: FadeSlideAnimation(
+                    duration: Duration(milliseconds: 400 + index * 100),
+                    curve: AnimCurves.spring,
+                    beginOffset: const Offset(0.0, 0.25),
+                    beginOpacity: 0.0,
+                    child: FixtureCard(
+                      fixture: fixture,
+                      onTap: onNavigateToUpdateScore,
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
       ],
     );

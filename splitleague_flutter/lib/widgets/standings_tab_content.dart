@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../widgets/error_display.dart';
+import '../widgets/skeleton_loading.dart';
+import '../helpers/animation_helper.dart';
 
 class StandingsTabContent extends StatelessWidget {
   final bool isLoadingStandings;
@@ -25,11 +26,9 @@ class StandingsTabContent extends StatelessWidget {
       children: [
         // Loading indicator
         if (isLoadingStandings)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(32.0),
-              child: SpinKitCircle(color: Colors.blue, size: 50.0),
-            ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: SkeletonStandingsTable(rowCount: 6),
           )
         // Error message
         else if (standingsErrorMessage != null)
@@ -51,44 +50,53 @@ class StandingsTabContent extends StatelessWidget {
           )
         // Standings table
         else
-          Card(
+          AnimatedCard(
             elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Table header
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Colors.grey.shade300,
-                          width: 1.0,
-                        ),
+            borderRadius: BorderRadius.circular(12),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Table header
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.grey.shade300,
+                        width: 1.0,
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        const SizedBox(width: 24), // Position column
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            'Player',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade700,
-                            ),
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 24), // Position column
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          'Player',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade700,
                           ),
                         ),
+                      ),
+                      SizedBox(
+                        width: 30,
+                        child: Text(
+                          'P',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade700,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      if (winType != 'WIN') ...[
                         SizedBox(
                           width: 30,
                           child: Text(
-                            'P',
+                            'W',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.grey.shade700,
@@ -96,11 +104,11 @@ class StandingsTabContent extends StatelessWidget {
                             textAlign: TextAlign.center,
                           ),
                         ),
-                        if (winType != 'WIN') ...[
+                        if (winType == 'WDL')
                           SizedBox(
                             width: 30,
                             child: Text(
-                              'W',
+                              'D',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.grey.shade700,
@@ -108,34 +116,10 @@ class StandingsTabContent extends StatelessWidget {
                               textAlign: TextAlign.center,
                             ),
                           ),
-                          if (winType == 'WDL')
-                            SizedBox(
-                              width: 30,
-                              child: Text(
-                                'D',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey.shade700,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          SizedBox(
-                            width: 30,
-                            child: Text(
-                              'L',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey.shade700,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ],
                         SizedBox(
-                          width: 40,
+                          width: 30,
                           child: Text(
-                            winType == 'WIN' ? 'Won' : 'Pts',
+                            'L',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.grey.shade700,
@@ -144,20 +128,34 @@ class StandingsTabContent extends StatelessWidget {
                           ),
                         ),
                       ],
-                    ),
+                      SizedBox(
+                        width: 40,
+                        child: Text(
+                          winType == 'WIN' ? 'Won' : 'Pts',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade700,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
 
-                  // Table rows
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: standings.length,
-                    itemBuilder: (context, index) {
-                      final player = standings[index];
-                      final position = index + 1;
-                      final isCurrentUser = player['is_current_user'] == true;
+                // Table rows with staggered animation
+                Column(
+                  children: List.generate(standings.length, (index) {
+                    final player = standings[index];
+                    final position = index + 1;
+                    final isCurrentUser = player['is_current_user'] == true;
 
-                      return Container(
+                    return FadeSlideAnimation(
+                      duration: Duration(milliseconds: 300 + index * 50),
+                      curve: AnimCurves.decelerate,
+                      beginOffset: const Offset(0.0, 0.25),
+                      beginOpacity: 0.0,
+                      child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12.0),
                         decoration: BoxDecoration(
                           color: isCurrentUser ? Colors.blue.withAlpha(20) : null,
@@ -248,11 +246,11 @@ class StandingsTabContent extends StatelessWidget {
                             ),
                           ],
                         ),
-                      );
-                    },
-                  ),
-                ],
-              ),
+                      ),
+                    );
+                  }),
+                ),
+              ],
             ),
           ),
       ],

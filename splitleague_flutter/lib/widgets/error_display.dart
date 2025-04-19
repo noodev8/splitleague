@@ -4,6 +4,7 @@ Provides consistent error UI components
 */
 
 import 'package:flutter/material.dart';
+import '../helpers/animation_helper.dart';
 
 class ErrorDisplay extends StatelessWidget {
   final String message;
@@ -115,9 +116,14 @@ class EmptyStateDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 32),
-        child: Column(
+      child: FadeSlideAnimation(
+        duration: const Duration(milliseconds: 600),
+        curve: AnimCurves.decelerate,
+        beginOffset: const Offset(0.0, 0.1),
+        beginOpacity: 0.0,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
@@ -155,6 +161,7 @@ class EmptyStateDisplay extends StatelessWidget {
               ),
             ],
           ],
+          ),
         ),
       ),
     );
@@ -180,20 +187,17 @@ class LoadingOverlay extends StatelessWidget {
         child,
         if (isLoading)
           Container(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withAlpha(76),
             child: Center(
-              child: Card(
+              child: AnimatedCard(
                 elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const CircularProgressIndicator(),
-                      if (loadingText != null) ...[
+                borderRadius: BorderRadius.circular(16),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(),
+                    if (loadingText != null) ...[
                         const SizedBox(height: 16),
                         Text(
                           loadingText!,
@@ -202,9 +206,8 @@ class LoadingOverlay extends StatelessWidget {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ],
                     ],
-                  ),
+                  ],
                 ),
               ),
             ),
