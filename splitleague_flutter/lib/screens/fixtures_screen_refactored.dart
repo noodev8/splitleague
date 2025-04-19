@@ -5,6 +5,7 @@ This screen shows fixtures, standings, and league details
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/generate_fixtures_api.dart';
 import '../api/get_fixtures_api.dart';
 import '../api/get_league_info_api.dart';
@@ -35,7 +36,8 @@ class _FixturesScreenState extends State<FixturesScreen> {
   // Selected tab index
   int _selectedTabIndex = 0;
 
-
+  // User data
+  Map<String, dynamic>? _userData;
 
   // League info
   Map<String, dynamic> _leagueInfo = {};
@@ -83,6 +85,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
     try {
       Map<String, dynamic>? userData = await AuthHelper.getUserData();
       setState(() {
+        _userData = userData;
         // Check if current user is the creator
         _isCreator = userData != null &&
             widget.league['creator_id'] != null &&
@@ -284,7 +287,8 @@ class _FixturesScreenState extends State<FixturesScreen> {
       MaterialPageRoute(
         builder: (context) => UpdateScoreScreen(
           fixture: fixture,
-          onScoreUpdated: () => true,
+          leagueId: widget.league['league_id'],
+          winType: _leagueInfo['win_type'],
         ),
       ),
     );
