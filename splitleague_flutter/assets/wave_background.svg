@@ -1,0 +1,7 @@
+<svg width="360" height="800" viewBox="0 0 360 800" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark blue background -->
+  <rect width="360" height="800" fill="#002639"/>
+  
+  <!-- Blue wave -->
+  <path d="M0,700 C60,650 120,750 180,700 C240,650 300,750 360,700 L360,800 L0,800 Z" fill="#0066FF"/>
+</svg>

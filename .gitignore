@@ -56,4 +56,8 @@ android/key.properties
 .idea/
 
 # =========================================
-# Git
+# Environment files
+.env
+*.env
+splitleague_server/.env
+

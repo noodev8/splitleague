@@ -59,7 +59,7 @@ app.get('/', (req, res) => {
 });
 
 // Start server
-app.listen(3003, '0.0.0.0', () => console.log("Server running"));
+app.listen(3000, '0.0.0.0', () => console.log("Server running"));
 
 // const PORT = process.env.PORT || 3000;
 // app.listen(PORT, () => {

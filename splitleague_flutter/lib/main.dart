@@ -23,12 +23,6 @@ class SplitLeagueApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Set preferred orientations
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-    
     return MaterialApp(
       title: 'SplitLeague',
       debugShowCheckedModeBanner: false,
