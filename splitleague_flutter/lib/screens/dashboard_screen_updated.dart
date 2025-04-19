@@ -13,7 +13,7 @@ import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
 import '../widgets/league_card.dart';
-import 'create_league_screen.dart';
+import 'create_league_screen_updated.dart';
 import 'fixtures_screen.dart';
 import 'join_league_screen.dart';
 import 'profile_screen.dart';

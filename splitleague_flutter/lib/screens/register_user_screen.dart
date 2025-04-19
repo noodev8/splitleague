@@ -22,17 +22,17 @@ class RegisterUserScreen extends StatefulWidget {
 class _RegisterUserScreenState extends State<RegisterUserScreen> {
   // Form key for validation
   final _formKey = GlobalKey<FormState>();
-  
+
   // Text controllers
   final _nameController = TextEditingController();
   final _nicknameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   // Loading state
   bool _isLoading = false;
-  
+
   // Error message
   String? _errorMessage;
 
@@ -53,20 +53,20 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
     // Set loading state
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-    
+
     try {
       // Get form values
       String name = _nameController.text.trim();
       String nickname = _nicknameController.text.trim();
       String email = _emailController.text.trim();
       String password = _passwordController.text;
-      
+
       // Call register API
       Map<String, dynamic> response = await RegisterUserApi.registerUser(
         name,
@@ -74,16 +74,16 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
         email,
         password,
       );
-      
+
       // Check response
       if (response['return_code'] == 'SUCCESS') {
         // Save token and user data
         await AuthHelper.saveToken(response['token']);
         await AuthHelper.saveUserData(response['user']);
-        
+
         // Show success message
         ErrorHelper.showSuccessToast('Registration successful!');
-        
+
         // Navigate to dashboard
         if (mounted) {
           Navigator.of(context).pushReplacement(
@@ -112,166 +112,201 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
       appBar: AppBar(
         title: const Text('Register'),
       ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Name field
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: AppStyles.inputDecoration(
-                      'Full Name',
-                      prefixIcon: const Icon(Icons.person),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.blue.shade100,
+              Colors.white,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(20),
+                      blurRadius: 8,
+                      spreadRadius: 0,
+                      offset: const Offset(0, 2),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Nickname field
-                  TextFormField(
-                    controller: _nicknameController,
-                    decoration: AppStyles.inputDecoration(
-                      'Nickname',
-                      prefixIcon: const Icon(Icons.person_outline),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a nickname';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Email field
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: AppStyles.inputDecoration(
-                      'Email',
-                      prefixIcon: const Icon(Icons.email),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Password field
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: AppStyles.inputDecoration(
-                      'Password',
-                      prefixIcon: const Icon(Icons.lock),
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a password';
-                      }
-                      if (value.length < 4) {
-                        return 'Password must be at least 4 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Confirm password field
-                  TextFormField(
-                    controller: _confirmPasswordController,
-                    decoration: AppStyles.inputDecoration(
-                      'Confirm Password',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please confirm your password';
-                      }
-                      if (value != _passwordController.text) {
-                        return 'Passwords do not match';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Error message
-                  if (_errorMessage != null)
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppStyles.errorColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _errorMessage!,
-                        style: const TextStyle(
-                          color: AppStyles.errorColor,
-                          fontWeight: FontWeight.w500,
-                        ),
+                  ],
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Create your account',
+                        style: TextStyle(color: Colors.grey, fontSize: 16),
                         textAlign: TextAlign.center,
                       ),
-                    ),
-                  if (_errorMessage != null) const SizedBox(height: 24),
-                  
-                  // Register button
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _handleRegister,
-                    style: AppStyles.primaryButtonStyle,
-                    child: _isLoading
-                        ? const SpinKitThreeBounce(
-                            color: Colors.white,
-                            size: 24,
-                          )
-                        : const Text(
-                            'Register',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Login link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        "Already have an account? ",
-                        style: AppStyles.bodyStyle,
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).pop();
+                      const SizedBox(height: 24),
+
+                      // Name field
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: AppStyles.inputDecoration(
+                          'Full Name',
+                          prefixIcon: const Icon(Icons.person),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your name';
+                          }
+                          return null;
                         },
-                        child: const Text(
-                          'Login',
-                          style: TextStyle(
-                            color: AppStyles.primaryColor,
-                            fontWeight: FontWeight.bold,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Nickname field
+                      TextFormField(
+                        controller: _nicknameController,
+                        decoration: AppStyles.inputDecoration(
+                          'Nickname',
+                          prefixIcon: const Icon(Icons.person_outline),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a nickname';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Email field
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: AppStyles.inputDecoration(
+                          'Email',
+                          prefixIcon: const Icon(Icons.email),
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          if (!value.contains('@')) {
+                            return 'Please enter a valid email';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Password field
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: AppStyles.inputDecoration(
+                          'Password',
+                          prefixIcon: const Icon(Icons.lock),
+                        ),
+                        obscureText: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a password';
+                          }
+                          if (value.length < 4) {
+                            return 'Password must be at least 4 characters';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Confirm password field
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        decoration: AppStyles.inputDecoration(
+                          'Confirm Password',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                        ),
+                        obscureText: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please confirm your password';
+                          }
+                          if (value != _passwordController.text) {
+                            return 'Passwords do not match';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Error message
+                      if (_errorMessage != null)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppStyles.errorColor.withAlpha(25),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(
+                              color: AppStyles.errorColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
+                      if (_errorMessage != null) const SizedBox(height: 24),
+
+                      // Register button
+                      ElevatedButton(
+                        onPressed: _isLoading ? null : _handleRegister,
+                        style: AppStyles.primaryButtonStyle,
+                        child: _isLoading
+                            ? const SpinKitThreeBounce(
+                                color: Colors.white,
+                                size: 24,
+                              )
+                            : const Text(
+                                'Register',
+                                style: TextStyle(fontSize: 16),
+                              ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Login link
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            "Already have an account? ",
+                            style: AppStyles.bodyStyle,
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text(
+                              'Login',
+                              style: TextStyle(
+                                color: AppStyles.primaryColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           ),

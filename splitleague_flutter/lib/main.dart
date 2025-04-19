@@ -4,7 +4,6 @@ Sets up the MaterialApp and handles initial routing based on authentication stat
 */
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'screens/login_user_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'helpers/auth_helper.dart';
@@ -13,7 +12,7 @@ import 'styles/app_styles.dart';
 void main() {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Run the app
   runApp(const SplitLeagueApp());
 }
@@ -64,7 +63,7 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
   // Check if user is already logged in
   Future<void> _checkLoginStatus() async {
     bool isLoggedIn = await AuthHelper.isLoggedIn();
-    
+
     setState(() {
       _isLoggedIn = isLoggedIn;
       _isLoading = false;
@@ -81,7 +80,7 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
         ),
       );
     }
-    
+
     // Navigate to appropriate screen based on login status
     if (_isLoggedIn) {
       return const DashboardScreen();
