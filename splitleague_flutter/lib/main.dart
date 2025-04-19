@@ -10,6 +10,7 @@ import 'screens/dashboard_screen.dart';
 import 'helpers/auth_helper.dart';
 import 'styles/app_styles.dart';
 import 'providers/league_provider.dart';
+import 'providers/accessibility_provider.dart';
 
 void main() {
   // Ensure Flutter is initialized
@@ -27,25 +28,50 @@ class SplitLeagueApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => LeagueProvider()),
+        ChangeNotifierProvider(create: (_) => AccessibilityProvider()),
       ],
-      child: MaterialApp(
-      title: 'SplitLeague',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppStyles.primaryColor,
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true, // Use Material Design 3
-        scaffoldBackgroundColor: AppStyles.backgroundColor,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppStyles.primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
+      child: Consumer<AccessibilityProvider>(
+        builder: (context, accessibilityProvider, _) {
+          // Apply accessibility settings
+          final textScaleFactor = accessibilityProvider.getTextScaleFactor();
+
+          // Create base theme
+          final baseTheme = ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: AppStyles.primaryColor,
+              brightness: Brightness.light,
+            ),
+            useMaterial3: true,
+            scaffoldBackgroundColor: AppStyles.backgroundColor,
+            appBarTheme: const AppBarTheme(
+              backgroundColor: AppStyles.primaryColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
+          );
+
+          // Apply high contrast if needed
+          final theme = accessibilityProvider.getThemeData(baseTheme);
+
+          return MaterialApp(
+            builder: (context, child) {
+              return MediaQuery(
+                // Apply text scaling
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: TextScaler.linear(textScaleFactor),
+                ),
+                child: child!,
+              );
+            },
+            title: 'SplitLeague',
+            debugShowCheckedModeBanner: false,
+            // Enable accessibility features
+            showSemanticsDebugger: false, // Set to true for debugging accessibility
+            theme: theme,
+            home: const AuthCheckScreen(),
+          );
+        },
       ),
-      home: const AuthCheckScreen(),
-    ),
     );
   }
 }

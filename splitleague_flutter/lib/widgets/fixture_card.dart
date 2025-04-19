@@ -4,8 +4,9 @@ Used in the fixtures screen to show match details
 */
 
 import 'package:flutter/material.dart';
-import '../styles/app_styles.dart';
 import '../helpers/animation_helper.dart';
+import '../helpers/accessibility_helper.dart';
+import '../styles/app_styles.dart';
 
 class FixtureCard extends StatelessWidget {
   final Map<String, dynamic> fixture;
@@ -83,13 +84,20 @@ class FixtureCard extends StatelessWidget {
       scheduledDate = '${date.day}/${date.month}/${date.year}';
     }
 
-    return AnimatedCard(
-      margin: const EdgeInsets.only(bottom: 8),
-      borderRadius: BorderRadius.circular(10),
-      elevation: 2,
-      // Different background color for played matches
-      color: played ? Colors.blue.shade50 : Colors.white,
-      onTap: onTap != null ? () => onTap!(fixture) : null,
+    // Create semantic label for screen readers
+    final String semanticLabel = AccessibilityHelper.getFixtureLabel(fixture);
+
+    return Semantics(
+      label: semanticLabel,
+      button: onTap != null,
+      enabled: onTap != null,
+      child: AnimatedCard(
+        margin: const EdgeInsets.only(bottom: 8),
+        borderRadius: BorderRadius.circular(10),
+        elevation: 2,
+        // Different background color for played matches
+        color: played ? Colors.blue.shade50 : Colors.white,
+        onTap: onTap != null ? () => onTap!(fixture) : null,
       padding: const EdgeInsets.all(16),
       child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,6 +305,7 @@ class FixtureCard extends StatelessWidget {
               ),
             ],
           ),
+    ),
     );
   }
 }

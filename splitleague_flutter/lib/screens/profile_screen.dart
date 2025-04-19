@@ -8,6 +8,7 @@ import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import 'login_user_screen.dart';
 import 'hidden_leagues_screen.dart';
+import 'accessibility_settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -251,6 +252,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     Navigator.of(context).push(
                                       MaterialPageRoute(
                                         builder: (context) => const HiddenLeaguesScreen(),
+                                      ),
+                                    );
+                                  },
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                const Divider(),
+                                // Accessibility settings button
+                                ListTile(
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.purple.withAlpha(30),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.accessibility_new,
+                                      color: Colors.purple,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  title: const Text(
+                                    'Accessibility Settings',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  subtitle: const Text(
+                                    'Customize accessibility options',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => const AccessibilitySettingsScreen(),
                                       ),
                                     );
                                   },

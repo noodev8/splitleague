@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/error_display.dart';
 import '../widgets/skeleton_loading.dart';
 import '../helpers/animation_helper.dart';
+import '../helpers/accessibility_helper.dart';
 
 class StandingsTabContent extends StatelessWidget {
   final bool isLoadingStandings;
@@ -150,12 +151,17 @@ class StandingsTabContent extends StatelessWidget {
                     final position = index + 1;
                     final isCurrentUser = player['is_current_user'] == true;
 
+                    // Create semantic label for screen readers
+                    final String semanticLabel = AccessibilityHelper.getStandingsRowLabel(player, position, winType);
+
                     return FadeSlideAnimation(
                       duration: Duration(milliseconds: 300 + index * 50),
                       curve: AnimCurves.decelerate,
                       beginOffset: const Offset(0.0, 0.25),
                       beginOpacity: 0.0,
-                      child: Container(
+                      child: Semantics(
+                        label: semanticLabel,
+                        child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12.0),
                         decoration: BoxDecoration(
                           color: isCurrentUser ? Colors.blue.withAlpha(20) : null,
@@ -246,6 +252,7 @@ class StandingsTabContent extends StatelessWidget {
                             ),
                           ],
                         ),
+                      ),
                       ),
                     );
                   }),

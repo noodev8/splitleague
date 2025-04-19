@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../helpers/accessibility_helper.dart';
 
 class TabSelector extends StatelessWidget {
   final int selectedIndex;
@@ -60,19 +61,26 @@ class TabSelector extends StatelessWidget {
   }) {
     final bool isSelected = selectedIndex == index;
 
+    // Create semantic label for screen readers
+    final String semanticLabel = AccessibilityHelper.getTabLabel(label, isSelected);
+
     return Expanded(
-      child: ElevatedButton(
-        onPressed: () => onTabChanged(index),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? Colors.blue : Colors.transparent,
-          foregroundColor: isSelected ? Colors.white : Colors.grey.shade700,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+      child: Semantics(
+        label: semanticLabel,
+        selected: isSelected,
+        button: true,
+        child: ElevatedButton(
+          onPressed: () => onTabChanged(index),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isSelected ? Colors.blue : Colors.transparent,
+            foregroundColor: isSelected ? Colors.white : Colors.grey.shade700,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 12),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-        ),
-        child: Row(
+          child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -91,6 +99,7 @@ class TabSelector extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

@@ -4,6 +4,8 @@ Provides consistent animations and transitions
 */
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/accessibility_provider.dart';
 
 /// Animation durations
 class AnimDurations {
@@ -38,6 +40,15 @@ class FadeInAnimation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Check if animations should be reduced
+    final accessibilityProvider = Provider.of<AccessibilityProvider>(context, listen: false);
+    final reduceAnimations = accessibilityProvider.reduceAnimations;
+
+    // If animations are reduced, just return the child with full opacity
+    if (reduceAnimations) {
+      return child;
+    }
+
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: beginOpacity, end: 1.0),
       duration: duration,
@@ -72,6 +83,15 @@ class SlideInAnimation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Check if animations should be reduced
+    final accessibilityProvider = Provider.of<AccessibilityProvider>(context, listen: false);
+    final reduceAnimations = accessibilityProvider.reduceAnimations;
+
+    // If animations are reduced, just return the child without animation
+    if (reduceAnimations) {
+      return child;
+    }
+
     return TweenAnimationBuilder<Offset>(
       tween: Tween<Offset>(begin: beginOffset, end: Offset.zero),
       duration: duration,
@@ -205,6 +225,15 @@ class AnimatedTabTransition extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Check if animations should be reduced
+    final accessibilityProvider = Provider.of<AccessibilityProvider>(context, listen: false);
+    final reduceAnimations = accessibilityProvider.reduceAnimations;
+
+    // If animations are reduced, just return the selected child without animation
+    if (reduceAnimations) {
+      return children[selectedIndex];
+    }
+
     return AnimatedSwitcher(
       duration: duration,
       switchInCurve: curve,
