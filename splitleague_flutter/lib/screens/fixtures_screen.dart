@@ -614,29 +614,57 @@ class _FixturesScreenState extends State<FixturesScreen> {
       appBar: AppBar(
         title: Text(widget.league['name']),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          // Reduce horizontal padding to fix overflow
-          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Removed league name as it's now in the app bar
-              const SizedBox(height: 8),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.blue.shade100,
+              Colors.white,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            // Reduce horizontal padding to fix overflow
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Removed league name as it's now in the app bar
+                const SizedBox(height: 8),
 
-              // Tab selection
-              Container(
-                padding: const EdgeInsets.all(2),
-                decoration: AppStyles.tabContainerDecoration,
-                child: Row(
-                  children: [
-                    // Fixtures tab
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => _onTabChanged(0),
-                        style: _selectedTabIndex == 0
-                            ? AppStyles.activeTabButtonStyle
-                            : AppStyles.tabButtonStyle,
+                // Tab selection
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(20),
+                        blurRadius: 8,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      // Fixtures tab
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => _onTabChanged(0),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _selectedTabIndex == 0 ? Colors.blue : Colors.transparent,
+                            foregroundColor: _selectedTabIndex == 0 ? Colors.white : Colors.grey.shade700,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
@@ -644,7 +672,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                             Icon(
                               Icons.sports_soccer,
                               size: 14,
-                              color: _selectedTabIndex == 0 ? Colors.white : AppStyles.secondaryTextColor,
+                              color: _selectedTabIndex == 0 ? Colors.white : Colors.grey.shade700,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -659,13 +687,19 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       ),
                     ),
 
-                    // Standings tab (moved to second position)
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => _onTabChanged(1),
-                        style: _selectedTabIndex == 1
-                            ? AppStyles.activeTabButtonStyle
-                            : AppStyles.tabButtonStyle,
+                      // Standings tab (moved to second position)
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => _onTabChanged(1),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _selectedTabIndex == 1 ? Colors.blue : Colors.transparent,
+                            foregroundColor: _selectedTabIndex == 1 ? Colors.white : Colors.grey.shade700,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
@@ -673,7 +707,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                             Icon(
                               Icons.leaderboard,
                               size: 14,
-                              color: _selectedTabIndex == 1 ? Colors.white : AppStyles.secondaryTextColor,
+                              color: _selectedTabIndex == 1 ? Colors.white : Colors.grey.shade700,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -688,13 +722,19 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       ),
                     ),
 
-                    // Details tab (moved to third position)
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => _onTabChanged(2),
-                        style: _selectedTabIndex == 2
-                            ? AppStyles.activeTabButtonStyle
-                            : AppStyles.tabButtonStyle,
+                      // Details tab (moved to third position)
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => _onTabChanged(2),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _selectedTabIndex == 2 ? Colors.blue : Colors.transparent,
+                            foregroundColor: _selectedTabIndex == 2 ? Colors.white : Colors.grey.shade700,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
@@ -702,7 +742,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                             Icon(
                               Icons.info_outline,
                               size: 14,
-                              color: _selectedTabIndex == 2 ? Colors.white : AppStyles.secondaryTextColor,
+                              color: _selectedTabIndex == 2 ? Colors.white : Colors.grey.shade700,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -1064,6 +1104,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 
