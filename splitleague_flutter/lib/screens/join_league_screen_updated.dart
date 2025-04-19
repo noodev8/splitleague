@@ -136,108 +136,103 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
               // Add padding at the bottom to ensure content is visible above keyboard
               padding: EdgeInsets.only(bottom: bottomInset > 0 ? bottomInset + 20 : 0),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+                padding: const EdgeInsets.all(24.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     // Card for join league content
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width - 32,
+                    Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            children: [
-                              // Icon in a circle
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          children: [
+                            // Icon in a circle
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withAlpha(30),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.group_add,
+                                size: 40,
+                                color: Colors.blue,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Title
+                            const Text(
+                              'Join a League',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Description
+                            const Text(
+                              'Enter the 4-digit code provided by the league creator to join.',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 40),
+
+                            // PIN input
+                            PinInput(
+                              onCompleted: _onPinCompleted,
+                              pinLength: 4,
+                              autoFocus: true,
+                            ),
+                            const SizedBox(height: 40),
+
+                            // Error message
+                            if (_errorMessage != null)
                               Container(
-                                width: 80,
-                                height: 80,
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue.withAlpha(30),
-                                  shape: BoxShape.circle,
+                                  color: Colors.red.withAlpha(25),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Icon(
-                                  Icons.group_add,
-                                  size: 40,
-                                  color: Colors.blue,
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Title
-                              const Text(
-                                'Join a League',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Description
-                              const Text(
-                                'Enter the 4-digit code provided by the league creator to join.',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 40),
-
-                              // PIN input
-                              PinInput(
-                                onCompleted: _onPinCompleted,
-                                pinLength: 4,
-                                autoFocus: true,
-                              ),
-                              const SizedBox(height: 40),
-
-                              // Error message
-                              if (_errorMessage != null)
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.withAlpha(25),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.error_outline, color: Colors.red),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          _errorMessage!,
-                                          style: const TextStyle(
-                                            color: Colors.red,
-                                          ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.error_outline, color: Colors.red),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        _errorMessage!,
+                                        style: const TextStyle(
+                                          color: Colors.red,
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              if (_errorMessage != null) const SizedBox(height: 24),
+                              ),
+                            if (_errorMessage != null) const SizedBox(height: 24),
 
-                              // Loading indicator
-                              if (_isLoading)
-                                Container(
-                                  margin: const EdgeInsets.only(top: 24),
-                                  child: const SpinKitThreeBounce(
-                                    color: Colors.blue,
-                                    size: 24,
-                                  ),
+                            // Loading indicator
+                            if (_isLoading)
+                              Container(
+                                margin: const EdgeInsets.only(top: 24),
+                                child: const SpinKitThreeBounce(
+                                  color: Colors.blue,
+                                  size: 24,
                                 ),
+                              ),
                           ],
                         ),
                       ),
-                    ),
                     ),
                   ],
                 ),
