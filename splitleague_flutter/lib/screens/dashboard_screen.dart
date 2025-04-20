@@ -9,6 +9,7 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 import '../api/get_user_leagues_api.dart';
 import '../api/update_last_accessed_api.dart';
 import '../api/deactivate_league_membership_api.dart';
+import '../api/get_fixtures_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
@@ -16,6 +17,7 @@ import '../widgets/league_card.dart';
 import 'create_league_screen.dart';
 import 'fixtures_screen.dart';
 import 'join_league_screen.dart';
+import 'player_list_screen.dart';
 import 'profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -119,6 +121,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  // Check if league has fixtures and navigate to appropriate screen
+  Future<void> _checkFixturesAndNavigate(Map<String, dynamic> league) async {
+    final leagueId = league['league_id'];
+
+    try {
+      // Check if league has fixtures
+      final fixturesResponse = await GetFixturesApi.getFixtures(leagueId);
+      final hasFixtures = fixturesResponse['return_code'] == 'SUCCESS' &&
+                        (fixturesResponse['fixtures'] as List?)?.isNotEmpty == true;
+
+      if (!mounted) return;
+
+      if (hasFixtures) {
+        // Navigate to fixtures screen if fixtures exist
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => FixturesScreen(
+              league: league,
+            ),
+          ),
+        ).then((_) => _loadData());
+      } else {
+        // Navigate to player list screen if no fixtures
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => PlayerListScreen(
+              league: league,
+            ),
+          ),
+        ).then((_) => _loadData());
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      // If there's an error, default to fixtures screen
+      ErrorHelper.showErrorToast('Error checking league status');
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => FixturesScreen(
+            league: league,
+          ),
+        ),
+      ).then((_) => _loadData());
+    }
+  }
+
   // Handle removing a league
   Future<void> _handleRemoveLeague(int leagueId) async {
     try {
@@ -178,8 +226,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('SplitLeague'),
+        title: const Text('SplitLeague', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -236,9 +287,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.blue.shade100,
+            Colors.blue.shade900,
+            Colors.blue.shade700,
+            Colors.blue.shade200,
             Colors.white,
           ],
+          stops: const [0.0, 0.1, 0.3, 1.0],
         ),
       ),
       child: SmartRefresher(
@@ -248,138 +302,158 @@ class _DashboardScreenState extends State<DashboardScreen> {
           waterDropColor: AppStyles.primaryColor,
           complete: Icon(Icons.check, color: AppStyles.successColor),
         ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // User profile section
-              Container(
-                margin: const EdgeInsets.only(bottom: 24),
-                child: Row(
-                  children: [
-                    // Profile picture (tappable)
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const ProfileScreen(),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withAlpha(40),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.blue.withAlpha(100), width: 2),
-                        ),
-                        child: const Icon(Icons.person, color: Colors.blue, size: 30),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    // User name and leagues header
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Your leagues',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        Text(
-                          userName,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              // Error message
-              if (_errorMessage != null)
+        child: SafeArea(
+          bottom: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // User profile section
                 Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppStyles.errorColor.withAlpha(25),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  margin: const EdgeInsets.only(bottom: 24, top: 8),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline, color: AppStyles.errorColor),
-                      const SizedBox(width: 8),
+                      // Profile picture (tappable)
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const ProfileScreen(),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.blue, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(40),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(Icons.person, color: Colors.blue, size: 36),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      // User name and leagues header
                       Expanded(
-                        child: Text(
-                          _errorMessage!,
-                          style: const TextStyle(color: AppStyles.errorColor),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              userName,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withAlpha(30),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                'Your leagues',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-
-              // Leagues list
-              if (_leagues.isEmpty && _errorMessage == null)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                // Error message
+                if (_errorMessage != null)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppStyles.errorColor.withAlpha(25),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
                       children: [
-                        Icon(
-                          Icons.sports_soccer,
-                          size: 48,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'You are not a member of any leagues yet.',
-                          style: AppStyles.bodyStyle,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Create or join a league to get started',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppStyles.secondaryTextColor,
+                        const Icon(Icons.error_outline, color: AppStyles.errorColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(color: AppStyles.errorColor),
                           ),
                         ),
                       ],
                     ),
                   ),
-                )
-              else
-                ListView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: _leagues.length,
-                  itemBuilder: (context, index) {
-                    return LeagueCard(
-                      league: _leagues[index],
-                      onTap: () {
-                        final leagueId = _leagues[index]['league_id'];
-                        UpdateLastAccessedApi.updateLastAccessed(leagueId);
 
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => FixturesScreen(
-                              league: _leagues[index],
+                // Leagues list
+                if (_leagues.isEmpty && _errorMessage == null)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.sports_soccer,
+                            size: 48,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'You are not a member of any leagues yet.',
+                            style: AppStyles.bodyStyle,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Create or join a league to get started',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppStyles.secondaryTextColor,
                             ),
                           ),
-                        ).then((_) => _loadData());
-                      },
-                      onRemove: _handleRemoveLeague,
-                    );
-                  },
-                ),
-            ],
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  ListView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: _leagues.length,
+                    itemBuilder: (context, index) {
+                      return LeagueCard(
+                        league: _leagues[index],
+                        onTap: () {
+                          final leagueId = _leagues[index]['league_id'];
+                          UpdateLastAccessedApi.updateLastAccessed(leagueId);
+
+                          // Store the league data for use in the async function
+                          final league = _leagues[index];
+
+                          // Check if league has fixtures and navigate accordingly
+                          _checkFixturesAndNavigate(league);
+                        },
+                        onRemove: _handleRemoveLeague,
+                      );
+                    },
+                  ),
+              ],
+            ),
           ),
         ),
       ),

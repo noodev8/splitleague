@@ -201,11 +201,12 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
         : widget.fixture['player_2_name'];
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Update Score'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
+        title: const Text('Update Score', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -213,12 +214,16 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.blue.shade100,
+              Colors.blue.shade900,
+              Colors.blue.shade700,
+              Colors.blue.shade200,
               Colors.white,
             ],
+            stops: const [0.0, 0.1, 0.3, 1.0],
           ),
         ),
         child: SafeArea(
+          bottom: false,
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: Form(
@@ -304,15 +309,17 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                                 children: [
                                   const SizedBox(height: 4),
                                   Container(
-                                    width: 100,
+                                    width: 90,
                                     height: 80,
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Colors.blue.shade200, width: 2),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.grey.withAlpha(40),
-                                          blurRadius: 4,
+                                          color: Colors.blue.withAlpha(30),
+                                          blurRadius: 8,
+                                          spreadRadius: 2,
                                           offset: const Offset(0, 2),
                                         ),
                                       ],
@@ -330,7 +337,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                                       ),
                                       keyboardType: TextInputType.number,
                                       textAlign: TextAlign.center,
-                                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                                       inputFormatters: [
                                         FilteringTextInputFormatter.digitsOnly,
                                         LengthLimitingTextInputFormatter(3),
@@ -370,15 +377,17 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                                 children: [
                                   const SizedBox(height: 4),
                                   Container(
-                                    width: 100,
+                                    width: 90,
                                     height: 80,
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Colors.blue.shade200, width: 2),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.grey.withAlpha(40),
-                                          blurRadius: 4,
+                                          color: Colors.blue.withAlpha(30),
+                                          blurRadius: 8,
+                                          spreadRadius: 2,
                                           offset: const Offset(0, 2),
                                         ),
                                       ],
@@ -396,7 +405,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                                       ),
                                       keyboardType: TextInputType.number,
                                       textAlign: TextAlign.center,
-                                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                                       inputFormatters: [
                                         FilteringTextInputFormatter.digitsOnly,
                                         LengthLimitingTextInputFormatter(3),

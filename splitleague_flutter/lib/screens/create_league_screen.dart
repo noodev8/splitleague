@@ -34,6 +34,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
   final _winMarginBonusController = TextEditingController(text: '0');
   final _loseMarginBonusController = TextEditingController(text: '0');
   final _winMarginThresholdController = TextEditingController(text: '0');
+  final _playEachOtherController = TextEditingController(text: '1');
 
   // Loading state
   bool _isLoading = false;
@@ -54,6 +55,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     _winMarginBonusController.dispose();
     _loseMarginBonusController.dispose();
     _winMarginThresholdController.dispose();
+    _playEachOtherController.dispose();
     super.dispose();
   }
 
@@ -82,6 +84,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
       int winMarginBonus = int.tryParse(_winMarginBonusController.text) ?? 0;
       int loseMarginBonus = int.tryParse(_loseMarginBonusController.text) ?? 0;
       int winMarginThreshold = int.tryParse(_winMarginThresholdController.text) ?? 0;
+      int playEachOther = int.tryParse(_playEachOtherController.text) ?? 1;
 
       // Call create league API
       Map<String, dynamic> response = await CreateLeagueApi.createLeague(
@@ -92,6 +95,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
         pointsForWinMargin: winMarginBonus,
         pointsForCloseLoss: loseMarginBonus,
         winMarginThreshold: winMarginThreshold,
+        playEachOther: playEachOther,
       );
 
       // Check response
@@ -148,8 +152,12 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Create League'),
+        title: const Text('Create League', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -157,12 +165,16 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.blue.shade100,
+              Colors.blue.shade900,
+              Colors.blue.shade700,
+              Colors.blue.shade200,
               Colors.white,
             ],
+            stops: const [0.0, 0.1, 0.3, 1.0],
           ),
         ),
         child: SafeArea(
+          bottom: false,
           child: Form(
             key: _formKey,
             child: SingleChildScrollView(
@@ -181,31 +193,23 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+
                           const Text(
-                            'League Details',
+                            'Name',
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 8),
                           TextFormField(
                             controller: _leagueNameController,
                             decoration: AppStyles.inputDecoration(
-                              'League Name',
+                              'Max 30 chars',
                               prefixIcon: const Icon(Icons.sports_soccer),
-                            ).copyWith(
-                              counterText: '${_leagueNameController.text.length}/30',
-                              counterStyle: TextStyle(
-                                color: _leagueNameController.text.length > 30 ? Colors.red : Colors.grey,
-                                fontWeight: _leagueNameController.text.length > 30 ? FontWeight.bold : FontWeight.normal,
-                              ),
                             ),
                             maxLength: 30,
                             buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-                            onChanged: (value) {
-                              setState(() {}); // Refresh to update counter
-                            },
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter a league name';
@@ -234,194 +238,250 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+
+
+                          // Win type selection
                           const Text(
                             'Scoring System',
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Scoring system cards - horizontal layout
+                          Column(
+                            children: [
+                              // WIN option
+                              InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedWinType = 'WIN';
+                                    // Set default values for WIN
+                                    _winPointsController.text = '1';
+                                    _drawPointsController.text = '0';
+                                    _losePointsController.text = '0';
+                                  });
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  decoration: BoxDecoration(
+                                    color: _selectedWinType == 'WIN' ? Colors.blue.shade50 : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _selectedWinType == 'WIN' ? Colors.blue : Colors.grey.shade300,
+                                      width: _selectedWinType == 'WIN' ? 2 : 1,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withAlpha(10),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: _selectedWinType == 'WIN' ? Colors.blue.withAlpha(30) : Colors.grey.shade100,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.emoji_events,
+                                            size: 24,
+                                            color: _selectedWinType == 'WIN' ? Colors.blue : Colors.grey.shade600,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Text(
+                                          'Win Only',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                            color: _selectedWinType == 'WIN' ? Colors.blue : Colors.black87,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              // WDL option
+                              InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedWinType = 'WDL';
+                                    // Set default values for WDL
+                                    _winPointsController.text = '3';
+                                    _drawPointsController.text = '1';
+                                    _losePointsController.text = '0';
+                                  });
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  decoration: BoxDecoration(
+                                    color: _selectedWinType == 'WDL' ? Colors.blue.shade50 : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _selectedWinType == 'WDL' ? Colors.blue : Colors.grey.shade300,
+                                      width: _selectedWinType == 'WDL' ? 2 : 1,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withAlpha(10),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: _selectedWinType == 'WDL' ? Colors.blue.withAlpha(30) : Colors.grey.shade100,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.sports_soccer,
+                                            size: 24,
+                                            color: _selectedWinType == 'WDL' ? Colors.blue : Colors.grey.shade600,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Text(
+                                          'Win/Draw/Lose',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                            color: _selectedWinType == 'WDL' ? Colors.blue : Colors.black87,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              // PTS option
+                              InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedWinType = 'PTS';
+                                    // Set default values for PTS
+                                    _winPointsController.text = '2';
+                                    _drawPointsController.text = '1';
+                                    _losePointsController.text = '0';
+                                  });
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: _selectedWinType == 'PTS' ? Colors.blue.shade50 : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _selectedWinType == 'PTS' ? Colors.blue : Colors.grey.shade300,
+                                      width: _selectedWinType == 'PTS' ? 2 : 1,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withAlpha(10),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: _selectedWinType == 'PTS' ? Colors.blue.withAlpha(30) : Colors.grey.shade100,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            Icons.leaderboard,
+                                            size: 24,
+                                            color: _selectedWinType == 'PTS' ? Colors.blue : Colors.grey.shade600,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Text(
+                                          'Points',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                            color: _selectedWinType == 'PTS' ? Colors.blue : Colors.black87,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Play each other section
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Fixtures',
+                            style: TextStyle(
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 16),
 
-                          // Win type selection
-                          const Text(
-                            'Select a scoring system:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Scoring system cards
+                          // Play each other
                           Row(
                             children: [
-                              // WIN option
                               Expanded(
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedWinType = 'WIN';
-                                      // Set default values for WIN
-                                      _winPointsController.text = '1';
-                                      _drawPointsController.text = '0';
-                                      _losePointsController.text = '0';
-                                    });
-                                  },
-                                  child: Card(
-                                    elevation: _selectedWinType == 'WIN' ? 4 : 1,
-                                    color: _selectedWinType == 'WIN' ? Colors.blue.shade50 : Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      side: BorderSide(
-                                        color: _selectedWinType == 'WIN' ? Colors.blue : Colors.grey.shade300,
-                                        width: _selectedWinType == 'WIN' ? 2 : 1,
-                                      ),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(16.0),
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.emoji_events,
-                                            size: 32,
-                                            color: _selectedWinType == 'WIN' ? Colors.blue : Colors.grey.shade600,
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'Win Only',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: _selectedWinType == 'WIN' ? Colors.blue : Colors.black87,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            '1 point per win',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey.shade700,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                                flex: 3,
+                                child: const Text('Times to play each other:'),
                               ),
-                              const SizedBox(width: 8),
-
-                              // WDL option
                               Expanded(
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedWinType = 'WDL';
-                                      // Set default values for WDL
-                                      _winPointsController.text = '3';
-                                      _drawPointsController.text = '1';
-                                      _losePointsController.text = '0';
-                                    });
+                                flex: 2,
+                                child: TextFormField(
+                                  controller: _playEachOtherController,
+                                  decoration: AppStyles.inputDecoration(''),
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Required';
+                                    }
+                                    if (int.tryParse(value) == 0) {
+                                      return 'Min 1';
+                                    }
+                                    return null;
                                   },
-                                  child: Card(
-                                    elevation: _selectedWinType == 'WDL' ? 4 : 1,
-                                    color: _selectedWinType == 'WDL' ? Colors.blue.shade50 : Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      side: BorderSide(
-                                        color: _selectedWinType == 'WDL' ? Colors.blue : Colors.grey.shade300,
-                                        width: _selectedWinType == 'WDL' ? 2 : 1,
-                                      ),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(16.0),
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.sports_soccer,
-                                            size: 32,
-                                            color: _selectedWinType == 'WDL' ? Colors.blue : Colors.grey.shade600,
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'Win/Draw/Lose',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: _selectedWinType == 'WDL' ? Colors.blue : Colors.black87,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            '3-1-0 points',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey.shade700,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-
-                              // PTS option
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedWinType = 'PTS';
-                                      // Set default values for PTS
-                                      _winPointsController.text = '2';
-                                      _drawPointsController.text = '1';
-                                      _losePointsController.text = '0';
-                                    });
-                                  },
-                                  child: Card(
-                                    elevation: _selectedWinType == 'PTS' ? 4 : 1,
-                                    color: _selectedWinType == 'PTS' ? Colors.blue.shade50 : Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      side: BorderSide(
-                                        color: _selectedWinType == 'PTS' ? Colors.blue : Colors.grey.shade300,
-                                        width: _selectedWinType == 'PTS' ? 2 : 1,
-                                      ),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(16.0),
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.leaderboard,
-                                            size: 32,
-                                            color: _selectedWinType == 'PTS' ? Colors.blue : Colors.grey.shade600,
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'Points',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: _selectedWinType == 'PTS' ? Colors.blue : Colors.black87,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            'Custom scoring',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey.shade700,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
                                 ),
                               ),
                             ],
