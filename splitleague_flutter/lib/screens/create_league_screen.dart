@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/create_league_api.dart';
+import '../api/update_last_accessed_api.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
 import 'fixtures_screen.dart';
@@ -97,22 +98,37 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
         playEachOther: playEachOther,
       );
 
+      print('Create League Response: $response'); // Debug log
+
       // Check response
       if (response['return_code'] == 'SUCCESS') {
+        // Get league ID from the nested league object
+        final leagueId = response['league']['id'];
+        print('Creating league - League ID: $leagueId'); // Debug log
+        
+        if (leagueId != null) {
+          final updateResponse = await UpdateLastAccessedApi.updateLastAccessed(leagueId);
+          print('Update last accessed response: $updateResponse'); // Debug log
+        } else {
+          print('League ID is null!'); // Debug log
+        }
+        
         if (mounted) {
           Navigator.of(context).pop();
         }
       } else {
-        // Show error message
+        // Show error message with more detail
         setState(() {
           _errorMessage = ErrorHelper.getErrorMessage(response);
+          print('Error Message: $_errorMessage'); // Debug log
           _isLoading = false;
         });
       }
     } catch (e) {
-      // Show error message
+      // Show detailed error message
+      print('Create League Error: $e'); // Debug log
       setState(() {
-        _errorMessage = 'An error occurred. Please try again.';
+        _errorMessage = 'Error: ${e.toString()}';
         _isLoading = false;
       });
     }
@@ -837,6 +853,10 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     );
   }
 }
+
+
+
+
 
 
 

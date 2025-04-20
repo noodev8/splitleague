@@ -223,6 +223,7 @@ router.post('/', verifyToken, async (req, res) => {
     // Return success response with league data including points
     return res.status(201).json({
       return_code: 'SUCCESS',
+      league_id: league.id,  // Add this line to include the league ID
       league: league
     });
   } catch (error) {
