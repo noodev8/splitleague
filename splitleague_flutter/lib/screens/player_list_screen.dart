@@ -276,24 +276,24 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                                     ),
                                     child: ListTile(
                                       leading: CircleAvatar(
-                                        backgroundColor: isCreator ? Colors.blue.shade100 : Colors.grey.shade100,
+                                        backgroundColor: Colors.grey.shade100,
                                         child: Icon(
                                           Icons.person,
-                                          color: isCreator ? Colors.blue : Colors.grey.shade700,
+                                          color: Colors.grey.shade700,
                                         ),
                                       ),
                                       title: Text(
                                         memberName,
-                                        style: TextStyle(
-                                          fontWeight: isCreator ? FontWeight.bold : FontWeight.normal,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,  // All names now bold
                                         ),
                                       ),
                                       subtitle: isCreator
                                           ? const Text(
-                                              'Organizer',
+                                              'Organiser',
                                               style: TextStyle(
                                                 color: Colors.blue,
-                                                fontWeight: FontWeight.w500,
+                                                fontSize: 12,
                                               ),
                                             )
                                           : null,
@@ -329,5 +329,7 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
     );
   }
 }
+
+
 
 
