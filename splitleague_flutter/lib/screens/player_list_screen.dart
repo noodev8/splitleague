@@ -237,19 +237,27 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                           children: [
                             Padding(
                               padding: const EdgeInsets.all(16.0),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.people, color: Colors.blue),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Players (${_members.length})',
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withAlpha(30),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.people, color: Colors.white, size: 16),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '${_members.length} Players',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.white,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                             Expanded(
@@ -321,3 +329,5 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
     );
   }
 }
+
+
