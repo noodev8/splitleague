@@ -194,7 +194,18 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                             decoration: AppStyles.inputDecoration(
                               'League Name',
                               prefixIcon: const Icon(Icons.sports_soccer),
+                            ).copyWith(
+                              counterText: '${_leagueNameController.text.length}/30',
+                              counterStyle: TextStyle(
+                                color: _leagueNameController.text.length > 30 ? Colors.red : Colors.grey,
+                                fontWeight: _leagueNameController.text.length > 30 ? FontWeight.bold : FontWeight.normal,
+                              ),
                             ),
+                            maxLength: 30,
+                            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                            onChanged: (value) {
+                              setState(() {}); // Refresh to update counter
+                            },
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter a league name';
@@ -241,55 +252,179 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                           ),
                           const SizedBox(height: 8),
 
-                          // WIN option
-                          RadioListTile<String>(
-                            title: const Text('Win Only'),
-                            subtitle: const Text('Only wins count, no draws'),
-                            value: 'WIN',
-                            groupValue: _selectedWinType,
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedWinType = value!;
-                                // Set default values for WIN
-                                _winPointsController.text = '1';
-                                _drawPointsController.text = '0';
-                                _losePointsController.text = '0';
-                              });
-                            },
-                          ),
+                          // Scoring system cards
+                          Row(
+                            children: [
+                              // WIN option
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedWinType = 'WIN';
+                                      // Set default values for WIN
+                                      _winPointsController.text = '1';
+                                      _drawPointsController.text = '0';
+                                      _losePointsController.text = '0';
+                                    });
+                                  },
+                                  child: Card(
+                                    elevation: _selectedWinType == 'WIN' ? 4 : 1,
+                                    color: _selectedWinType == 'WIN' ? Colors.blue.shade50 : Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      side: BorderSide(
+                                        color: _selectedWinType == 'WIN' ? Colors.blue : Colors.grey.shade300,
+                                        width: _selectedWinType == 'WIN' ? 2 : 1,
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.emoji_events,
+                                            size: 32,
+                                            color: _selectedWinType == 'WIN' ? Colors.blue : Colors.grey.shade600,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Win Only',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: _selectedWinType == 'WIN' ? Colors.blue : Colors.black87,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '1 point per win',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade700,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
 
-                          // WDL option
-                          RadioListTile<String>(
-                            title: const Text('Win/Draw/Lose'),
-                            subtitle: const Text('Points for wins, draws, and losses'),
-                            value: 'WDL',
-                            groupValue: _selectedWinType,
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedWinType = value!;
-                                // Set default values for WDL
-                                _winPointsController.text = '3';
-                                _drawPointsController.text = '1';
-                                _losePointsController.text = '0';
-                              });
-                            },
-                          ),
+                              // WDL option
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedWinType = 'WDL';
+                                      // Set default values for WDL
+                                      _winPointsController.text = '3';
+                                      _drawPointsController.text = '1';
+                                      _losePointsController.text = '0';
+                                    });
+                                  },
+                                  child: Card(
+                                    elevation: _selectedWinType == 'WDL' ? 4 : 1,
+                                    color: _selectedWinType == 'WDL' ? Colors.blue.shade50 : Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      side: BorderSide(
+                                        color: _selectedWinType == 'WDL' ? Colors.blue : Colors.grey.shade300,
+                                        width: _selectedWinType == 'WDL' ? 2 : 1,
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.sports_soccer,
+                                            size: 32,
+                                            color: _selectedWinType == 'WDL' ? Colors.blue : Colors.grey.shade600,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Win/Draw/Lose',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: _selectedWinType == 'WDL' ? Colors.blue : Colors.black87,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '3-1-0 points',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade700,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
 
-                          // PTS option
-                          RadioListTile<String>(
-                            title: const Text('Points'),
-                            subtitle: const Text('Custom points for each result'),
-                            value: 'PTS',
-                            groupValue: _selectedWinType,
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedWinType = value!;
-                                // Set default values for PTS
-                                _winPointsController.text = '2';
-                                _drawPointsController.text = '1';
-                                _losePointsController.text = '0';
-                              });
-                            },
+                              // PTS option
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedWinType = 'PTS';
+                                      // Set default values for PTS
+                                      _winPointsController.text = '2';
+                                      _drawPointsController.text = '1';
+                                      _losePointsController.text = '0';
+                                    });
+                                  },
+                                  child: Card(
+                                    elevation: _selectedWinType == 'PTS' ? 4 : 1,
+                                    color: _selectedWinType == 'PTS' ? Colors.blue.shade50 : Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      side: BorderSide(
+                                        color: _selectedWinType == 'PTS' ? Colors.blue : Colors.grey.shade300,
+                                        width: _selectedWinType == 'PTS' ? 2 : 1,
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.leaderboard,
+                                            size: 32,
+                                            color: _selectedWinType == 'PTS' ? Colors.blue : Colors.grey.shade600,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Points',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: _selectedWinType == 'PTS' ? Colors.blue : Colors.black87,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Custom scoring',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade700,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

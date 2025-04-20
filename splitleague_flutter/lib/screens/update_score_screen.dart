@@ -203,400 +203,434 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Update Score'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Reduced space at the top
-                const SizedBox(height: 8),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.blue.shade100,
+              Colors.white,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Reduced space at the top
+                  const SizedBox(height: 8),
 
-                // Different UI based on win type
-                if (_winType == 'PTS')
-                  // Points-based score entry - modernized UI
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: Column(
-                      children: [
-                        // Player names in a row
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                                decoration: BoxDecoration(
-                                  color: AppStyles.primaryColor.withAlpha(25),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  player1Name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: AppStyles.primaryColor,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                                decoration: BoxDecoration(
-                                  color: AppStyles.accentColor.withAlpha(25),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  player2Name,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: AppStyles.accentColor,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Score inputs in a row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            // Player 1 score
-                            Column(
-                              children: [
-                                const SizedBox(height: 4),
-                                Container(
-                                  width: 100,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.withAlpha(40),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: TextFormField(
-                                    controller: _player1ScoreController,
-                                    decoration: InputDecoration(
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.white,
-                                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                      LengthLimitingTextInputFormatter(3),
-                                    ],
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Required';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            // VS indicator
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  'VS',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppStyles.secondaryTextColor,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // Player 2 score
-                            Column(
-                              children: [
-                                const SizedBox(height: 4),
-                                Container(
-                                  width: 100,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.withAlpha(40),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: TextFormField(
-                                    controller: _player2ScoreController,
-                                    decoration: InputDecoration(
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.white,
-                                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                      LengthLimitingTextInputFormatter(3),
-                                    ],
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Required';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 32),
-
-                // Error message
-                if (_errorMessage != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppStyles.errorColor.withAlpha(25),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.error_outline, color: AppStyles.errorColor),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _errorMessage!,
-                            style: const TextStyle(
-                              color: AppStyles.errorColor,
-                            ),
+                  // Different UI based on win type
+                  if (_winType == 'PTS')
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(13),
+                            blurRadius: 10,
+                            spreadRadius: 1,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (_errorMessage != null) const SizedBox(height: 24),
-
-                // Win/Draw/Loss selection for WIN or WDL types
-                if (_winType == 'WIN' || _winType == 'WDL')
-                  Column(
-                    children: [
-
-                      // Result selection cards - Winners in a row
-                      Row(
+                        ],
+                      ),
+                      child: Column(
                         children: [
-                          // Player 1 wins
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedResult = 'WIN_1';
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: _selectedResult == 'WIN_1'
-                                    ? AppStyles.selectedCardDecoration
-                                    : AppStyles.selectionCardDecoration,
-                                child: Column(
-                                  children: [
-                                    Icon(
-                                      Icons.emoji_events,
-                                      size: 32,
-                                      color: _selectedResult == 'WIN_1' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
+                          // Player names in a row
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                  decoration: BoxDecoration(
+                                    color: AppStyles.primaryColor.withAlpha(25),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    player1Name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: AppStyles.primaryColor,
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Winner',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: _selectedResult == 'WIN_1' ? AppStyles.primaryColor : AppStyles.textColor,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      player1Name,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: _selectedResult == 'WIN_1' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
-                                      ),
-                                    ),
-                                  ],
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-
-                          // Player 2 wins
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedResult = 'WIN_2';
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: _selectedResult == 'WIN_2'
-                                    ? AppStyles.selectedCardDecoration
-                                    : AppStyles.selectionCardDecoration,
-                                child: Column(
-                                  children: [
-                                    Icon(
-                                      Icons.emoji_events,
-                                      size: 32,
-                                      color: _selectedResult == 'WIN_2' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                                  decoration: BoxDecoration(
+                                    color: AppStyles.accentColor.withAlpha(25),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    player2Name,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: AppStyles.accentColor,
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Winner',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: _selectedResult == 'WIN_2' ? AppStyles.primaryColor : AppStyles.textColor,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      player2Name,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: _selectedResult == 'WIN_2' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
-                                      ),
-                                    ),
-                                  ],
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // Score inputs in a row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              // Player 1 score
+                              Column(
+                                children: [
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    width: 100,
+                                    height: 80,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withAlpha(40),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: TextFormField(
+                                      controller: _player1ScoreController,
+                                      decoration: InputDecoration(
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.white,
+                                        contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                      ),
+                                      keyboardType: TextInputType.number,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                        LengthLimitingTextInputFormatter(3),
+                                      ],
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Required';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              // VS indicator
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade200,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    'VS',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: AppStyles.secondaryTextColor,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              // Player 2 score
+                              Column(
+                                children: [
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    width: 100,
+                                    height: 80,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withAlpha(40),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: TextFormField(
+                                      controller: _player2ScoreController,
+                                      decoration: InputDecoration(
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.white,
+                                        contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                      ),
+                                      keyboardType: TextInputType.number,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                        LengthLimitingTextInputFormatter(3),
+                                      ],
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Required';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  const SizedBox(height: 32),
+
+                  // Error message
+                  if (_errorMessage != null)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppStyles.errorColor.withAlpha(25),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, color: AppStyles.errorColor),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(
+                                color: AppStyles.errorColor,
                               ),
                             ),
                           ),
                         ],
                       ),
+                    ),
+                  if (_errorMessage != null) const SizedBox(height: 24),
 
-                      // Draw option below (only for WDL type)
-                      if (_winType == 'WDL') ...[
-                        const SizedBox(height: 12),
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedResult = 'DRAW';
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: _selectedResult == 'DRAW'
-                                ? AppStyles.selectedCardDecoration
-                                : AppStyles.selectionCardDecoration,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.handshake,
-                                  size: 32,
-                                  color: _selectedResult == 'DRAW' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
-                                ),
-                                const SizedBox(width: 16),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Draw',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: _selectedResult == 'DRAW' ? AppStyles.primaryColor : AppStyles.textColor,
-                                      ),
+                  // Win/Draw/Loss selection for WIN or WDL types
+                  if (_winType == 'WIN' || _winType == 'WDL')
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(13),
+                            blurRadius: 10,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          // Result selection cards - Winners in a row
+                          Row(
+                            children: [
+                              // Player 1 wins
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedResult = 'WIN_1';
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: _selectedResult == 'WIN_1'
+                                        ? AppStyles.selectedCardDecoration
+                                        : AppStyles.selectionCardDecoration,
+                                    child: Column(
+                                      children: [
+                                        Icon(
+                                          Icons.emoji_events,
+                                          size: 32,
+                                          color: _selectedResult == 'WIN_1' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Winner',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: _selectedResult == 'WIN_1' ? AppStyles.primaryColor : AppStyles.textColor,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          player1Name,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: _selectedResult == 'WIN_1' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    // Removed 'Equal Score' text as requested
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+
+                              // Player 2 wins
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedResult = 'WIN_2';
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: _selectedResult == 'WIN_2'
+                                        ? AppStyles.selectedCardDecoration
+                                        : AppStyles.selectionCardDecoration,
+                                    child: Column(
+                                      children: [
+                                        Icon(
+                                          Icons.emoji_events,
+                                          size: 32,
+                                          color: _selectedResult == 'WIN_2' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Winner',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: _selectedResult == 'WIN_2' ? AppStyles.primaryColor : AppStyles.textColor,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          player2Name,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: _selectedResult == 'WIN_2' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          // Draw option below (only for WDL type)
+                          if (_winType == 'WDL') ...[
+                            const SizedBox(height: 12),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedResult = 'DRAW';
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: _selectedResult == 'DRAW'
+                                    ? AppStyles.selectedCardDecoration
+                                    : AppStyles.selectionCardDecoration,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.handshake,
+                                      size: 32,
+                                      color: _selectedResult == 'DRAW' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Draw',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: _selectedResult == 'DRAW' ? AppStyles.primaryColor : AppStyles.textColor,
+                                          ),
+                                        ),
+                                        // Removed 'Equal Score' text as requested
+                                      ],
+                                    ),
                                   ],
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
-                        ),
-                      ],
-                    ],
+                          ],
+                        ],
+                      ),
+                    ),
+
+                  const SizedBox(height: 24),
+
+                  // Submit button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isSubmitting || !_isAuthorized ? null : _handleSubmit,
+                      style: AppStyles.primaryButtonStyle,
+                      child: _isSubmitting
+                          ? const SpinKitThreeBounce(
+                              color: Colors.white,
+                              size: 24,
+                            )
+                          : Text(_winType == 'PTS' ? 'Submit Score' : 'Submit Result'),
+                    ),
                   ),
 
-                const SizedBox(height: 24),
-
-                // Submit button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isSubmitting || !_isAuthorized ? null : _handleSubmit,
-                    style: AppStyles.primaryButtonStyle,
-                    child: _isSubmitting
-                        ? const SpinKitThreeBounce(
-                            color: Colors.white,
-                            size: 24,
-                          )
-                        : Text(_winType == 'PTS' ? 'Submit Score' : 'Submit Result'),
+                  // Note
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Note: Scores can only be updated by the league organiser or the players involved in the match.',
+                    style: TextStyle(
+                      color: AppStyles.secondaryTextColor,
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
-                ),
-
-                // Note
-                const SizedBox(height: 16),
-                const Text(
-                  'Note: Scores can only be updated by the league organiser or the players involved in the match.',
-                  style: TextStyle(
-                    color: AppStyles.secondaryTextColor,
-                    fontSize: 12,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

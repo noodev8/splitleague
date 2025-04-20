@@ -130,7 +130,7 @@ class FixturesTabContent extends StatelessWidget {
               children: [
                 // All button
                 ElevatedButton(
-                  onPressed: onClearPlayedStatusFilter,
+                  onPressed: onClearPlayedStatusFilter != null ? () => onClearPlayedStatusFilter!.call() : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: filterPlayedStatus == null ? Colors.blue : Colors.grey.shade200,
                     foregroundColor: filterPlayedStatus == null ? Colors.white : Colors.black87,
@@ -336,14 +336,32 @@ class FixturesTabContent extends StatelessWidget {
           )
         else if ((filterPlayerId != null || filterPlayedStatus != null) && filteredFixtures.isEmpty)
           EmptyStateDisplay(
-            message: filterPlayerId != null
-              ? 'No fixtures found for ${filterPlayerName ?? "selected player"}'
-              : filterPlayedStatus == 'played'
-                ? 'No played fixtures found'
-                : 'No unplayed fixtures found',
+            message: filterPlayerId != null && filterPlayedStatus != null
+              ? filterPlayedStatus == 'played'
+                ? 'No played fixtures found for ${filterPlayerName ?? "selected player"}'
+                : 'No unplayed fixtures found for ${filterPlayerName ?? "selected player"}'
+              : filterPlayerId != null
+                ? 'No fixtures found for ${filterPlayerName ?? "selected player"}'
+                : filterPlayedStatus == 'played'
+                  ? 'No played fixtures found'
+                  : 'No unplayed fixtures found',
             icon: Icons.filter_alt_off,
-            actionText: filterPlayerId != null ? 'Clear Player Filter' : 'Clear Status Filter',
-            onAction: filterPlayerId != null ? onClearFilter : onClearPlayedStatusFilter,
+            actionText: filterPlayerId != null && filterPlayedStatus != null
+              ? 'Clear All Filters'
+              : filterPlayerId != null
+                ? 'Clear Player Filter'
+                : 'Clear Status Filter',
+            onAction: filterPlayerId != null && filterPlayedStatus != null
+              ? () {
+                  onClearFilter();
+                  onClearPlayedStatusFilter?.call();
+                }
+              : filterPlayerId != null
+                ? onClearFilter
+                : onClearPlayedStatusFilter != null
+                  ? () => onClearPlayedStatusFilter!.call()
+                  : null,
+            showPullToRefresh: false,
           )
         else
           Column(
