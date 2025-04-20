@@ -15,6 +15,7 @@ import '../styles/app_styles.dart';
 import '../widgets/league_card.dart';
 import 'create_league_screen.dart';
 import 'fixtures_screen.dart';
+import 'fixtures_only_screen.dart';
 import 'join_league_screen.dart';
 import 'profile_screen.dart';
 
@@ -367,13 +368,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         final leagueId = _leagues[index]['league_id'];
                         UpdateLastAccessedApi.updateLastAccessed(leagueId);
 
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => FixturesScreen(
-                              league: _leagues[index],
-                            ),
-                          ),
-                        ).then((_) => _loadData());
+                        // Show a dialog to choose which screen to navigate to
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text('Choose Screen'),
+                              content: const Text('Select which screen to navigate to:'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => FixturesScreen(
+                                          league: _leagues[index],
+                                        ),
+                                      ),
+                                    ).then((_) => _loadData());
+                                  },
+                                  child: const Text('Original Fixtures Screen'),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => FixturesOnlyScreen(
+                                          league: _leagues[index],
+                                        ),
+                                      ),
+                                    ).then((_) => _loadData());
+                                  },
+                                  child: const Text('Fixtures Only Screen'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
                       },
                       onRemove: _handleRemoveLeague,
                     );
