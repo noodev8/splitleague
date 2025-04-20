@@ -83,7 +83,12 @@ router.post('/', verifyToken, async (req, res) => {
           SELECT COUNT(*) > 0
           FROM league_members lm
           WHERE lm.league_id = l.id AND lm.user_id = $1
-        ) as is_member
+        ) as is_member,
+        (
+          SELECT u.nickname
+          FROM app_user u
+          WHERE u.id = l.created_by
+        ) as created_by_nickname
       FROM
         league l
       WHERE
@@ -151,6 +156,7 @@ router.post('/', verifyToken, async (req, res) => {
       id: leagueData.id,
       name: leagueData.name,
       created_by: leagueData.created_by,
+      created_by_nickname: leagueData.created_by_nickname,
       public_code: leagueData.public_code,
       active: leagueData.active,
       start_date: leagueData.start_date,

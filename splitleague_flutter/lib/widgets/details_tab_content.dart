@@ -78,11 +78,11 @@ class DetailsTabContent extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: InkWell(
-                          onTap: () => onCopyToClipboard(leagueInfo['pin']),
+                          onTap: () => onCopyToClipboard(leagueInfo['public_code']),
                           child: Row(
                             children: [
                               Text(
-                                leagueInfo['pin'] ?? 'Unknown',
+                                leagueInfo['public_code'] ?? 'Unknown',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -146,17 +146,12 @@ class DetailsTabContent extends StatelessWidget {
                             color: Colors.grey,
                           ),
                         ),
-                        FutureBuilder<String>(
-                          future: Future.value(leagueInfo['organizer_nickname'] ?? 'Unknown'),
-                          builder: (context, snapshot) {
-                            return Text(
-                              snapshot.data ?? 'Unknown',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            );
-                          },
+                        Text(
+                          leagueInfo['created_by_nickname'] ?? leagueInfo['created_by']?.toString() ?? 'Unknown',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),

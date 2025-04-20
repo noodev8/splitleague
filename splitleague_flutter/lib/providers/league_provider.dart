@@ -121,7 +121,7 @@ class LeagueProvider extends ChangeNotifier {
       final response = await GetLeagueInfoApi.getLeagueInfo(_currentLeagueId);
 
       if (response['return_code'] == 'SUCCESS') {
-        _leagueInfo = response['league_info'] ?? {};
+        _leagueInfo = response['league'] ?? {};
         _isLoadingLeagueInfo = false;
         _leagueInfoErrorMessage = null;
       } else {
