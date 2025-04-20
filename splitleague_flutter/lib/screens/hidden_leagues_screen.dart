@@ -268,7 +268,7 @@ class _HiddenLeaguesScreenState extends State<HiddenLeaguesScreen> {
                               border: Border.all(color: Colors.amber.shade600),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black.withAlpha(25),
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 ),
@@ -388,5 +388,6 @@ class _HiddenLeaguesScreenState extends State<HiddenLeaguesScreen> {
     );
   }
 }
+
 
 

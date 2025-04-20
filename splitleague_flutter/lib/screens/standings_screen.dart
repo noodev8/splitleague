@@ -50,6 +50,8 @@ class _StandingsScreenState extends State<StandingsScreen> {
 
   // Initialize the league provider with the current league
   Future<void> _initializeLeagueProvider() async {
+    if (_isDisposing) return;  // Don't initialize if disposing
+    
     // Check if current user is the creator
     final userData = await AuthHelper.getUserData();
     final isCreator = userData != null &&
@@ -57,10 +59,12 @@ class _StandingsScreenState extends State<StandingsScreen> {
         userData['id'].toString() == widget.league['creator_id'].toString();
 
     // Initialize the league provider
-    _leagueProvider.initLeague(widget.league['league_id'], isCreator);
-    
-    // Load standings specifically
-    _leagueProvider.loadStandings();
+    if (!_isDisposing) {  // Check again before updating
+      _leagueProvider.initLeague(widget.league['league_id'], isCreator);
+      
+      // Load standings specifically
+      _leagueProvider.loadStandings();
+    }
   }
 
   @override
@@ -75,35 +79,49 @@ class _StandingsScreenState extends State<StandingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('${widget.league['name']} - Standings'),
+        title: Text(
+          '${widget.league['name']}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Consumer<LeagueProvider>(
-        builder: (context, leagueProvider, _) {
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.blue.shade100,
-                  Colors.white,
-                ],
-              ),
-            ),
-            child: SafeArea(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.blue.shade900,
+              Colors.blue.shade700,
+              Colors.blue.shade200,
+              Colors.white,
+            ],
+            stops: const [0.0, 0.1, 0.3, 1.0],
+          ),
+        ),
+        child: Consumer<LeagueProvider>(
+          builder: (context, leagueProvider, _) {
+            return SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // League name header
-                    Text(
-                      'Standings',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    //Text(
+                      // 'Standings',
+                      //style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      //  fontWeight: FontWeight.bold,
+                      //  color: Colors.white,
+                      //),
+                    //),
                     const SizedBox(height: 16),
                     
                     // Standings content
@@ -117,10 +135,13 @@ class _StandingsScreenState extends State<StandingsScreen> {
                   ],
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
 }
+
+
+
