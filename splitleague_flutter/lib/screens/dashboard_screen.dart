@@ -295,131 +295,132 @@ class _DashboardScreenState extends State<DashboardScreen> {
           stops: const [0.0, 0.1, 0.3, 1.0],
         ),
       ),
-      child: SmartRefresher(
-        controller: _refreshController,
-        onRefresh: _onRefresh,
-        header: const WaterDropHeader(
-          waterDropColor: AppStyles.primaryColor,
-          complete: Icon(Icons.check, color: AppStyles.successColor),
-        ),
-        child: SafeArea(
-          bottom: false,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // User profile section
-                Container(
-                  margin: const EdgeInsets.only(bottom: 16, top: 8),  // Adjusted margin
-                  child: Row(
-                    children: [
-                      // Profile picture (tappable)
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const ProfileScreen(),
-                            ),
-                          );
-                        },
-                        child: CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.white,
-                          child: const Icon(Icons.person, color: Colors.blue, size: 36),
-                        ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Profile card - fixed at top
+            Card(
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const ProfileScreen(),
+                          ),
+                        );
+                      },
+                      child: CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Colors.blue.withAlpha(30),
+                        child: const Icon(Icons.person, color: Colors.blue, size: 36),
                       ),
-                      const SizedBox(width: 16),
-                      // User name
-                      Text(
-                        userName,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                    ),
+                    const SizedBox(width: 16),
+                    Text(
+                      userName,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                // Error message
-                if (_errorMessage != null)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppStyles.errorColor.withAlpha(25),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.error_outline, color: AppStyles.errorColor),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _errorMessage!,
-                            style: const TextStyle(color: AppStyles.errorColor),
+              ),
+            ),
+            // Scrollable content
+            Expanded(
+              child: SmartRefresher(
+                controller: _refreshController,
+                onRefresh: _onRefresh,
+                header: const WaterDropHeader(
+                  waterDropColor: AppStyles.primaryColor,
+                  complete: Icon(Icons.check, color: AppStyles.successColor),
+                ),
+                child: ListView(
+                  padding: const EdgeInsets.all(16.0),
+                  children: [
+                    // Error message
+                    if (_errorMessage != null)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppStyles.errorColor.withAlpha(25),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: AppStyles.errorColor),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _errorMessage!,
+                                style: const TextStyle(color: AppStyles.errorColor),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    // Empty state
+                    if (_leagues.isEmpty && _errorMessage == null)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.sports_soccer,
+                                size: 48,
+                                color: Colors.grey.shade400,
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'You are not a member of any leagues yet.',
+                                style: AppStyles.bodyStyle,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Create or join a league to get started',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: AppStyles.secondaryTextColor,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-
-                // Leagues list
-                if (_leagues.isEmpty && _errorMessage == null)
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.sports_soccer,
-                            size: 48,
-                            color: Colors.grey.shade400,
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'You are not a member of any leagues yet.',
-                            style: AppStyles.bodyStyle,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Create or join a league to get started',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppStyles.secondaryTextColor,
-                            ),
-                          ),
-                        ],
                       ),
-                    ),
-                  )
-                else
-                  ListView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    itemCount: _leagues.length,
-                    itemBuilder: (context, index) {
-                      return LeagueCard(
-                        league: _leagues[index],
-                        onTap: () {
-                          final leagueId = _leagues[index]['league_id'];
-                          UpdateLastAccessedApi.updateLastAccessed(leagueId);
 
-                          // Store the league data for use in the async function
-                          final league = _leagues[index];
-
-                          // Check if league has fixtures and navigate accordingly
-                          _checkFixturesAndNavigate(league);
-                        },
-                        onRemove: _handleRemoveLeague,
-                      );
-                    },
-                  ),
-              ],
+                    // Leagues list
+                    if (_leagues.isNotEmpty)
+                      ...List.generate(
+                        _leagues.length,
+                        (index) => LeagueCard(
+                          league: _leagues[index],
+                          onTap: () {
+                            final leagueId = _leagues[index]['league_id'];
+                            UpdateLastAccessedApi.updateLastAccessed(leagueId);
+                            final league = _leagues[index];
+                            _checkFixturesAndNavigate(league);
+                          },
+                          onRemove: _handleRemoveLeague,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
