@@ -1,6 +1,6 @@
 /*
-Show only the league details without tabs
-This is a simplified version of the details tab from the fixtures screen
+Show the league details
+This screen shows detailed information about the league
 */
 
 import 'package:flutter/material.dart';
@@ -11,19 +11,19 @@ import '../widgets/details_tab_content.dart';
 import '../widgets/skeleton_loading.dart';
 import '../helpers/auth_helper.dart';
 
-class DetailsOnlyScreen extends StatefulWidget {
+class LeagueDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> league;
 
-  const DetailsOnlyScreen({
+  const LeagueDetailsScreen({
     super.key,
     required this.league,
   });
 
   @override
-  State<DetailsOnlyScreen> createState() => _DetailsOnlyScreenState();
+  State<LeagueDetailsScreen> createState() => _LeagueDetailsScreenState();
 }
 
-class _DetailsOnlyScreenState extends State<DetailsOnlyScreen> {
+class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
   // Reference to the league provider
   late LeagueProvider _leagueProvider;
   

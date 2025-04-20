@@ -1,6 +1,6 @@
 /*
-Show only the standings for a league without tabs
-This is a simplified version of the standings tab from the fixtures screen
+Show the standings for a league
+This screen shows the league standings
 */
 
 import 'package:flutter/material.dart';
@@ -9,19 +9,19 @@ import '../providers/league_provider.dart';
 import '../widgets/standings_tab_content.dart';
 import '../helpers/auth_helper.dart';
 
-class StandingsOnlyScreen extends StatefulWidget {
+class StandingsScreen extends StatefulWidget {
   final Map<String, dynamic> league;
 
-  const StandingsOnlyScreen({
+  const StandingsScreen({
     super.key,
     required this.league,
   });
 
   @override
-  State<StandingsOnlyScreen> createState() => _StandingsOnlyScreenState();
+  State<StandingsScreen> createState() => _StandingsScreenState();
 }
 
-class _StandingsOnlyScreenState extends State<StandingsOnlyScreen> {
+class _StandingsScreenState extends State<StandingsScreen> {
   // Reference to the league provider
   late LeagueProvider _leagueProvider;
   
