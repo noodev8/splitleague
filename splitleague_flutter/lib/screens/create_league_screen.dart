@@ -80,7 +80,6 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
       // Get points settings
       int winPoints = int.tryParse(_winPointsController.text) ?? 0;
       int drawPoints = int.tryParse(_drawPointsController.text) ?? 0;
-      // Note: losePoints is not used in the API but we keep it for UI consistency
       int winMarginBonus = int.tryParse(_winMarginBonusController.text) ?? 0;
       int loseMarginBonus = int.tryParse(_loseMarginBonusController.text) ?? 0;
       int winMarginThreshold = int.tryParse(_winMarginThresholdController.text) ?? 0;
@@ -100,14 +99,9 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
 
       // Check response
       if (response['return_code'] == 'SUCCESS') {
-        // Show success message
-        ErrorHelper.showSuccessToast('League created successfully!');
-
-        // Set league code
-        setState(() {
-          _leagueCode = response['league_code'];
-          _isLoading = false;
-        });
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
       } else {
         // Show error message
         setState(() {
@@ -843,5 +837,6 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     );
   }
 }
+
 
 
