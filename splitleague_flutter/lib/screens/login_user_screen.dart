@@ -10,8 +10,8 @@ import '../api/login_user_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
-import 'dashboard_screen.dart';
-import 'register_user_screen.dart';
+import 'dashboard_screen.dart' as dashboard;
+import 'register_user_screen.dart' as register;
 
 class LoginUserScreen extends StatefulWidget {
   const LoginUserScreen({super.key});
@@ -75,7 +75,7 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
         // Navigate to dashboard
         if (mounted) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const DashboardScreen()),
+            MaterialPageRoute(builder: (context) => const dashboard.DashboardScreen()),
           );
         }
       } else {
@@ -229,7 +229,7 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (context) => const RegisterUserScreen(),
+                                  builder: (context) => const register.RegisterUserScreen(),
                                 ),
                               );
                             },
