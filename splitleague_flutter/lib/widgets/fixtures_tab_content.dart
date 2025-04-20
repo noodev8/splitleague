@@ -122,123 +122,126 @@ class FixturesTabContent extends StatelessWidget {
 
         // Fixtures section (only shown when fixtures exist)
         if (fixtures.isNotEmpty) ...[
-          // Played/Not Played filter buttons
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // All button
-                ElevatedButton(
-                  onPressed: onClearPlayedStatusFilter != null ? () => onClearPlayedStatusFilter!.call() : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: filterPlayedStatus == null ? Colors.blue : Colors.grey.shade200,
-                    foregroundColor: filterPlayedStatus == null ? Colors.white : Colors.black87,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.horizontal(left: Radius.circular(16)),
-                    ),
-                  ),
-                  child: const Text('All'),
-                ),
-                // Played button
-                ElevatedButton(
-                  onPressed: onApplyPlayedStatusFilter != null ? () => onApplyPlayedStatusFilter!('played') : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: filterPlayedStatus == 'played' ? Colors.blue : Colors.grey.shade200,
-                    foregroundColor: filterPlayedStatus == 'played' ? Colors.white : Colors.black87,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.zero,
-                    ),
-                  ),
-                  child: const Text('Played'),
-                ),
-                // Not Played button
-                ElevatedButton(
-                  onPressed: onApplyPlayedStatusFilter != null ? () => onApplyPlayedStatusFilter!('not_played') : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: filterPlayedStatus == 'not_played' ? Colors.blue : Colors.grey.shade200,
-                    foregroundColor: filterPlayedStatus == 'not_played' ? Colors.white : Colors.black87,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.horizontal(right: Radius.circular(16)),
-                    ),
-                  ),
-                  child: const Text('Not Played'),
-                ),
-              ],
-            ),
-          ),
-          // Filter controls in a separate row
+          // Filter controls section
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Filter menu button
-                IconButton(
-                  icon: Icon(
-                    Icons.filter_list,
-                    color: filterPlayerId != null ? Colors.blue : null,
-                  ),
-                  onPressed: () => onShowFilterMenu(context),
-                  tooltip: 'Filter fixtures',
-                  constraints: const BoxConstraints(
-                    minWidth: 36, // Reduced from 40
-                    minHeight: 36, // Reduced from 40
-                  ),
-                ),
-                // Filter indicator with Expanded
-                Expanded(
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 200),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    margin: const EdgeInsets.only(left: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.blue.withAlpha(100)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            filterPlayerName ?? 'All Fixtures',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: filterPlayerId != null ? Colors.blue : Colors.grey.shade700,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
+                // Played status filter row
+                Row(
+                  children: [
+                    Container(
+                      height: 32,
+                      margin: const EdgeInsets.only(left: 40, bottom: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.blue.withAlpha(100)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildFilterChip(
+                            label: 'All',
+                            isSelected: filterPlayedStatus == null,
+                            onTap: onClearPlayedStatusFilter != null 
+                              ? () => onClearPlayedStatusFilter!.call() 
+                              : null,
+                            isFirst: true,
                           ),
-                        ),
-                        if (filterPlayerId != null) ...[
-                          const SizedBox(width: 4),
-                          InkWell(
-                            onTap: onClearFilter,
-                            borderRadius: BorderRadius.circular(12),
-                            child: const Icon(
-                              Icons.close,
-                              size: 14,
-                              color: Colors.blue,
-                            ),
+                          _buildFilterChip(
+                            label: 'Played',
+                            isSelected: filterPlayedStatus == 'played',
+                            onTap: onApplyPlayedStatusFilter != null 
+                              ? () => onApplyPlayedStatusFilter!('played') 
+                              : null,
+                          ),
+                          _buildFilterChip(
+                            label: 'Not Played',
+                            isSelected: filterPlayedStatus == 'not_played',
+                            onTap: onApplyPlayedStatusFilter != null 
+                              ? () => onApplyPlayedStatusFilter!('not_played') 
+                              : null,
+                            isLast: true,
                           ),
                         ],
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-                // Refresh button
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: onLoadFixtures,
-                  tooltip: 'Refresh fixtures',
-                  constraints: const BoxConstraints(
-                    minWidth: 36, // Reduced from default
-                    minHeight: 36, // Reduced from default
-                  ),
+
+                // Player filter row
+                Row(
+                  children: [
+                    // Filter menu button
+                    IconButton(
+                      icon: Icon(
+                        Icons.filter_list,
+                        color: filterPlayerId != null ? Colors.blue : null,
+                      ),
+                      onPressed: () => onShowFilterMenu(context),
+                      tooltip: 'Filter fixtures',
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                    ),
+                    
+                    // Player filter indicator
+                    Expanded(
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 300),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        margin: const EdgeInsets.only(left: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.blue.withAlpha(100)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                filterPlayerName ?? 'All Fixtures',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: filterPlayerId != null ? Colors.blue : Colors.grey.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                            if (filterPlayerId != null) ...[
+                              const SizedBox(width: 8),
+                              InkWell(
+                                onTap: onClearFilter,
+                                borderRadius: BorderRadius.circular(12),
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 16,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Refresh button
+                    IconButton(
+                      icon: const Icon(Icons.refresh),
+                      onPressed: onLoadFixtures,
+                      tooltip: 'Refresh fixtures',
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -388,4 +391,37 @@ class FixturesTabContent extends StatelessWidget {
       ],
     );
   }
+
+  Widget _buildFilterChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback? onTap,
+    bool isFirst = false,
+    bool isLast = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue : Colors.transparent,
+          borderRadius: BorderRadius.horizontal(
+            left: isFirst ? const Radius.circular(16) : Radius.zero,
+            right: isLast ? const Radius.circular(16) : Radius.zero,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black87,
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
 }
+
+
+
