@@ -128,230 +128,265 @@ class _HiddenLeaguesScreenState extends State<HiddenLeaguesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Hidden Leagues'),
+        title: const Text('Hidden Leagues', 
+          style: TextStyle(
+            color: Colors.white, 
+            fontWeight: FontWeight.bold
+          )
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: _isLoading
-          ? const Center(
-              child: SpinKitCircle(
-                color: AppStyles.primaryColor,
-                size: 50.0,
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: _loadHiddenLeagues,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Error message
-                    if (_errorMessage != null)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: AppStyles.errorColor.withAlpha(25),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: AppStyles.errorColor),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _errorMessage!,
-                                style: const TextStyle(
-                                  color: AppStyles.errorColor,
-                                ),
-                              ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.blue.shade900,
+              Colors.blue.shade700,
+              Colors.blue.shade200,
+              Colors.white,
+            ],
+            stops: const [0.0, 0.1, 0.3, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: _isLoading
+              ? const Center(
+                  child: SpinKitCircle(
+                    color: AppStyles.primaryColor,
+                    size: 50.0,
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadHiddenLeagues,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Error message
+                        if (_errorMessage != null)
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: AppStyles.errorColor.withAlpha(25),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                          ],
-                        ),
-                      ),
-
-                    // No hidden leagues message
-                    if (_hiddenLeagues.isEmpty && _errorMessage == null)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 32),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.visibility_off,
-                                size: 64,
-                                color: Colors.grey.shade400,
-                              ),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'No Hidden Leagues',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Leagues you remove from your dashboard will appear here',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.amber.withAlpha(30),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.amber.withAlpha(100)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.warning_amber_rounded,
-                                      size: 20,
-                                      color: Colors.amber.shade800,
+                            child: Row(
+                              children: [
+                                const Icon(Icons.error_outline, color: AppStyles.errorColor),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: const TextStyle(
+                                      color: AppStyles.errorColor,
                                     ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        'Non-accessed leagues are permanently deleted after 30 days',
-                                        style: TextStyle(
-                                          color: Colors.amber.shade800,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ),
 
-                    // Warning message for non-empty list
-                    if (_hiddenLeagues.isNotEmpty) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.withAlpha(30),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.amber.withAlpha(100)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.warning_amber_rounded,
-                              size: 20,
-                              color: Colors.amber.shade800,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Non-accessed leagues are permanently deleted after 30 days',
-                                style: TextStyle(
-                                  color: Colors.amber.shade800,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Hidden leagues list
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _hiddenLeagues.length,
-                        itemBuilder: (context, index) {
-                          final league = _hiddenLeagues[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Card(
-                              margin: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              elevation: 1,
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // League name
-                                    Text(
-                                      league['name'] ?? 'Unnamed League',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                        // No hidden leagues message
+                        if (_hiddenLeagues.isEmpty && _errorMessage == null)
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 32),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.visibility_off,
+                                    size: 64,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'No Hidden Leagues',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    const SizedBox(height: 8),
-
-                                    // League details
-                                    Row(
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Leagues you remove from your dashboard will appear here',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber.withAlpha(30),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.amber.withAlpha(100)),
+                                    ),
+                                    child: Row(
                                       children: [
-                                        // Player count
                                         Icon(
-                                          Icons.people,
-                                          size: 16,
-                                          color: Colors.grey.shade600,
+                                          Icons.warning_amber_rounded,
+                                          size: 20,
+                                          color: Colors.amber.shade800,
                                         ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '${league['player_count'] ?? 0} players',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-
-                                        // Creator badge
-                                        if (league['is_creator'] == true)
-                                          Padding(
-                                            padding: const EdgeInsets.only(left: 4),
-                                            child: const Icon(
-                                              Icons.star,
-                                              color: Colors.amber,
-                                              size: 18,
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            'Non-accessed leagues are permanently deleted after 30 days',
+                                            style: TextStyle(
+                                              color: Colors.amber.shade800,
+                                              fontWeight: FontWeight.w500,
                                             ),
                                           ),
+                                        ),
                                       ],
                                     ),
-                                    const SizedBox(height: 16),
-
-                                    // Restore button
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: ElevatedButton.icon(
-                                        onPressed: () => _handleRestoreLeague(league['league_id']),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppStyles.primaryColor,
-                                          foregroundColor: Colors.white,
-                                        ),
-                                        icon: const Icon(Icons.visibility, size: 18),
-                                        label: const Text('Add to Dashboard'),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
-                          );
-                        },
-                      ),
-                    ],
-                  ],
+                          ),
+
+                        // Warning message for non-empty list
+                        if (_hiddenLeagues.isNotEmpty) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber.shade600),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.warning_amber_rounded,
+                                  size: 20,
+                                  color: Colors.amber.shade800,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Non-accessed leagues are permanently deleted after 30 days',
+                                    style: TextStyle(
+                                      color: Colors.amber.shade900,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Hidden leagues list
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _hiddenLeagues.length,
+                            itemBuilder: (context, index) {
+                              final league = _hiddenLeagues[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: Card(
+                                  margin: EdgeInsets.zero,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  elevation: 1,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // League name
+                                        Text(
+                                          league['name'] ?? 'Unnamed League',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+
+                                        // League details
+                                        Row(
+                                          children: [
+                                            // Player count
+                                            Icon(
+                                              Icons.people,
+                                              size: 16,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '${league['player_count'] ?? 0} players',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey.shade600,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 16),
+
+                                            // Creator badge
+                                            if (league['is_creator'] == true)
+                                              Padding(
+                                                padding: const EdgeInsets.only(left: 4),
+                                                child: const Icon(
+                                                  Icons.star,
+                                                  color: Colors.amber,
+                                                  size: 18,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 16),
+
+                                        // Restore button
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton.icon(
+                                            onPressed: () => _handleRestoreLeague(league['league_id']),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppStyles.primaryColor,
+                                              foregroundColor: Colors.white,
+                                            ),
+                                            icon: const Icon(Icons.visibility, size: 18),
+                                            label: const Text('Add to Dashboard'),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
+        ),
+      ),
     );
   }
 }
+
+
