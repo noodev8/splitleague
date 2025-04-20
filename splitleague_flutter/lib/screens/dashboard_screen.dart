@@ -311,7 +311,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 // User profile section
                 Container(
-                  margin: const EdgeInsets.only(bottom: 24, top: 8),
+                  margin: const EdgeInsets.only(bottom: 16, top: 8),  // Adjusted margin
                   child: Row(
                     children: [
                       // Profile picture (tappable)
@@ -323,55 +323,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           );
                         },
-                        child: Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.blue, width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(40),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
+                        child: CircleAvatar(
+                          radius: 30,
+                          backgroundColor: Colors.white,
                           child: const Icon(Icons.person, color: Colors.blue, size: 36),
                         ),
                       ),
                       const SizedBox(width: 16),
-                      // User name and leagues header
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              userName,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withAlpha(30),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Text(
-                                'Your leagues',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
+                      // User name
+                      Text(
+                        userName,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                     ],
@@ -460,3 +425,5 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 }
+
+

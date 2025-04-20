@@ -154,10 +154,38 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Create League', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text('Create League', 
+          style: TextStyle(
+            color: Colors.white, 
+            fontWeight: FontWeight.bold
+          )
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: _isLoading
+                ? const SpinKitThreeBounce(
+                    color: Colors.white,
+                    size: 24,
+                  )
+                : TextButton(
+                    onPressed: _handleCreateLeague,
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text(
+                      'Create',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -788,23 +816,24 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                       ),
                     ),
 
-                  if (_leagueCode == null) const SizedBox(height: 16),
-
-                  // Create button
-                  if (_leagueCode == null)
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _handleCreateLeague,
-                      style: AppStyles.primaryButtonStyle,
-                      child: _isLoading
-                          ? const SpinKitThreeBounce(
-                              color: Colors.white,
-                              size: 24,
-                            )
-                          : const Text(
-                              'Create League',
-                              style: TextStyle(fontSize: 16),
-                            ),
-                    ),
+                  // Remove these lines
+                  // if (_leagueCode == null) const SizedBox(height: 16),
+                  
+                  // Remove the Create button section
+                  // if (_leagueCode == null)
+                  //   ElevatedButton(
+                  //     onPressed: _isLoading ? null : _handleCreateLeague,
+                  //     style: AppStyles.primaryButtonStyle,
+                  //     child: _isLoading
+                  //         ? const SpinKitThreeBounce(
+                  //             color: Colors.white,
+                  //             size: 24,
+                  //           )
+                  //         : const Text(
+                  //             'Create League',
+                  //             style: TextStyle(fontSize: 16),
+                  //           ),
+                  //   ),
                 ],
               ),
             ),
@@ -814,3 +843,5 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     );
   }
 }
+
+
