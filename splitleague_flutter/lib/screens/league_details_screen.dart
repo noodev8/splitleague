@@ -90,8 +90,18 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('${widget.league['name']} - Details'),
+        title: Text(
+          widget.league['name'],
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Consumer<LeagueProvider>(
         builder: (context, leagueProvider, _) {
@@ -101,9 +111,12 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.blue.shade100,
+                  Colors.blue.shade900,
+                  Colors.blue.shade700,
+                  Colors.blue.shade200,
                   Colors.white,
                 ],
+                stops: const [0.0, 0.1, 0.3, 1.0],
               ),
             ),
             child: SafeArea(
@@ -112,15 +125,6 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // League name header
-                    Text(
-                      'League Details',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    
                     // Details content
                     leagueProvider.isLoadingLeagueInfo
                       ? const SkeletonLeagueDetails()
@@ -141,3 +145,4 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
     );
   }
 }
+
