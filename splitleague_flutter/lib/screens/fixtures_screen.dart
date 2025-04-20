@@ -80,18 +80,23 @@ class _FixturesScreenState extends State<FixturesScreen> {
     }
   }
 
-  // Show filter menu
+  // Show filter menu for players only
   void _showFilterMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
+      isScrollControlled: true,
       builder: (BuildContext context) {
-        return SafeArea(
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Header
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
@@ -99,7 +104,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                     const Icon(Icons.filter_list),
                     const SizedBox(width: 8),
                     const Text(
-                      'Filter Fixtures',
+                      'Filter by Player',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -114,33 +119,51 @@ class _FixturesScreenState extends State<FixturesScreen> {
                 ),
               ),
               const Divider(),
-              ListTile(
-                leading: const Icon(Icons.people),
-                title: const Text('All Fixtures'),
-                onTap: () {
-                  _leagueProvider.clearFilter();
-                  Navigator.of(context).pop();
-                },
-              ),
-              const Divider(),
-              Expanded(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _leagueProvider.leagueMembers.length,
-                  itemBuilder: (context, index) {
-                    final member = _leagueProvider.leagueMembers[index];
-                    final memberId = member['id'].toString();
-                    final memberName = member['nickname'] ?? member['name'] ?? 'Unknown Player';
 
-                    return ListTile(
-                      leading: const Icon(Icons.person),
-                      title: Text(memberName),
+              // Scrollable content
+              Expanded(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    // All players option
+                    ListTile(
+                      leading: const Icon(Icons.people),
+                      title: const Text('All Players'),
                       onTap: () {
-                        _leagueProvider.applyFilter(memberId, memberName);
+                        _leagueProvider.clearFilter();
                         Navigator.of(context).pop();
                       },
-                    );
-                  },
+                    ),
+                    const Divider(),
+
+                    // Player list section
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: Text(
+                        'Select Player',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+
+                    // Player list
+                    ...List.generate(
+                      _leagueProvider.leagueMembers.length,
+                      (index) {
+                        final member = _leagueProvider.leagueMembers[index];
+                        final memberId = member['id'].toString();
+                        final memberName = member['nickname'] ?? member['name'] ?? 'Unknown Player';
+
+                        return ListTile(
+                          leading: const Icon(Icons.person),
+                          title: Text(memberName),
+                          onTap: () {
+                            _leagueProvider.applyFilter(memberId, memberName);
+                            Navigator.of(context).pop();
+                          },
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -248,6 +271,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       leagueMembers: leagueProvider.leagueMembers,
                       filterPlayerId: leagueProvider.filterPlayerId,
                       filterPlayerName: leagueProvider.filterPlayerName,
+                      filterPlayedStatus: leagueProvider.filterPlayedStatus,
                       generateErrorMessage: leagueProvider.generateErrorMessage,
                       fixturesErrorMessage: leagueProvider.fixturesErrorMessage,
                       membersErrorMessage: leagueProvider.membersErrorMessage,
@@ -260,6 +284,8 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       onRemovePlayerFromLeague: (playerId, playerName) =>
                           leagueProvider.removePlayerFromLeague(context, playerId, playerName),
                       onClearFilter: leagueProvider.clearFilter,
+                      onApplyPlayedStatusFilter: leagueProvider.applyPlayedStatusFilter,
+                      onClearPlayedStatusFilter: leagueProvider.clearPlayedStatusFilter,
                     ),
                   ],
                 ),

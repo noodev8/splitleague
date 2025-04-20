@@ -107,7 +107,7 @@ class DetailsTabContent extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
-                          'Complete',
+                          'Started',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,

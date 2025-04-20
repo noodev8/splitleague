@@ -15,6 +15,7 @@ class FixturesTabContent extends StatelessWidget {
   final List<Map<String, dynamic>> leagueMembers;
   final String? filterPlayerId;
   final String? filterPlayerName;
+  final String? filterPlayedStatus;
   final String? generateErrorMessage;
   final String? fixturesErrorMessage;
   final String? membersErrorMessage;
@@ -27,6 +28,8 @@ class FixturesTabContent extends StatelessWidget {
   final Function(Map<String, dynamic>) onNavigateToUpdateScore;
   final Function(int, String) onRemovePlayerFromLeague;
   final Function() onClearFilter;
+  final Function(String)? onApplyPlayedStatusFilter;
+  final Function()? onClearPlayedStatusFilter;
 
   const FixturesTabContent({
     super.key,
@@ -39,6 +42,7 @@ class FixturesTabContent extends StatelessWidget {
     required this.leagueMembers,
     required this.filterPlayerId,
     required this.filterPlayerName,
+    this.filterPlayedStatus,
     required this.generateErrorMessage,
     required this.fixturesErrorMessage,
     required this.membersErrorMessage,
@@ -50,6 +54,8 @@ class FixturesTabContent extends StatelessWidget {
     required this.onNavigateToUpdateScore,
     required this.onRemovePlayerFromLeague,
     required this.onClearFilter,
+    this.onApplyPlayedStatusFilter,
+    this.onClearPlayedStatusFilter,
   });
 
   @override
@@ -116,6 +122,54 @@ class FixturesTabContent extends StatelessWidget {
 
         // Fixtures section (only shown when fixtures exist)
         if (fixtures.isNotEmpty) ...[
+          // Played/Not Played filter buttons
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // All button
+                ElevatedButton(
+                  onPressed: onClearPlayedStatusFilter,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: filterPlayedStatus == null ? Colors.blue : Colors.grey.shade200,
+                    foregroundColor: filterPlayedStatus == null ? Colors.white : Colors.black87,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.horizontal(left: Radius.circular(16)),
+                    ),
+                  ),
+                  child: const Text('All'),
+                ),
+                // Played button
+                ElevatedButton(
+                  onPressed: onApplyPlayedStatusFilter != null ? () => onApplyPlayedStatusFilter!('played') : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: filterPlayedStatus == 'played' ? Colors.blue : Colors.grey.shade200,
+                    foregroundColor: filterPlayedStatus == 'played' ? Colors.white : Colors.black87,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.zero,
+                    ),
+                  ),
+                  child: const Text('Played'),
+                ),
+                // Not Played button
+                ElevatedButton(
+                  onPressed: onApplyPlayedStatusFilter != null ? () => onApplyPlayedStatusFilter!('not_played') : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: filterPlayedStatus == 'not_played' ? Colors.blue : Colors.grey.shade200,
+                    foregroundColor: filterPlayedStatus == 'not_played' ? Colors.white : Colors.black87,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.horizontal(right: Radius.circular(16)),
+                    ),
+                  ),
+                  child: const Text('Not Played'),
+                ),
+              ],
+            ),
+          ),
           // Filter controls in a separate row
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
@@ -275,25 +329,28 @@ class FixturesTabContent extends StatelessWidget {
                 EmptyStateDisplay(
                   message: 'No Fixtures Yet',
                   icon: Icons.sports_soccer,
-                  actionText: 'Refresh',
-                  onAction: onLoadFixtures,
+                  showPullToRefresh: false,
                 ),
               ],
             ],
           )
-        else if (filterPlayerId != null && filteredFixtures.isEmpty)
+        else if ((filterPlayerId != null || filterPlayedStatus != null) && filteredFixtures.isEmpty)
           EmptyStateDisplay(
-            message: 'No fixtures found for ${filterPlayerName ?? "selected player"}',
+            message: filterPlayerId != null
+              ? 'No fixtures found for ${filterPlayerName ?? "selected player"}'
+              : filterPlayedStatus == 'played'
+                ? 'No played fixtures found'
+                : 'No unplayed fixtures found',
             icon: Icons.filter_alt_off,
-            actionText: 'Clear Filter',
-            onAction: onClearFilter,
+            actionText: filterPlayerId != null ? 'Clear Player Filter' : 'Clear Status Filter',
+            onAction: filterPlayerId != null ? onClearFilter : onClearPlayedStatusFilter,
           )
         else
           Column(
             children: List.generate(
-              (filterPlayerId != null ? filteredFixtures : fixtures).length,
+              (filterPlayerId != null || filterPlayedStatus != null) ? filteredFixtures.length : fixtures.length,
               (index) {
-                final fixture = (filterPlayerId != null ? filteredFixtures : fixtures)[index];
+                final fixture = (filterPlayerId != null || filterPlayedStatus != null) ? filteredFixtures[index] : fixtures[index];
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
                   child: FadeSlideAnimation(

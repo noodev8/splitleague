@@ -73,11 +73,15 @@ class LeagueProvider extends ChangeNotifier {
   int? _fixturesCount;
   int? get fixturesCount => _fixturesCount;
 
-  // Filter
+  // Filters
   String? _filterPlayerId;
   String? get filterPlayerId => _filterPlayerId;
-  String? _filterPlayerName;
+  String? _filterPlayerName = 'All Fixtures';
   String? get filterPlayerName => _filterPlayerName;
+
+  // Played status filter
+  String? _filterPlayedStatus;
+  String? get filterPlayedStatus => _filterPlayedStatus; // Can be 'played', 'not_played', or null (all)
 
   // Is creator flag
   bool _isCreator = false;
@@ -154,9 +158,15 @@ class LeagueProvider extends ChangeNotifier {
         _isLoadingFixtures = false;
         _fixturesErrorMessage = null;
 
-        // Apply filter if set
+        // Apply filters if set
         if (_filterPlayerId != null) {
           _applyFilter(_filterPlayerId!, _filterPlayerName);
+        } else if (_filterPlayedStatus != null) {
+          // Apply only played status filter
+          _filteredFixtures = _fixtures.where((fixture) {
+            bool playedMatch = _filterPlayedStatus == 'played';
+            return fixture['played'] == playedMatch;
+          }).toList();
         }
       } else if (response['return_code'] == 'NO_FIXTURES') {
         // Handle the no fixtures case gracefully - this is not an error
@@ -322,15 +332,67 @@ class LeagueProvider extends ChangeNotifier {
     _filterPlayerId = playerId;
     _filterPlayerName = playerName ?? 'Selected Player';
     _filteredFixtures = _fixtures.where((fixture) {
-      return fixture['player_1_id'].toString() == playerId ||
+      bool playerMatch = fixture['player_1_id'].toString() == playerId ||
           fixture['player_2_id'].toString() == playerId;
+
+      // Also apply played status filter if set
+      if (_filterPlayedStatus != null) {
+        bool playedMatch = _filterPlayedStatus == 'played';
+        return playerMatch && (fixture['played'] == playedMatch);
+      }
+
+      return playerMatch;
     }).toList();
   }
 
-  // Clear filter
+  // Apply played status filter
+  void applyPlayedStatusFilter(String status) {
+    _filterPlayedStatus = status;
+
+    // Re-apply player filter if it exists
+    if (_filterPlayerId != null) {
+      _applyFilter(_filterPlayerId!, _filterPlayerName);
+    } else {
+      // Apply only played status filter
+      _filteredFixtures = _fixtures.where((fixture) {
+        bool playedMatch = status == 'played';
+        return fixture['played'] == playedMatch;
+      }).toList();
+    }
+
+    notifyListeners();
+  }
+
+  // Clear played status filter
+  void clearPlayedStatusFilter() {
+    _filterPlayedStatus = null;
+
+    // Re-apply player filter if it exists
+    if (_filterPlayerId != null) {
+      _applyFilter(_filterPlayerId!, _filterPlayerName);
+    } else {
+      // When no player filter, show all fixtures
+      _filteredFixtures = [];
+    }
+
+    notifyListeners();
+  }
+
+  // Clear player filter
   void clearFilter() {
     _filterPlayerId = null;
     _filterPlayerName = 'All Fixtures';
+
+    // Keep played status filter if it exists
+    if (_filterPlayedStatus != null) {
+      _filteredFixtures = _fixtures.where((fixture) {
+        bool playedMatch = _filterPlayedStatus == 'played';
+        return fixture['played'] == playedMatch;
+      }).toList();
+    } else {
+      _filteredFixtures = [];
+    }
+
     notifyListeners();
   }
 
@@ -438,6 +500,7 @@ class LeagueProvider extends ChangeNotifier {
     _leagueMembers = [];
     _filterPlayerId = null;
     _filterPlayerName = null;
+    _filterPlayedStatus = null;
     _currentLeagueId = null;
     _isCreator = false;
     _isLoadingLeagueInfo = true;

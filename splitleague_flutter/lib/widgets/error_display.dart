@@ -104,6 +104,7 @@ class EmptyStateDisplay extends StatelessWidget {
   final IconData icon;
   final String? actionText;
   final VoidCallback? onAction;
+  final bool showPullToRefresh;
 
   const EmptyStateDisplay({
     super.key,
@@ -111,6 +112,7 @@ class EmptyStateDisplay extends StatelessWidget {
     required this.icon,
     this.actionText,
     this.onAction,
+    this.showPullToRefresh = true,
   });
 
   @override
@@ -140,14 +142,16 @@ class EmptyStateDisplay extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Pull down to refresh',
-              style: TextStyle(
-                color: Colors.grey.shade600,
+            if (showPullToRefresh) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Pull down to refresh',
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
+            ],
             if (actionText != null && onAction != null) ...[
               const SizedBox(height: 24),
               ElevatedButton.icon(
