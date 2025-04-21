@@ -27,6 +27,7 @@ Return Codes:
 "SUCCESS"
 "MISSING_FIELDS"
 "INVALID_CREDENTIALS"
+"EMAIL_NOT_VERIFIED"
 "SERVER_ERROR"
 =======================================================================================================================================
 */
@@ -42,7 +43,7 @@ router.post('/', async (req, res) => {
   try {
     // Extract email and password from request body
     const { email, password } = req.body;
-    
+
     // Check if email and password are provided
     if (!email || !password) {
       return res.status(400).json({
@@ -50,13 +51,13 @@ router.post('/', async (req, res) => {
         message: 'Email and password are required'
       });
     }
-    
+
     // Query the database to find the user by email
     const userResult = await pool.query(
-      'SELECT id, name, nickname, email, password_hash FROM app_user WHERE email = $1',
+      'SELECT id, name, nickname, email, password_hash, email_verified FROM app_user WHERE email = $1',
       [email]
     );
-    
+
     // Check if user exists
     if (userResult.rows.length === 0) {
       return res.status(401).json({
@@ -64,13 +65,13 @@ router.post('/', async (req, res) => {
         message: 'Invalid email or password'
       });
     }
-    
+
     // Get the user from the result
     const user = userResult.rows[0];
-    
+
     // Compare the provided password with the stored hash
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-    
+
     // Check if password is valid
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -78,14 +79,22 @@ router.post('/', async (req, res) => {
         message: 'Invalid email or password'
       });
     }
-    
+
+    // Check if email is verified
+    if (!user.email_verified) {
+      return res.status(403).json({
+        return_code: 'EMAIL_NOT_VERIFIED',
+        message: 'Please verify your email before logging in'
+      });
+    }
+
     // Generate JWT token
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET,
       { expiresIn: '7d' } // Token expires in 7 days
     );
-    
+
     // Return success response with token and user data
     return res.status(200).json({
       return_code: 'SUCCESS',
@@ -99,7 +108,7 @@ router.post('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error in login_user route:', error);
-    
+
     // Return server error response
     return res.status(500).json({
       return_code: 'SERVER_ERROR',

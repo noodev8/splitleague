@@ -11,8 +11,8 @@ class RegisterUserApi {
   // Register user with name, email, and password
   static Future<Map<String, dynamic>> registerUser(String name, String nickname, String email, String password) async {
     // Create the request URL
-    final url = Uri.parse('${Config.baseUrl}/register');
-    
+    final url = Uri.parse('${Config.baseUrl}/register_user');
+
     try {
       // Send POST request to the server
       final response = await http.post(
@@ -27,10 +27,10 @@ class RegisterUserApi {
           'password': password,
         }),
       );
-      
+
       // Parse the response
       final Map<String, dynamic> responseData = jsonDecode(response.body);
-      
+
       // Return the response data
       return responseData;
     } catch (e) {

@@ -18,7 +18,7 @@ app.use(cors());
 app.use(express.json());
 
 // Import routes
-const register = require('./routes/register_user');
+const register_user = require('./routes/register_user');
 const login_user = require('./routes/login_user');
 const create_league = require('./routes/create_league');
 const join_league = require('./routes/join_league');
@@ -35,8 +35,15 @@ const deactivate_league_membership = require('./routes/deactivate_league_members
 const get_hidden_leagues = require('./routes/get_hidden_leagues');
 const reactivate_league_membership = require('./routes/reactivate_league_membership');
 
+// Import email and password management routes
+const verify_email = require('./routes/verify_email');
+const resend_verification = require('./routes/resend_verification');
+const forgot_password = require('./routes/forgot_password');
+const reset_password = require('./routes/reset_password');
+const change_password = require('./routes/change_password');
+
 // Use routes
-app.use('/register', register);
+app.use('/register_user', register_user);
 app.use('/login_user', login_user);
 app.use('/create_league', create_league);
 app.use('/join_league', join_league);
@@ -52,6 +59,13 @@ app.use('/update_last_accessed', update_last_accessed);
 app.use('/deactivate_league_membership', deactivate_league_membership);
 app.use('/get_hidden_leagues', get_hidden_leagues);
 app.use('/reactivate_league_membership', reactivate_league_membership);
+
+// Use email and password management routes
+app.use('/verify_email', verify_email);
+app.use('/resend_verification', resend_verification);
+app.use('/forgot_password', forgot_password);
+app.use('/reset_password', reset_password);
+app.use('/change_password', change_password);
 
 // Root route
 app.get('/', (req, res) => {

@@ -9,11 +9,15 @@ Body:
   "email": "test1@test.com",
   "password": "1234"
 }
+
+Notes:
+- Login will fail with EMAIL_NOT_VERIFIED if the user's email is not verified
+- Use the verify_email API to verify the email before logging in
 ======================================
 
 
 == Register User ==============================
-URL: http://localhost:3000/register
+URL: http://localhost:3000/register_user
 Method: POST
 Headers: Content-Type: application/json
 Body:
@@ -270,6 +274,75 @@ Only the league creator can remove players
 Organizers cannot remove themselves from the league
 ======================================
 
+== Verify Email ==============================
+URL: http://localhost:3000/verify_email
+Method: POST
+Headers: Content-Type: application/json
+Body:
+{
+  "token": "verification_token_string"
+}
+
+Verifies a user's email address using the token sent to their email
+Response includes SUCCESS if verified successfully
+======================================
+
+== Resend Verification Email ==============================
+URL: http://localhost:3000/resend_verification
+Method: POST
+Headers: Content-Type: application/json
+Body:
+{
+  "email": "user@example.com"
+}
+
+Resends the verification email with a new token
+Response includes SUCCESS if email sent successfully
+======================================
+
+== Forgot Password ==============================
+URL: http://localhost:3000/forgot_password
+Method: POST
+Headers: Content-Type: application/json
+Body:
+{
+  "email": "user@example.com"
+}
+
+Sends a password reset email with a reset token
+Response includes SUCCESS if email sent successfully
+======================================
+
+== Reset Password ==============================
+URL: http://localhost:3000/reset_password
+Method: POST
+Headers: Content-Type: application/json
+Body:
+{
+  "token": "verification_token_string",
+  "new_password": "new_password"
+}
+
+Resets a user's password using the verification token sent to their email
+Response includes SUCCESS if password reset successfully
+======================================
+
+== Change Password ==============================
+URL: http://localhost:3000/change_password
+Method: POST
+Headers:
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+Body:
+{
+  "current_password": "current_password",
+  "new_password": "new_password"
+}
+
+Changes a user's password (requires authentication)
+Response includes SUCCESS if password changed successfully
+======================================
+
 == Common Response Codes ==============================
 SUCCESS - Operation completed successfully
 MISSING_FIELDS - Required fields are missing
@@ -283,4 +356,9 @@ PLAYER_NOT_FOUND - The specified player was not found
 INVALID_OPERATION - The requested operation is not allowed
 SERVER_ERROR - Server encountered an error
 UNAUTHORIZED - Authentication token is missing or invalid
+INVALID_TOKEN - The provided token is invalid
+TOKEN_EXPIRED - The provided token has expired
+EMAIL_NOT_FOUND - No user found with the provided email
+INVALID_PASSWORD - The provided password is incorrect
+ALREADY_VERIFIED - Email is already verified
 ======================================
