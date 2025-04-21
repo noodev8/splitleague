@@ -378,11 +378,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.sports_soccer,
-                                size: 48,
-                                color: Colors.grey.shade400,
-                              ),
                               const SizedBox(height: 16),
                               const Text(
                                 'You are not a member of any leagues yet.',
