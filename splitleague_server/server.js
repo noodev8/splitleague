@@ -74,10 +74,11 @@ app.get('/', (req, res) => {
     res.json({ message: 'Welcome to SplitLeague API' });
 });
 
-// Start server
-app.listen(3000, '0.0.0.0', () => console.log("Server running"));
+//const PORT = process.env.PORT || 3003;
+//app.listen(PORT, '0.0.0.0', () => console.log(`✅ Server running on port ${PORT}`);
 
-// const PORT = process.env.PORT || 3000;
-// app.listen(PORT, () => {
-//     console.log(`✅ Server running on port ${PORT}`);
-// });
+// Start server
+const PORT = process.env.PORT || 3003;
+app.listen(PORT, '0.0.0.0', () => {
+     console.log(`✅ Server running on port ${PORT}`);
+ });
