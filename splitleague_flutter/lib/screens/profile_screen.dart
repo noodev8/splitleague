@@ -10,6 +10,7 @@ import 'login_user_screen.dart';
 import 'hidden_leagues_screen.dart';
 import 'accessibility_settings_screen.dart';
 import 'edit_profile_screen.dart';
+import 'change_password_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -294,6 +295,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                   ),
                                 ),
+                                // Change Password button
+                                ListTile(
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.withAlpha(30),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.lock_outline,
+                                      color: Colors.blue,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  title: const Text(
+                                    'Change Password',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  subtitle: const Text(
+                                    'Update your account password',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => const ChangePasswordScreen(),
+                                      ),
+                                    );
+                                  },
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 8),
+
                                 // Hidden Leagues button
                                 ListTile(
                                   leading: Container(

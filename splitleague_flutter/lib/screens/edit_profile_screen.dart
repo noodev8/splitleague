@@ -147,6 +147,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   // Name field
                   TextFormField(
                     controller: _nameController,
+                    textCapitalization: TextCapitalization.words,
                     decoration: AppStyles.inputDecoration(
                       'Full Name',
                       prefixIcon: const Icon(Icons.person),
@@ -164,6 +165,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   // Nickname field
                   TextFormField(
                     controller: _nicknameController,
+                    textCapitalization: TextCapitalization.words,
                     decoration: AppStyles.inputDecoration(
                       'Nickname',
                       prefixIcon: const Icon(Icons.person_outline),
@@ -231,3 +233,4 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 }
+
