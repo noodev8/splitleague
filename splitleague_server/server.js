@@ -41,6 +41,7 @@ const resend_verification = require('./routes/resend_verification');
 const forgot_password = require('./routes/forgot_password');
 const reset_password = require('./routes/reset_password');
 const change_password = require('./routes/change_password');
+const update_profile = require('./routes/update_profile');
 
 // Use routes
 app.use('/register_user', register_user);
@@ -66,6 +67,7 @@ app.use('/resend_verification', resend_verification);
 app.use('/forgot_password', forgot_password);
 app.use('/reset_password', reset_password);
 app.use('/change_password', change_password);
+app.use('/update_profile', update_profile);
 
 // Root route
 app.get('/', (req, res) => {

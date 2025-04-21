@@ -161,11 +161,19 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('SplitLeague'),
+        title: const Text('SplitLeague', 
+          style: TextStyle(
+            color: Colors.black, 
+            fontWeight: FontWeight.bold
+          )
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      body: GestureDetector(  // Add this wrapper
-        onTap: () => FocusScope.of(context).unfocus(),  // Dismiss keyboard on tap
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
         child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -329,6 +337,7 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
     );
   }
 }
+
 
 
 

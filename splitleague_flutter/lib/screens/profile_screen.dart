@@ -9,6 +9,7 @@ import '../helpers/error_helper.dart';
 import 'login_user_screen.dart';
 import 'hidden_leagues_screen.dart';
 import 'accessibility_settings_screen.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -44,6 +45,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isLoading = false;
       });
       ErrorHelper.showErrorToast('Failed to load user data');
+    }
+  }
+
+  // Navigate to edit profile screen
+  Future<void> _navigateToEditProfile() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => EditProfileScreen(userData: _userData!),
+      ),
+    );
+
+    // Reload user data if profile was updated
+    if (result == true) {
+      await _loadUserData();
     }
   }
 
@@ -138,35 +153,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Column(
                               children: [
                                 // Avatar
-                                CircleAvatar(
-                                  radius: 50,
-                                  backgroundColor: Colors.blue.withAlpha(40),
-                                  child: Text(
-                                    _getInitials(_userData!['name']),
-                                    style: TextStyle(
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue,
+                                Stack(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 50,
+                                      backgroundColor: Colors.blue.withAlpha(40),
+                                      child: Text(
+                                        _getInitials(_userData!['name']),
+                                        style: TextStyle(
+                                          fontSize: 36,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue,
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                    Positioned(
+                                      right: 0,
+                                      bottom: 0,
+                                      child: GestureDetector(
+                                        onTap: _navigateToEditProfile,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: Colors.white,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: const Icon(
+                                            Icons.edit,
+                                            color: Colors.white,
+                                            size: 16,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: 16),
 
-                                // Name
-                                Text(
-                                  _userData!['name'],
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                // Name and Edit button
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        children: [
+                                          // Name
+                                          Text(
+                                            _userData!['name'],
+                                            style: const TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          // Nickname
+                                          Text(
+                                            '@${_userData!['nickname']}',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.grey[600],
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
 
-                                // Nickname
-                                Text(
-                                  '@${_userData!['nickname']}',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey[600],
+                                // Edit Profile Button
+                                TextButton.icon(
+                                  onPressed: _navigateToEditProfile,
+                                  icon: const Icon(Icons.edit),
+                                  label: const Text('Edit Profile'),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: Colors.blue,
                                   ),
                                 ),
                               ],

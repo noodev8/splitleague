@@ -1,0 +1,233 @@
+/*
+Screen for editing user profile information
+Allows users to update their name and nickname
+*/
+
+import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import '../api/update_profile_api.dart';
+import '../helpers/auth_helper.dart';
+import '../helpers/error_helper.dart';
+import '../styles/app_styles.dart';
+
+class EditProfileScreen extends StatefulWidget {
+  final Map<String, dynamic> userData;
+
+  const EditProfileScreen({super.key, required this.userData});
+
+  @override
+  State<EditProfileScreen> createState() => _EditProfileScreenState();
+}
+
+class _EditProfileScreenState extends State<EditProfileScreen> {
+  // Form key for validation
+  final _formKey = GlobalKey<FormState>();
+
+  // Text controllers
+  late final TextEditingController _nameController;
+  late final TextEditingController _nicknameController;
+
+  // Loading state
+  bool _isLoading = false;
+
+  // Error message
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize controllers with current user data
+    _nameController = TextEditingController(text: widget.userData['name']);
+    _nicknameController = TextEditingController(text: widget.userData['nickname']);
+  }
+
+  @override
+  void dispose() {
+    // Clean up controllers
+    _nameController.dispose();
+    _nicknameController.dispose();
+    super.dispose();
+  }
+
+  // Handle save button press
+  Future<void> _handleSave() async {
+    // Validate form
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Set loading state
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Get form values
+      String name = _nameController.text.trim();
+      String nickname = _nicknameController.text.trim();
+
+      // Call update profile API
+      Map<String, dynamic> response = await UpdateProfileApi.updateProfile(
+        name,
+        nickname,
+      );
+
+      // Check response
+      if (response['return_code'] == 'SUCCESS') {
+        // Save updated user data
+        await AuthHelper.saveUserData(response['user']);
+
+        // Show success message
+        ErrorHelper.showSuccessToast('Profile updated successfully!');
+
+        // Go back to profile screen
+        if (mounted) {
+          Navigator.of(context).pop(true); // Return true to indicate successful update
+        }
+      } else {
+        // Show error message
+        setState(() {
+          _errorMessage = ErrorHelper.getErrorMessage(response);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      // Show error message
+      setState(() {
+        _errorMessage = 'An error occurred. Please try again.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Edit Profile'),
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.blue.shade100,
+              Colors.white,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Profile picture placeholder
+                  Center(
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.blue.withAlpha(40),
+                      child: Text(
+                        _getInitials(_nameController.text),
+                        style: const TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Name field
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: AppStyles.inputDecoration(
+                      'Full Name',
+                      prefixIcon: const Icon(Icons.person),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your name';
+                      }
+                      return null;
+                    },
+                    onChanged: (_) => setState(() {}), // Update initials when name changes
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Nickname field
+                  TextFormField(
+                    controller: _nicknameController,
+                    decoration: AppStyles.inputDecoration(
+                      'Nickname',
+                      prefixIcon: const Icon(Icons.person_outline),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a nickname';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Error message
+                  if (_errorMessage != null)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppStyles.errorColor.withAlpha(25),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(
+                          color: AppStyles.errorColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  if (_errorMessage != null) const SizedBox(height: 24),
+
+                  // Save button
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _handleSave,
+                    style: AppStyles.primaryButtonStyle,
+                    child: _isLoading
+                        ? const SpinKitThreeBounce(
+                            color: Colors.white,
+                            size: 24,
+                          )
+                        : const Text(
+                            'Save Changes',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Get initials from name
+  String _getInitials(String name) {
+    if (name.isEmpty) return '';
+    
+    List<String> nameParts = name.split(' ');
+    if (nameParts.length > 1) {
+      return nameParts[0][0].toUpperCase() + nameParts[1][0].toUpperCase();
+    } else {
+      return name[0].toUpperCase();
+    }
+  }
+}
