@@ -7,10 +7,10 @@ Once registered, it automatically logs them in and goes to the dashboard
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/register_user_api.dart';
-import '../helpers/auth_helper.dart';
+// import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
-import 'dashboard_screen.dart' as dashboard;
+// import 'dashboard_screen.dart' as dashboard;
 
 class RegisterUserScreen extends StatefulWidget {
   const RegisterUserScreen({super.key});
@@ -77,17 +77,27 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
 
       // Check response
       if (response['return_code'] == 'SUCCESS') {
-        // Save token and user data
-        await AuthHelper.saveToken(response['token']);
-        await AuthHelper.saveUserData(response['user']);
-
-        // Show success message
-        ErrorHelper.showSuccessToast('Registration successful!');
-
-        // Navigate to dashboard
+        // Show success dialog
         if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const dashboard.DashboardScreen()),
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Registration Successful'),
+                content: const Text('Please check your email to verify your account before logging in.'),
+                actions: [
+                  TextButton(
+                    child: const Text('OK'),
+                    onPressed: () {
+                      // Pop the dialog and the register screen
+                      Navigator.of(context).pop(); // Pop dialog
+                      Navigator.of(context).pop(); // Pop register screen
+                    },
+                  ),
+                ],
+              );
+            },
           );
         }
       } else {
@@ -315,3 +325,4 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
     );
   }
 }
+
