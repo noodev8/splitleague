@@ -37,6 +37,7 @@ const reactivate_league_membership = require('./routes/reactivate_league_members
 
 // Import email and password management routes
 const verify_email = require('./routes/verify_email');
+const verify_web_email = require('./routes/verify_web_email');
 const resend_verification = require('./routes/resend_verification');
 const forgot_password = require('./routes/forgot_password');
 const reset_password = require('./routes/reset_password');
@@ -63,6 +64,7 @@ app.use('/reactivate_league_membership', reactivate_league_membership);
 
 // Use email and password management routes
 app.use('/verify_email', verify_email);
+app.use('/verify_web_email', verify_web_email);
 app.use('/resend_verification', resend_verification);
 app.use('/forgot_password', forgot_password);
 app.use('/reset_password', reset_password);

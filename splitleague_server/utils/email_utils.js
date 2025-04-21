@@ -19,7 +19,10 @@ async function sendVerificationEmail(email, name, verificationToken) {
     console.log('Attempting to send verification email to:', email);
     console.log('Using API key:', process.env.RESEND_API_KEY ? 'Present' : 'Missing');
 
-    const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+    // Use the web verification route instead of the mobile deep link
+    const verificationLink = `http://77.68.13.150:3003/verify_web_email?token=${verificationToken}`;
+    // For debugging
+    console.log('Using web verification link:', verificationLink);
     console.log('Verification link:', verificationLink);
 
     const data = await resend.emails.send({
