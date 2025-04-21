@@ -61,8 +61,10 @@ async function sendPasswordResetEmail(email, name, resetToken) {
     console.log('Attempting to send password reset email to:', email);
     console.log('Using API key:', process.env.RESEND_API_KEY ? 'Present' : 'Missing');
 
-    // Create the reset link
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    // Use the web reset password route instead of the mobile deep link
+    const resetLink = `http://77.68.13.150:3003/reset_password_web?token=${resetToken}`;
+    // For debugging
+    console.log('Using web reset password link:', resetLink);
     console.log('Reset link:', resetLink);
 
     // Send the email

@@ -7,6 +7,7 @@ Once logged in, it goes straight to the dashboard
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/login_user_api.dart';
+import '../api/forgot_password_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../helpers/config.dart';
@@ -163,9 +164,9 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('SplitLeague', 
+        title: const Text('SplitLeague',
           style: TextStyle(
-            color: Colors.black, 
+            color: Colors.black,
             fontWeight: FontWeight.bold
           )
         ),
@@ -259,7 +260,24 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 24),
+                        // Forgot Password link
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              _showForgotPasswordDialog();
+                            },
+                            child: const Text(
+                              'Forgot Password?',
+                              style: TextStyle(
+                                color: AppStyles.primaryColor,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
 
                         // Error message
                         if (_errorMessage != null)
@@ -336,9 +354,112 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
       ),
     );
   }
+
+  // Show forgot password dialog
+  void _showForgotPasswordDialog() {
+    final TextEditingController emailController = TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return _ForgotPasswordDialog(emailController: emailController);
+      },
+    );
+  }
 }
 
+class _ForgotPasswordDialog extends StatefulWidget {
+  final TextEditingController emailController;
 
+  const _ForgotPasswordDialog({required this.emailController});
 
+  @override
+  _ForgotPasswordDialogState createState() => _ForgotPasswordDialogState();
+}
 
+class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
+  bool _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Forgot Password'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('Enter your email address and we\'ll send you a link to reset your password.'),
+          const SizedBox(height: 16),
+          TextField(
+            controller: widget.emailController,
+            decoration: AppStyles.inputDecoration('Email'),
+            keyboardType: TextInputType.emailAddress,
+            enabled: !_isLoading,
+          ),
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.only(top: 16),
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading
+              ? null
+              : () {
+                  Navigator.of(context).pop();
+                },
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: _isLoading ? null : _handleForgotPassword,
+          child: const Text('Send Reset Link'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleForgotPassword() async {
+    final email = widget.emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      ErrorHelper.showErrorToast('Please enter a valid email address');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await ForgotPasswordApi.forgotPassword(email);
+
+      if (!mounted) return;
+
+      if (response['return_code'] == 'SUCCESS') {
+        Navigator.of(context).pop();
+        ErrorHelper.showSuccessToast('Password reset email sent! Please check your inbox.');
+      } else if (response['return_code'] == 'EMAIL_NOT_FOUND') {
+        setState(() {
+          _isLoading = false;
+        });
+        ErrorHelper.showErrorToast('No account found with this email address');
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+        ErrorHelper.showErrorToast(ErrorHelper.getErrorMessage(response));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      ErrorHelper.showErrorToast('Failed to send password reset email. Please try again.');
+    }
+  }
+}
 

@@ -41,6 +41,7 @@ const verify_web_email = require('./routes/verify_web_email');
 const resend_verification = require('./routes/resend_verification');
 const forgot_password = require('./routes/forgot_password');
 const reset_password = require('./routes/reset_password');
+const reset_password_web = require('./routes/reset_password_web');
 const change_password = require('./routes/change_password');
 const update_profile = require('./routes/update_profile');
 
@@ -68,6 +69,7 @@ app.use('/verify_web_email', verify_web_email);
 app.use('/resend_verification', resend_verification);
 app.use('/forgot_password', forgot_password);
 app.use('/reset_password', reset_password);
+app.use('/reset_password_web', reset_password_web);
 app.use('/change_password', change_password);
 app.use('/update_profile', update_profile);
 
