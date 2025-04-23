@@ -10,6 +10,7 @@ import '../providers/league_provider.dart';
 import '../widgets/details_tab_content.dart';
 import '../widgets/skeleton_loading.dart';
 import '../helpers/auth_helper.dart';
+import '../styles/app_styles.dart';
 
 class LeagueDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> league;
@@ -26,7 +27,7 @@ class LeagueDetailsScreen extends StatefulWidget {
 class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
   // Reference to the league provider
   late LeagueProvider _leagueProvider;
-  
+
   // Flag to track if we're disposing
   bool _isDisposing = false;
 
@@ -60,7 +61,7 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
 
     // Initialize the league provider
     _leagueProvider.initLeague(widget.league['league_id'], isCreator);
-    
+
     // Load league info specifically
     _leagueProvider.loadLeagueInfo();
   }
@@ -90,35 +91,18 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
           widget.league['name'],
           style: const TextStyle(
-            color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Consumer<LeagueProvider>(
         builder: (context, leagueProvider, _) {
           return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.blue.shade900,
-                  Colors.blue.shade700,
-                  Colors.blue.shade200,
-                  Colors.white,
-                ],
-                stops: const [0.0, 0.1, 0.3, 1.0],
-              ),
-            ),
+            color: AppStyles.backgroundColor,
             child: SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),

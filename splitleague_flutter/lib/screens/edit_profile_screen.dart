@@ -105,20 +105,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Profile'),
-        elevation: 0,
+        title: const Text('Edit Profile', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade100,
-              Colors.white,
-            ],
-          ),
-        ),
+        color: AppStyles.backgroundColor,
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -131,13 +121,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   Center(
                     child: CircleAvatar(
                       radius: 50,
-                      backgroundColor: Colors.blue.withAlpha(40),
+                      backgroundColor: AppStyles.primaryColor.withAlpha(40),
                       child: Text(
                         _getInitials(_nameController.text.trim()),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 36,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue,
+                          color: AppStyles.primaryColor,
                         ),
                       ),
                     ),
@@ -145,37 +135,54 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: 24),
 
                   // Name field
-                  TextFormField(
-                    controller: _nameController,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: AppStyles.inputDecoration(
-                      'Full Name',
-                      prefixIcon: const Icon(Icons.person),
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your name';
-                      }
-                      return null;
-                    },
-                    // Removed the problematic onChanged handler
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: TextFormField(
+                        controller: _nameController,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: AppStyles.inputDecoration(
+                          'Full Name',
+                          prefixIcon: const Icon(Icons.person),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your name';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
 
                   // Nickname field
-                  TextFormField(
-                    controller: _nicknameController,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: AppStyles.inputDecoration(
-                      'Nickname',
-                      prefixIcon: const Icon(Icons.person_outline),
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a nickname';
-                      }
-                      return null;
-                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: TextFormField(
+                        controller: _nicknameController,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: AppStyles.inputDecoration(
+                          'Nickname',
+                          prefixIcon: const Icon(Icons.person_outline),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a nickname';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
 
@@ -199,18 +206,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   if (_errorMessage != null) const SizedBox(height: 24),
 
                   // Save button
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _handleSave,
-                    style: AppStyles.primaryButtonStyle,
-                    child: _isLoading
-                        ? const SpinKitThreeBounce(
-                            color: Colors.white,
-                            size: 24,
-                          )
-                        : const Text(
-                            'Save Changes',
-                            style: TextStyle(fontSize: 16),
-                          ),
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _handleSave,
+                        style: AppStyles.primaryButtonStyle,
+                        child: _isLoading
+                            ? const SpinKitThreeBounce(
+                                color: Colors.white,
+                                size: 24,
+                              )
+                            : const Text(
+                                'Save Changes',
+                                style: TextStyle(fontSize: 16),
+                              ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -224,7 +240,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   // Get initials from name
   String _getInitials(String name) {
     if (name.isEmpty) return '';
-    
+
     List<String> nameParts = name.split(' ');
     if (nameParts.length > 1) {
       return nameParts[0][0].toUpperCase() + nameParts[1][0].toUpperCase();

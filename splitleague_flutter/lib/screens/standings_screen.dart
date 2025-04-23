@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../providers/league_provider.dart';
 import '../widgets/standings_tab_content.dart';
 import '../helpers/auth_helper.dart';
+import '../styles/app_styles.dart';
 
 class StandingsScreen extends StatefulWidget {
   final Map<String, dynamic> league;
@@ -24,7 +25,7 @@ class StandingsScreen extends StatefulWidget {
 class _StandingsScreenState extends State<StandingsScreen> {
   // Reference to the league provider
   late LeagueProvider _leagueProvider;
-  
+
   // Flag to track if we're disposing
   bool _isDisposing = false;
 
@@ -51,7 +52,7 @@ class _StandingsScreenState extends State<StandingsScreen> {
   // Initialize the league provider with the current league
   Future<void> _initializeLeagueProvider() async {
     if (_isDisposing) return;  // Don't initialize if disposing
-    
+
     // Check if current user is the creator
     final userData = await AuthHelper.getUserData();
     final isCreator = userData != null &&
@@ -61,7 +62,7 @@ class _StandingsScreenState extends State<StandingsScreen> {
     // Initialize the league provider
     if (!_isDisposing) {  // Check again before updating
       _leagueProvider.initLeague(widget.league['league_id'], isCreator);
-      
+
       // Load standings specifically
       _leagueProvider.loadStandings();
     }
@@ -79,33 +80,16 @@ class _StandingsScreenState extends State<StandingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
           '${widget.league['name']}',
           style: const TextStyle(
-            color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade900,
-              Colors.blue.shade700,
-              Colors.blue.shade200,
-              Colors.white,
-            ],
-            stops: const [0.0, 0.1, 0.3, 1.0],
-          ),
-        ),
+        color: AppStyles.backgroundColor,
         child: Consumer<LeagueProvider>(
           builder: (context, leagueProvider, _) {
             return SafeArea(
@@ -123,7 +107,7 @@ class _StandingsScreenState extends State<StandingsScreen> {
                       //),
                     //),
                     const SizedBox(height: 16),
-                    
+
                     // Standings content
                     StandingsTabContent(
                       isLoadingStandings: leagueProvider.isLoadingStandings,

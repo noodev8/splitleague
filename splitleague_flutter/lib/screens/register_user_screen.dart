@@ -6,6 +6,7 @@ Once registered, it automatically logs them in and goes to the dashboard
 
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../api/register_user_api.dart';
 // import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
@@ -119,48 +120,24 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Register', 
+        title: const Text('Register',
           style: TextStyle(
-            color: Colors.black, 
             fontWeight: FontWeight.bold
           )
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.blue.shade100,
-                Colors.white,
-              ],
-            ),
-          ),
+          color: AppStyles.backgroundColor,
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Container(
                   padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(20),
-                        blurRadius: 8,
-                        spreadRadius: 0,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
+                  decoration: AppStyles.cardDecoration,
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -170,7 +147,7 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
                         const SizedBox(height: 8),
                         const Text(
                           'Create your account',
-                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                          style: TextStyle(color: AppStyles.secondaryTextColor, fontSize: 16),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 24),
@@ -316,6 +293,53 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
                         ),
                         const SizedBox(height: 24),
 
+                        // Terms and Privacy Policy
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
+                            children: [
+                              const Text(
+                                'By registering, you agree to our ',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => _launchURL('https://www.noodev8.com/splitleague-terms-and-conditions/'),
+                                child: const Text(
+                                  'Terms of Service',
+                                  style: TextStyle(
+                                    color: AppStyles.primaryColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              const Text(
+                                ' and ',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => _launchURL('https://www.noodev8.com/privacy-policy/'),
+                                child: const Text(
+                                  'Privacy Policy',
+                                  style: TextStyle(
+                                    color: AppStyles.primaryColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
                         // Login link
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -348,6 +372,14 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
         ),
       ),
     );
+  }
+
+  // Launch URL in browser
+  Future<void> _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      ErrorHelper.showErrorToast('Could not launch $url');
+    }
   }
 }
 

@@ -4,8 +4,10 @@ Provides options like logout
 */
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
+import '../styles/app_styles.dart';
 import 'login_user_screen.dart';
 import 'hidden_leagues_screen.dart';
 import 'accessibility_settings_screen.dart';
@@ -108,27 +110,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade900,
-              Colors.blue.shade700,
-              Colors.blue.shade200,
-              Colors.white,
-            ],
-            stops: const [0.0, 0.1, 0.3, 1.0],
-          ),
-        ),
+        color: AppStyles.backgroundColor,
         child: SafeArea(
           child: _isLoading
               ? const Center(
@@ -158,13 +144,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   children: [
                                     CircleAvatar(
                                       radius: 50,
-                                      backgroundColor: Colors.blue.withAlpha(40),
+                                      backgroundColor: AppStyles.primaryColor.withAlpha(40),
                                       child: Text(
                                         _getInitials(_userData!['name']),
                                         style: TextStyle(
                                           fontSize: 36,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.blue,
+                                          color: AppStyles.primaryColor,
                                         ),
                                       ),
                                     ),
@@ -176,7 +162,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         child: Container(
                                           padding: const EdgeInsets.all(4),
                                           decoration: BoxDecoration(
-                                            color: Colors.blue,
+                                            color: AppStyles.primaryColor,
                                             shape: BoxShape.circle,
                                             border: Border.all(
                                               color: Colors.white,
@@ -232,7 +218,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   icon: const Icon(Icons.edit),
                                   label: const Text('Edit Profile'),
                                   style: TextButton.styleFrom(
-                                    foregroundColor: Colors.blue,
+                                    foregroundColor: AppStyles.primaryColor,
                                   ),
                                 ),
                               ],
@@ -300,12 +286,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   leading: Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.blue.withAlpha(30),
+                                      color: AppStyles.primaryColor.withAlpha(30),
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.lock_outline,
-                                      color: Colors.blue,
+                                      color: AppStyles.primaryColor,
                                       size: 24,
                                     ),
                                   ),
@@ -341,12 +327,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   leading: Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.blue.withAlpha(30),
+                                      color: AppStyles.primaryColor.withAlpha(30),
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.visibility_off,
-                                      color: Colors.blue,
+                                      color: AppStyles.primaryColor,
                                       size: 24,
                                     ),
                                   ),
@@ -414,6 +400,72 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                 ),
                                 const Divider(),
+                                // Privacy Policy
+                                ListTile(
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.teal.withAlpha(30),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.privacy_tip_outlined,
+                                      color: Colors.teal,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  title: const Text(
+                                    'Privacy Policy',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  subtitle: const Text(
+                                    'View our privacy policy',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  trailing: const Icon(Icons.open_in_new),
+                                  onTap: () => _launchURL('https://www.noodev8.com/privacy-policy/'),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                // Terms of Service
+                                ListTile(
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber.withAlpha(30),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.description_outlined,
+                                      color: Colors.amber,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  title: const Text(
+                                    'Terms of Service',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  subtitle: const Text(
+                                    'View our terms of service',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  trailing: const Icon(Icons.open_in_new),
+                                  onTap: () => _launchURL('https://www.noodev8.com/splitleague-terms-and-conditions/'),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                const Divider(),
                                 // Logout button
                                 ListTile(
                                   leading: Container(
@@ -469,12 +521,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.blue.withAlpha(30),
+          color: AppStyles.primaryColor.withAlpha(30),
           shape: BoxShape.circle,
         ),
         child: Icon(
           icon,
-          color: Colors.blue,
+          color: AppStyles.primaryColor,
           size: 24,
         ),
       ),
@@ -504,6 +556,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return nameParts[0][0].toUpperCase() + nameParts[1][0].toUpperCase();
     } else {
       return name[0].toUpperCase();
+    }
+  }
+
+  // Launch URL in browser
+  Future<void> _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      ErrorHelper.showErrorToast('Could not launch $url');
     }
   }
 }

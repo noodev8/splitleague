@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../providers/league_provider.dart';
 import '../widgets/fixtures_tab_content.dart';
 import '../helpers/auth_helper.dart';
+import '../styles/app_styles.dart';
 import 'update_score_screen.dart';
 import 'standings_screen.dart';
 import 'league_details_screen.dart';
@@ -185,29 +186,13 @@ class _FixturesScreenState extends State<FixturesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(widget.league['name'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(widget.league['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: Consumer<LeagueProvider>(
         builder: (context, leagueProvider, _) {
           return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.blue.shade900,
-                  Colors.blue.shade700,
-                  Colors.blue.shade200,
-                  Colors.white,
-                ],
-                stops: const [0.0, 0.1, 0.3, 1.0],
-              ),
-            ),
+            color: AppStyles.backgroundColor,
             child: SafeArea(
               bottom: false,
               child: SingleChildScrollView(
@@ -234,36 +219,27 @@ class _FixturesScreenState extends State<FixturesScreen> {
                                 ),
                               );
                             },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withAlpha(13),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
+                            child: Card(
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.withAlpha(25),
-                                      shape: BoxShape.circle,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.leaderboard, color: AppStyles.primaryColor),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Standings',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppStyles.primaryColor
+                                      ),
                                     ),
-                                    child: const Icon(Icons.leaderboard, color: Colors.blue),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Standings',
-                                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -279,36 +255,27 @@ class _FixturesScreenState extends State<FixturesScreen> {
                                 ),
                               );
                             },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withAlpha(13),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
+                            child: Card(
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.withAlpha(25),
-                                      shape: BoxShape.circle,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.info_outline, color: AppStyles.primaryColor),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Details',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppStyles.primaryColor
+                                      ),
                                     ),
-                                    child: const Icon(Icons.info_outline, color: Colors.blue),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Details',
-                                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),

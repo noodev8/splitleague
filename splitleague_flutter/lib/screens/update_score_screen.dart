@@ -201,27 +201,11 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
         : widget.fixture['player_2_name'];
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Update Score', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('Update Score', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade900,
-              Colors.blue.shade700,
-              Colors.blue.shade200,
-              Colors.white,
-            ],
-            stops: const [0.0, 0.1, 0.3, 1.0],
-          ),
-        ),
+        color: AppStyles.backgroundColor,
         child: SafeArea(
           bottom: false,
           child: SingleChildScrollView(
@@ -314,13 +298,13 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.blue.shade200, width: 2),
+                                      border: Border.all(color: AppStyles.primaryColor.withAlpha(100), width: 1),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.blue.withAlpha(30),
-                                          blurRadius: 8,
-                                          spreadRadius: 2,
-                                          offset: const Offset(0, 2),
+                                          color: Colors.grey.withAlpha(30),
+                                          blurRadius: 4,
+                                          spreadRadius: 1,
+                                          offset: const Offset(0, 1),
                                         ),
                                       ],
                                     ),
@@ -382,13 +366,13 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.blue.shade200, width: 2),
+                                      border: Border.all(color: AppStyles.primaryColor.withAlpha(100), width: 1),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.blue.withAlpha(30),
-                                          blurRadius: 8,
-                                          spreadRadius: 2,
-                                          offset: const Offset(0, 2),
+                                          color: Colors.grey.withAlpha(30),
+                                          blurRadius: 4,
+                                          spreadRadius: 1,
+                                          offset: const Offset(0, 1),
                                         ),
                                       ],
                                     ),
@@ -457,17 +441,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                   if (_winType == 'WIN' || _winType == 'WDL')
                     Container(
                       padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(13),
-                            blurRadius: 10,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
+                      decoration: AppStyles.cardDecoration,
                       child: Column(
                         children: [
                           // Result selection cards - Winners in a row

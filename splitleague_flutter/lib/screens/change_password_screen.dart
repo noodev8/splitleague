@@ -116,27 +116,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Change Password', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('Change Password', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade900,
-              Colors.blue.shade700,
-              Colors.blue.shade200,
-              Colors.white,
-            ],
-            stops: const [0.0, 0.1, 0.3, 1.0],
-          ),
-        ),
+        color: AppStyles.backgroundColor,
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -146,14 +130,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Security icon
-                  const Center(
+                  Center(
                     child: CircleAvatar(
                       radius: 50,
-                      backgroundColor: Colors.white38,
+                      backgroundColor: AppStyles.primaryColor.withAlpha(40),
                       child: Icon(
                         Icons.lock_outline,
                         size: 50,
-                        color: Colors.white,
+                        color: AppStyles.primaryColor,
                       ),
                     ),
                   ),
@@ -195,7 +179,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   Card(
                     elevation: 2,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -230,7 +214,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   Card(
                     elevation: 2,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -266,7 +250,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     Card(
                       elevation: 2,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       color: AppStyles.errorColor.withAlpha(25),
                       child: Padding(
@@ -287,7 +271,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   Card(
                     elevation: 2,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),

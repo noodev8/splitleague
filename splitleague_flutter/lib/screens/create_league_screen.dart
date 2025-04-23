@@ -105,14 +105,14 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
         // Get league ID from the nested league object
         final leagueId = response['league']['id'];
         print('Creating league - League ID: $leagueId'); // Debug log
-        
+
         if (leagueId != null) {
           final updateResponse = await UpdateLastAccessedApi.updateLastAccessed(leagueId);
           print('Update last accessed response: $updateResponse'); // Debug log
         } else {
           print('League ID is null!'); // Debug log
         }
-        
+
         if (mounted) {
           Navigator.of(context).pop();
         }
@@ -162,29 +162,24 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Create League', 
+        title: const Text('Create League',
           style: TextStyle(
-            color: Colors.white, 
             fontWeight: FontWeight.bold
           )
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: _isLoading
-                ? const SpinKitThreeBounce(
-                    color: Colors.white,
+                ? SpinKitThreeBounce(
+                    color: AppStyles.primaryColor,
                     size: 24,
                   )
                 : TextButton(
                     onPressed: _handleCreateLeague,
                     style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppStyles.primaryColor,
                     ),
                     child: const Text(
                       'Create',
@@ -198,19 +193,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade900,
-              Colors.blue.shade700,
-              Colors.blue.shade200,
-              Colors.white,
-            ],
-            stops: const [0.0, 0.1, 0.3, 1.0],
-          ),
-        ),
+        color: AppStyles.backgroundColor,
         child: SafeArea(
           bottom: false,
           child: Form(
@@ -828,7 +811,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
 
                   // Remove these lines
                   // if (_leagueCode == null) const SizedBox(height: 16),
-                  
+
                   // Remove the Create button section
                   // if (_leagueCode == null)
                   //   ElevatedButton(

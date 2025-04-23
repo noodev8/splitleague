@@ -226,11 +226,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('SplitLeague', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        title: const Text('SplitLeague', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -238,8 +235,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
+        selectedItemColor: AppStyles.primaryColor,
+        unselectedItemColor: AppStyles.secondaryTextColor,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
@@ -282,59 +279,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final String userName = _userData != null ? _userData!['nickname'] ?? 'User' : 'User';
 
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.blue.shade900,
-            Colors.blue.shade700,
-            Colors.blue.shade200,
-            Colors.white,
-          ],
-          stops: const [0.0, 0.1, 0.3, 1.0],
-        ),
-      ),
+      color: AppStyles.backgroundColor,
       child: SafeArea(
         child: Column(
           children: [
-            // Profile card - fixed at top
-            Card(
-              margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const ProfileScreen(),
-                          ),
-                        );
-                      },
-                      child: CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.blue.withAlpha(30),
-                        child: const Icon(Icons.person, color: Colors.blue, size: 36),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Text(
-                      userName,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
             // Scrollable content
             Expanded(
               child: SmartRefresher(
@@ -347,6 +295,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: ListView(
                   padding: const EdgeInsets.all(16.0),
                   children: [
+                    // Profile card - now scrollable
+                    Card(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const ProfileScreen(),
+                                  ),
+                                );
+                              },
+                              child: CircleAvatar(
+                                radius: 30,
+                                backgroundColor: AppStyles.primaryColor.withAlpha(30),
+                                child: Icon(Icons.person, color: AppStyles.primaryColor, size: 36),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Text(
+                              userName,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     // Error message
                     if (_errorMessage != null)
                       Container(

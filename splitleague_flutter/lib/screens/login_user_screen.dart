@@ -6,6 +6,7 @@ Once logged in, it goes straight to the dashboard
 
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../api/login_user_api.dart';
 import '../api/forgot_password_api.dart';
 import '../helpers/auth_helper.dart';
@@ -162,48 +163,24 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('SplitLeague',
           style: TextStyle(
-            color: Colors.black,
             fontWeight: FontWeight.bold
           )
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.blue.shade100,
-                Colors.white,
-              ],
-            ),
-          ),
+          color: AppStyles.backgroundColor,
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Container(
                   padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(20),
-                        blurRadius: 8,
-                        spreadRadius: 0,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
+                  decoration: AppStyles.cardDecoration,
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -327,15 +304,48 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
                         const SizedBox(height: 24),
 
                         const SizedBox(height: 16),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            'By signing in, you agree to our Terms of Service and Privacy Policy',
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
-                            ),
-                            textAlign: TextAlign.center,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
+                            children: [
+                              const Text(
+                                'By signing in, you agree to our ',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => _launchURL('https://www.noodev8.com/splitleague-terms-and-conditions/'),
+                                child: const Text(
+                                  'Terms of Service',
+                                  style: TextStyle(
+                                    color: AppStyles.primaryColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              const Text(
+                                ' and ',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => _launchURL('https://www.noodev8.com/privacy-policy/'),
+                                child: const Text(
+                                  'Privacy Policy',
+                                  style: TextStyle(
+                                    color: AppStyles.primaryColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -376,6 +386,14 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
         ),
       ),
     );
+  }
+
+  // Launch URL in browser
+  Future<void> _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      ErrorHelper.showErrorToast('Could not launch $url');
+    }
   }
 
   // Show forgot password dialog

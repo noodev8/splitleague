@@ -35,18 +35,25 @@ class SplitLeagueApp extends StatelessWidget {
           // Apply accessibility settings
           final textScaleFactor = accessibilityProvider.getTextScaleFactor();
 
-          // Create base theme
+          // Create standard base theme
           final baseTheme = ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: AppStyles.primaryColor,
-              brightness: Brightness.light,
+            primarySwatch: Colors.indigo,
+            primaryColor: AppStyles.primaryColor,
+            colorScheme: ColorScheme.light(
+              primary: AppStyles.primaryColor,
+              secondary: AppStyles.accentColor,
             ),
-            useMaterial3: true,
             scaffoldBackgroundColor: AppStyles.backgroundColor,
             appBarTheme: const AppBarTheme(
               backgroundColor: AppStyles.primaryColor,
               foregroundColor: Colors.white,
-              elevation: 0,
+              elevation: 4,
+            ),
+            cardTheme: CardTheme(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           );
 
