@@ -216,6 +216,15 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
                           style: TextStyle(color: Colors.grey, fontSize: 16),
                           textAlign: TextAlign.center,
                         ),
+                        const SizedBox(height: 16),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24),
+                          child: Text(
+                            'SplitLeague helps friends run custom leagues and track scores\n— for any game, anytime, anywhere.',
+                            style: TextStyle(color: Colors.grey, fontSize: 14),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                         const SizedBox(height: 24),
 
                         // Email field
@@ -316,6 +325,20 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
                                 ),
                         ),
                         const SizedBox(height: 24),
+
+                        const SizedBox(height: 16),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'By signing in, you agree to our Terms of Service and Privacy Policy',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
 
                         // Register link
                         Row(

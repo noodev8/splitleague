@@ -133,7 +133,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       radius: 50,
                       backgroundColor: Colors.blue.withAlpha(40),
                       child: Text(
-                        _getInitials(_nameController.text),
+                        _getInitials(_nameController.text.trim()),
                         style: const TextStyle(
                           fontSize: 36,
                           fontWeight: FontWeight.bold,
@@ -158,7 +158,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       }
                       return null;
                     },
-                    onChanged: (_) => setState(() {}), // Update initials when name changes
+                    // Removed the problematic onChanged handler
                   ),
                   const SizedBox(height: 16),
 

@@ -15,15 +15,8 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // Function to send verification email
 async function sendVerificationEmail(email, name, verificationToken) {
   try {
-    // Debug logs
-    console.log('Attempting to send verification email to:', email);
-    console.log('Using API key:', process.env.RESEND_API_KEY ? 'Present' : 'Missing');
-
     // Use the web verification route instead of the mobile deep link
     const verificationLink = `http://77.68.13.150:3003/verify_web_email?token=${verificationToken}`;
-    // For debugging
-    console.log('Using web verification link:', verificationLink);
-    console.log('Verification link:', verificationLink);
 
     const data = await resend.emails.send({
       from: process.env.FROM_EMAIL || 'onboarding@resend.dev',  // Use the configured FROM_EMAIL or fallback to Resend's testing address
@@ -46,7 +39,7 @@ async function sendVerificationEmail(email, name, verificationToken) {
       `,
     });
 
-    console.log('Resend API response:', data);
+    // Email sent successfully
     return { success: true, data };
   } catch (error) {
     console.error('Detailed error sending verification email:', error);
@@ -57,15 +50,8 @@ async function sendVerificationEmail(email, name, verificationToken) {
 // Function to send password reset email
 async function sendPasswordResetEmail(email, name, resetToken) {
   try {
-    // Debug logs
-    console.log('Attempting to send password reset email to:', email);
-    console.log('Using API key:', process.env.RESEND_API_KEY ? 'Present' : 'Missing');
-
     // Use the web reset password route instead of the mobile deep link
     const resetLink = `http://77.68.13.150:3003/reset_password_web?token=${resetToken}`;
-    // For debugging
-    console.log('Using web reset password link:', resetLink);
-    console.log('Reset link:', resetLink);
 
     // Send the email
     const data = await resend.emails.send({

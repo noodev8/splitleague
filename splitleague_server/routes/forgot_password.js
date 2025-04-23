@@ -71,14 +71,8 @@ router.post('/', async (req, res) => {
       [verificationToken, expirationDate, user.id]
     );
 
-    // Debug log before sending email
-    console.log('About to send password reset email to:', user.email);
-
     // Send password reset email
     const emailResult = await emailUtils.sendPasswordResetEmail(user.email, user.name, verificationToken);
-
-    // Debug log after sending email
-    console.log('Email sending result:', emailResult);
 
     if (!emailResult.success) {
       console.error('Failed to send password reset email:', emailResult.error);
