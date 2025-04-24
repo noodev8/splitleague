@@ -16,10 +16,10 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 async function sendVerificationEmail(email, name, verificationToken) {
   try {
     // Use the web verification route instead of the mobile deep link
-    const verificationLink = `http://77.68.13.150:3003/verify_web_email?token=${verificationToken}`;
+    const verificationLink = `${process.env.BASE_URL}/verify_web_email?token=${verificationToken}`;
 
     const data = await resend.emails.send({
-      from: process.env.FROM_EMAIL || 'onboarding@resend.dev',  // Use the configured FROM_EMAIL or fallback to Resend's testing address
+      from: `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_FROM}>`,  // This will show as "Noodev8 <no-reply@api.noodev8.com>"
       to: email,
       subject: 'Verify Your SplitLeague Account',
       html: `
@@ -51,7 +51,7 @@ async function sendVerificationEmail(email, name, verificationToken) {
 async function sendPasswordResetEmail(email, name, resetToken) {
   try {
     // Use the web reset password route instead of the mobile deep link
-    const resetLink = `http://77.68.13.150:3003/reset_password_web?token=${resetToken}`;
+    const resetLink = `${process.env.BASE_URL}/reset_password_web?token=${resetToken}`;
 
     // Send the email
     const data = await resend.emails.send({

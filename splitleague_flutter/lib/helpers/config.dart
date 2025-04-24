@@ -11,5 +11,6 @@ class Config {
   // static const String baseUrl = 'http://10.249.1.230:43352'; // Grays
 
   // VPS Server
-  static const String baseUrl = 'http://77.68.13.150:3003'; // Test Server
+  static const String baseUrl = 'https://api.noodev8.com'; // Test server
+  // static const String baseUrl = 'http://77.68.13.150:3003'; // Test Server
 }

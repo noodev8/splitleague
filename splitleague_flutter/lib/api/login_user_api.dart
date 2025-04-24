@@ -12,7 +12,7 @@ class LoginUserApi {
   static Future<Map<String, dynamic>> loginUser(String email, String password) async {
     // Create the request URL
     final url = Uri.parse('${Config.baseUrl}/login_user');
-    
+
     try {
       // Send POST request to the server
       final response = await http.post(
@@ -25,10 +25,10 @@ class LoginUserApi {
           'password': password,
         }),
       );
-      
+
       // Parse the response
       final Map<String, dynamic> responseData = jsonDecode(response.body);
-      
+
       // Return the response data
       return responseData;
     } catch (e) {
