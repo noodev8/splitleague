@@ -145,23 +145,32 @@ class FixturesTabContent extends StatelessWidget {
                           _buildFilterChip(
                             label: 'All',
                             isSelected: filterPlayedStatus == null,
-                            onTap: onClearPlayedStatusFilter != null 
-                              ? () => onClearPlayedStatusFilter!.call() 
+                            onTap: onClearPlayedStatusFilter != null
+                              ? () {
+                                  // Clear filter and force UI refresh
+                                  onClearPlayedStatusFilter!.call();
+                                }
                               : null,
                             isFirst: true,
                           ),
                           _buildFilterChip(
                             label: 'Played',
                             isSelected: filterPlayedStatus == 'played',
-                            onTap: onApplyPlayedStatusFilter != null 
-                              ? () => onApplyPlayedStatusFilter!('played') 
+                            onTap: onApplyPlayedStatusFilter != null
+                              ? () {
+                                  // Apply filter and force UI refresh
+                                  onApplyPlayedStatusFilter!('played');
+                                }
                               : null,
                           ),
                           _buildFilterChip(
                             label: 'Not Played',
                             isSelected: filterPlayedStatus == 'not_played',
-                            onTap: onApplyPlayedStatusFilter != null 
-                              ? () => onApplyPlayedStatusFilter!('not_played') 
+                            onTap: onApplyPlayedStatusFilter != null
+                              ? () {
+                                  // Apply filter and force UI refresh
+                                  onApplyPlayedStatusFilter!('not_played');
+                                }
                               : null,
                             isLast: true,
                           ),
@@ -187,7 +196,7 @@ class FixturesTabContent extends StatelessWidget {
                         minHeight: 36,
                       ),
                     ),
-                    
+
                     // Player filter indicator
                     Expanded(
                       child: Container(

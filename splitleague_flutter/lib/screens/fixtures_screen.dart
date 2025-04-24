@@ -46,10 +46,14 @@ class _FixturesScreenState extends State<FixturesScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Store reference to the provider and reset it
+    // Store reference to the provider
     _leagueProvider = Provider.of<LeagueProvider>(context, listen: false);
-    // Reset the provider to allow reuse
-    _leagueProvider.reset();
+
+    // We don't want to reset the provider here as it would clear filter states
+    // Instead, we'll initialize it if it's not already initialized with this league
+    if (_leagueProvider.currentLeagueId != widget.league['league_id']) {
+      _leagueProvider.reset();
+    }
   }
 
   // Initialize the league provider with the current league
@@ -82,8 +86,8 @@ class _FixturesScreenState extends State<FixturesScreen> {
   }
 
   // Show filter menu for players only
-  void _showFilterMenu(BuildContext context) {
-    showModalBottomSheet(
+  Future<void> _showFilterMenu(BuildContext context) async {
+    await showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -172,6 +176,11 @@ class _FixturesScreenState extends State<FixturesScreen> {
         );
       },
     );
+
+    // Force UI refresh after bottom sheet is closed
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -185,6 +194,9 @@ class _FixturesScreenState extends State<FixturesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Force rebuild when filter status changes by listening to the provider
+    Provider.of<LeagueProvider>(context, listen: true);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.league['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -217,7 +229,12 @@ class _FixturesScreenState extends State<FixturesScreen> {
                                     league: widget.league,
                                   ),
                                 ),
-                              );
+                              ).then((_) {
+                                // Force UI refresh when returning from standings
+                                if (mounted) {
+                                  setState(() {});
+                                }
+                              });
                             },
                             child: Card(
                               elevation: 2,
@@ -253,7 +270,12 @@ class _FixturesScreenState extends State<FixturesScreen> {
                                     league: widget.league,
                                   ),
                                 ),
-                              );
+                              ).then((_) {
+                                // Force UI refresh when returning from details
+                                if (mounted) {
+                                  setState(() {});
+                                }
+                              });
                             },
                             child: Card(
                               elevation: 2,

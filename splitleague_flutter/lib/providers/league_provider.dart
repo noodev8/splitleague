@@ -28,6 +28,9 @@ class LeagueProvider extends ChangeNotifier {
   // Reset the provider to allow reuse
   void reset() {
     _disposed = false;
+
+    // We don't clear filter states here anymore
+    // This allows filters to persist when navigating between screens
   }
   // League info
   Map<String, dynamic> _leagueInfo = {};
@@ -347,6 +350,13 @@ class LeagueProvider extends ChangeNotifier {
 
   // Apply played status filter
   void applyPlayedStatusFilter(String status) {
+    // If the same status is already applied, toggle it off
+    if (_filterPlayedStatus == status) {
+      clearPlayedStatusFilter();
+      return;
+    }
+
+    // Update the filter status
     _filterPlayedStatus = status;
 
     // Re-apply player filter if it exists
@@ -360,7 +370,16 @@ class LeagueProvider extends ChangeNotifier {
       }).toList();
     }
 
+    // Always notify listeners to ensure UI updates
     notifyListeners();
+
+    // Force a second notification after a short delay to ensure UI updates
+    // This helps with edge cases where the first notification might not trigger a rebuild
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (!_disposed) {
+        notifyListeners();
+      }
+    });
   }
 
   // Clear played status filter
@@ -375,7 +394,16 @@ class LeagueProvider extends ChangeNotifier {
       _filteredFixtures = [];
     }
 
+    // Always notify listeners to ensure UI updates
     notifyListeners();
+
+    // Force a second notification after a short delay to ensure UI updates
+    // This helps with edge cases where the first notification might not trigger a rebuild
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (!_disposed) {
+        notifyListeners();
+      }
+    });
   }
 
   // Clear player filter

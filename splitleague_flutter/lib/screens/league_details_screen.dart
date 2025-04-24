@@ -45,10 +45,9 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Store reference to the provider and reset it
+    // Store reference to the provider without resetting it
+    // This preserves filter states when navigating between screens
     _leagueProvider = Provider.of<LeagueProvider>(context, listen: false);
-    // Reset the provider to allow reuse
-    _leagueProvider.reset();
   }
 
   // Initialize the league provider with the current league
@@ -83,8 +82,8 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
   void dispose() {
     // Mark as disposing to prevent further updates
     _isDisposing = true;
-    // Clear the league provider data when leaving the screen
-    _leagueProvider.clearData();
+    // Don't clear the provider data to preserve filter states
+    // This allows filters to persist when returning to the fixtures screen
     super.dispose();
   }
 
