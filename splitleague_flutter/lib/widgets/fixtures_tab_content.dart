@@ -4,6 +4,7 @@ import '../widgets/fixture_card.dart';
 import '../widgets/error_display.dart';
 import '../widgets/skeleton_loading.dart';
 import '../helpers/animation_helper.dart';
+import '../styles/app_styles.dart';
 
 class FixturesTabContent extends StatelessWidget {
   final bool isCreator;
@@ -128,129 +129,180 @@ class FixturesTabContent extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Played status filter row
-                Row(
-                  children: [
-                    Container(
-                      height: 32,
-                      margin: const EdgeInsets.only(left: 40, bottom: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.blue.withAlpha(100)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildFilterChip(
-                            label: 'All',
-                            isSelected: filterPlayedStatus == null,
-                            onTap: onClearPlayedStatusFilter != null
-                              ? () {
-                                  // Clear filter and force UI refresh
-                                  onClearPlayedStatusFilter!.call();
-                                }
-                              : null,
-                            isFirst: true,
-                          ),
-                          _buildFilterChip(
-                            label: 'Played',
-                            isSelected: filterPlayedStatus == 'played',
-                            onTap: onApplyPlayedStatusFilter != null
-                              ? () {
-                                  // Apply filter and force UI refresh
-                                  onApplyPlayedStatusFilter!('played');
-                                }
-                              : null,
-                          ),
-                          _buildFilterChip(
-                            label: 'Not Played',
-                            isSelected: filterPlayedStatus == 'not_played',
-                            onTap: onApplyPlayedStatusFilter != null
-                              ? () {
-                                  // Apply filter and force UI refresh
-                                  onApplyPlayedStatusFilter!('not_played');
-                                }
-                              : null,
-                            isLast: true,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Player filter row
-                Row(
-                  children: [
-                    // Filter menu button
-                    IconButton(
-                      icon: Icon(
-                        Icons.filter_list,
-                        color: filterPlayerId != null ? Colors.blue : null,
-                      ),
-                      onPressed: () => onShowFilterMenu(context),
-                      tooltip: 'Filter fixtures',
-                      constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
-                      ),
-                    ),
-
-                    // Player filter indicator
-                    Expanded(
-                      child: Container(
-                        constraints: const BoxConstraints(maxWidth: 300),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        margin: const EdgeInsets.only(left: 4),
+                // Played status filter row - improved design
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        height: 36,
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.blue.withAlpha(100)),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withAlpha(30),
+                              spreadRadius: 0,
+                              blurRadius: 2,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Flexible(
-                              child: Text(
-                                filterPlayerName ?? 'All Fixtures',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: filterPlayerId != null ? Colors.blue : Colors.grey.shade700,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
+                            _buildFilterChip(
+                              label: 'All',
+                              isSelected: filterPlayedStatus == null,
+                              onTap: onClearPlayedStatusFilter != null
+                                ? () {
+                                    // Clear filter and force UI refresh
+                                    onClearPlayedStatusFilter!.call();
+                                  }
+                                : null,
+                              isFirst: true,
                             ),
-                            if (filterPlayerId != null) ...[
-                              const SizedBox(width: 8),
-                              InkWell(
-                                onTap: onClearFilter,
-                                borderRadius: BorderRadius.circular(12),
-                                child: const Icon(
-                                  Icons.close,
-                                  size: 16,
-                                  color: Colors.blue,
-                                ),
-                              ),
-                            ],
+                            _buildFilterChip(
+                              label: 'Played',
+                              isSelected: filterPlayedStatus == 'played',
+                              onTap: onApplyPlayedStatusFilter != null
+                                ? () {
+                                    // Apply filter and force UI refresh
+                                    onApplyPlayedStatusFilter!('played');
+                                  }
+                                : null,
+                            ),
+                            _buildFilterChip(
+                              label: 'Not Played',
+                              isSelected: filterPlayedStatus == 'not_played',
+                              onTap: onApplyPlayedStatusFilter != null
+                                ? () {
+                                    // Apply filter and force UI refresh
+                                    onApplyPlayedStatusFilter!('not_played');
+                                  }
+                                : null,
+                              isLast: true,
+                            ),
                           ],
                         ),
                       ),
-                    ),
+                    ],
+                  ),
+                ),
 
-                    // Refresh button
-                    IconButton(
-                      icon: const Icon(Icons.refresh),
-                      onPressed: onLoadFixtures,
-                      tooltip: 'Refresh fixtures',
-                      constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
+                // Player filter row - improved design
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withAlpha(30),
+                        spreadRadius: 0,
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      // Filter menu button
+                      Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () => onShowFilterMenu(context),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.filter_list,
+                                  color: filterPlayerId != null ? AppStyles.primaryColor : Colors.grey.shade700,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Player',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: filterPlayerId != null ? AppStyles.primaryColor : Colors.grey.shade700,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Player filter indicator
+                      Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(
+                            filterPlayerId != null ? (filterPlayerName ?? 'Selected Player') : 'All Players',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: filterPlayerId != null ? AppStyles.primaryColor : Colors.grey.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ),
+
+                      // Clear filter button
+                      if (filterPlayerId != null)
+                        Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: onClearFilter,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Icon(
+                                Icons.close,
+                                size: 18,
+                                color: AppStyles.primaryColor,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      // Divider
+                      Container(
+                        height: 24,
+                        width: 1,
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                        color: Colors.grey.withAlpha(100),
+                      ),
+
+                      // Refresh button
+                      Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: onLoadFixtures,
+                          child: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Icon(
+                              Icons.refresh,
+                              size: 20,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -381,17 +433,14 @@ class FixturesTabContent extends StatelessWidget {
               (filterPlayerId != null || filterPlayedStatus != null) ? filteredFixtures.length : fixtures.length,
               (index) {
                 final fixture = (filterPlayerId != null || filterPlayedStatus != null) ? filteredFixtures[index] : fixtures[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: FadeSlideAnimation(
-                    duration: Duration(milliseconds: 400 + index * 100),
-                    curve: AnimCurves.spring,
-                    beginOffset: const Offset(0.0, 0.25),
-                    beginOpacity: 0.0,
-                    child: FixtureCard(
-                      fixture: fixture,
-                      onTap: onNavigateToUpdateScore,
-                    ),
+                return FadeSlideAnimation(
+                  duration: Duration(milliseconds: 300 + index * 50), // Faster animation
+                  curve: AnimCurves.spring,
+                  beginOffset: const Offset(0.0, 0.15), // Reduced slide
+                  beginOpacity: 0.0,
+                  child: FixtureCard(
+                    fixture: fixture,
+                    onTap: onNavigateToUpdateScore,
                   ),
                 );
               },
@@ -410,21 +459,25 @@ class FixturesTabContent extends StatelessWidget {
   }) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.horizontal(
+        left: isFirst ? const Radius.circular(18) : Radius.zero,
+        right: isLast ? const Radius.circular(18) : Radius.zero,
+      ),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.blue : Colors.transparent,
+          color: isSelected ? AppStyles.primaryColor : Colors.transparent,
           borderRadius: BorderRadius.horizontal(
-            left: isFirst ? const Radius.circular(16) : Radius.zero,
-            right: isLast ? const Radius.circular(16) : Radius.zero,
+            left: isFirst ? const Radius.circular(18) : Radius.zero,
+            right: isLast ? const Radius.circular(18) : Radius.zero,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
             color: isSelected ? Colors.white : Colors.black87,
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
       ),

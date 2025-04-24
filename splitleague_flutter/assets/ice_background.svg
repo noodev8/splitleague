@@ -1,0 +1,30 @@
+<svg width="360" height="800" viewBox="0 0 360 800" xmlns="http://www.w3.org/2000/svg">
+  <!-- Ice blue gradient background -->
+  <defs>
+    <linearGradient id="iceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E0F7FA" />
+      <stop offset="100%" stop-color="#B3E5FC" />
+    </linearGradient>
+    
+    <!-- Ice pattern -->
+    <pattern id="icePattern" width="100" height="100" patternUnits="userSpaceOnUse">
+      <path d="M0,50 Q25,40 50,50 Q75,60 100,50" fill="none" stroke="#FFFFFF" stroke-width="0.5" opacity="0.3" />
+      <path d="M0,30 Q25,20 50,30 Q75,40 100,30" fill="none" stroke="#FFFFFF" stroke-width="0.5" opacity="0.2" />
+      <path d="M0,70 Q25,80 50,70 Q75,60 100,70" fill="none" stroke="#FFFFFF" stroke-width="0.5" opacity="0.2" />
+    </pattern>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="360" height="800" fill="url(#iceGradient)" />
+  
+  <!-- Ice pattern overlay -->
+  <rect width="360" height="800" fill="url(#icePattern)" />
+  
+  <!-- Frost at the top -->
+  <path d="M0,0 L360,0 L360,100 C320,120 280,90 240,110 C200,130 160,100 120,120 C80,140 40,110 0,130 Z" fill="#FFFFFF" opacity="0.4" />
+  
+  <!-- Ice cracks -->
+  <path d="M180,0 L190,200 L170,400 L200,600 L150,800" fill="none" stroke="#FFFFFF" stroke-width="0.8" opacity="0.5" />
+  <path d="M100,0 L120,150 L90,300 L130,450 L80,600 L110,800" fill="none" stroke="#FFFFFF" stroke-width="0.6" opacity="0.4" />
+  <path d="M260,0 L240,200 L270,400 L230,600 L250,800" fill="none" stroke="#FFFFFF" stroke-width="0.7" opacity="0.4" />
+</svg>

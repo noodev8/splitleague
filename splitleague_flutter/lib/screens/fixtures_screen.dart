@@ -214,45 +214,59 @@ class _FixturesScreenState extends State<FixturesScreen> {
                   children: [
 
 
-                    // Navigation buttons
+                    // Navigation buttons - improved design
                     Container(
                       margin: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withAlpha(51), // 0.2 opacity (51/255)
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           // Standings button
-                          InkWell(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => StandingsScreen(
-                                    league: widget.league,
+                          Expanded(
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => StandingsScreen(
+                                      league: widget.league,
+                                    ),
+                                  ),
+                                ).then((_) {
+                                  // Force UI refresh when returning from standings
+                                  if (mounted) {
+                                    setState(() {});
+                                  }
+                                });
+                              },
+                              borderRadius: const BorderRadius.horizontal(left: Radius.circular(10)),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                decoration: const BoxDecoration(
+                                  border: Border(
+                                    right: BorderSide(color: Colors.black12, width: 0.5),
                                   ),
                                 ),
-                              ).then((_) {
-                                // Force UI refresh when returning from standings
-                                if (mounted) {
-                                  setState(() {});
-                                }
-                              });
-                            },
-                            child: Card(
-                              elevation: 2,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                                 child: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.leaderboard, color: AppStyles.primaryColor),
+                                    Icon(Icons.leaderboard, color: AppStyles.primaryColor, size: 20),
                                     const SizedBox(width: 8),
                                     Text(
                                       'Standings',
                                       style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppStyles.primaryColor
+                                        fontWeight: FontWeight.w600,
+                                        color: AppStyles.primaryColor,
+                                        fontSize: 15,
                                       ),
                                     ),
                                   ],
@@ -262,38 +276,36 @@ class _FixturesScreenState extends State<FixturesScreen> {
                           ),
 
                           // Details button
-                          InkWell(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => LeagueDetailsScreen(
-                                    league: widget.league,
+                          Expanded(
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => LeagueDetailsScreen(
+                                      league: widget.league,
+                                    ),
                                   ),
-                                ),
-                              ).then((_) {
-                                // Force UI refresh when returning from details
-                                if (mounted) {
-                                  setState(() {});
-                                }
-                              });
-                            },
-                            child: Card(
-                              elevation: 2,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                ).then((_) {
+                                  // Force UI refresh when returning from details
+                                  if (mounted) {
+                                    setState(() {});
+                                  }
+                                });
+                              },
+                              borderRadius: const BorderRadius.horizontal(right: Radius.circular(10)),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
                                 child: Row(
-                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.info_outline, color: AppStyles.primaryColor),
+                                    Icon(Icons.info_outline, color: AppStyles.primaryColor, size: 20),
                                     const SizedBox(width: 8),
                                     Text(
                                       'Details',
                                       style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppStyles.primaryColor
+                                        fontWeight: FontWeight.w600,
+                                        color: AppStyles.primaryColor,
+                                        fontSize: 15,
                                       ),
                                     ),
                                   ],
@@ -304,7 +316,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
                     // Fixtures content
                     FixturesTabContent(

@@ -92,13 +92,13 @@ class FixtureCard extends StatelessWidget {
       button: onTap != null,
       enabled: onTap != null,
       child: AnimatedCard(
-        margin: const EdgeInsets.only(bottom: 8),
-        borderRadius: BorderRadius.circular(10),
-        elevation: 2,
+        margin: const EdgeInsets.only(bottom: 4), // Reduced spacing
+        borderRadius: BorderRadius.circular(8),
+        elevation: 1.5, // Slightly reduced elevation
         // Different background color for played matches
         color: played ? Colors.blue.shade50 : Colors.white,
         onTap: onTap != null ? () => onTap!(fixture) : null,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Reduced vertical padding
       child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

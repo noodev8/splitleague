@@ -16,6 +16,12 @@ class AppStyles {
   static const Color successColor = Color(0xFF388E3C);
   static const Color cardColor = Color(0xFFFFFFFF);
 
+  // Ice theme colors
+  static const Color iceBlue = Color(0xFF4FC3F7);
+  static const Color iceLightBlue = Color(0xFFE1F5FE);
+  static const Color iceWhite = Color(0xFFF5F7FA);
+  static const Color iceDarkBlue = Color(0xFF0288D1);
+
   // Text Styles
   static const TextStyle headingStyle = TextStyle(
     fontSize: 24,
