@@ -19,6 +19,7 @@ class CreateLeagueApi {
     int? pointsForCloseLoss,
     int? winMarginThreshold,
     int? playEachOther,
+    bool? allowCodeShare,
   }) async {
     // Create the request URL
     final url = Uri.parse('${Config.baseUrl}/create_league');
@@ -47,6 +48,11 @@ class CreateLeagueApi {
       if (pointsForCloseLoss != null) body['points_for_close_loss'] = pointsForCloseLoss;
       if (winMarginThreshold != null) body['win_margin_threshold'] = winMarginThreshold;
       if (playEachOther != null) body['play_each_other'] = playEachOther;
+      if (allowCodeShare != null) {
+        body['allow_code_share'] = allowCodeShare;
+        // Debug print to verify the value is being included in the request
+        print('Including allow_code_share in request: $allowCodeShare');
+      }
 
       // Send POST request to the server
       final response = await http.post(
@@ -60,6 +66,9 @@ class CreateLeagueApi {
 
       // Parse the response
       final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+      // Debug print the response
+      print('Server response: ${response.body}');
 
       // Return the response data
       return responseData;

@@ -42,6 +42,9 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
   // Error message
   String? _errorMessage;
 
+  // Allow code share setting
+  bool _allowCodeShare = true; // Default to true
+
   @override
   void dispose() {
     // Clean up controllers
@@ -82,6 +85,9 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
       int winMarginThreshold = int.tryParse(_winMarginThresholdController.text) ?? 0;
       int playEachOther = int.tryParse(_playEachOtherController.text) ?? 1;
 
+      // Debug print to verify the value
+      print('Creating league with allow_code_share: $_allowCodeShare');
+
       // Call create league API
       Map<String, dynamic> response = await CreateLeagueApi.createLeague(
         name: leagueName,
@@ -92,6 +98,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
         pointsForCloseLoss: loseMarginBonus,
         winMarginThreshold: winMarginThreshold,
         playEachOther: playEachOther,
+        allowCodeShare: _allowCodeShare,
       );
 
       // Check response
@@ -228,7 +235,8 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pop(); // Close dialog
-                    Navigator.of(context).pop(); // Return to previous screen
+                    // Use popUntil to ensure we go back to the dashboard
+                    Navigator.of(context).popUntil((route) => route.isFirst);
                   },
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -243,7 +251,8 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     ).then((_) {
       // When dialog is dismissed (by any means), navigate back to previous screen
       if (mounted) {
-        Navigator.of(context).pop();
+        // Use popUntil to ensure we go back to the dashboard
+        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     });
   }
@@ -869,6 +878,68 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                         ),
                       ),
                     ),
+
+                  const SizedBox(height: 16),
+
+                  // Code sharing settings section
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Privacy Settings',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Allow code sharing toggle
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Allow players to see and share league code',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'When disabled, only you can see and share the league code',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Switch(
+                                value: _allowCodeShare,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _allowCodeShare = value;
+                                  });
+                                },
+                                activeColor: AppStyles.primaryColor,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                   const SizedBox(height: 24),
 
