@@ -55,8 +55,6 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
   @override
   void initState() {
     super.initState();
-    // Debug print to show the entire league object
-    print('League object: ${widget.league}');
     _loadMembers();
     _checkFixtures();
   }
@@ -203,13 +201,7 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                          userData['id'].toString() == creatorId.toString()) ||
                         widget.league['is_creator'] == true;
 
-      // Debug prints to help diagnose issues
-      print('User data: ${userData?['id']}');
-      print('League creator ID: $creatorId');
-      print('Is creator from check: $isCreator');
-      print('Is creator from league: ${widget.league['is_creator']}');
-
-      // Set creator flag
+      // Set creator flag based on the checks above
       setState(() {
         _isCreator = isCreator;
       });
@@ -218,11 +210,6 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
       final response = await GetLeagueMembersApi.getLeagueMembers(widget.league['league_id']);
 
       if (response['return_code'] == 'SUCCESS') {
-        // Debug print to see the structure of the first member
-        if ((response['members'] ?? []).isNotEmpty) {
-          print('First member structure: ${response['members'][0]}');
-        }
-
         setState(() {
           _members = List<Map<String, dynamic>>.from(response['members'] ?? []);
           _isLoading = false;
@@ -243,11 +230,6 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
 
   // Remove player from league
   Future<void> _removePlayer(int playerId, String playerName) async {
-    // Debug prints to help diagnose issues
-    print('Attempting to remove player: $playerName (ID: $playerId)');
-    print('Is creator: $_isCreator');
-    print('Has fixtures: $_hasFixtures');
-
     // Check if fixtures exist
     if (_hasFixtures) {
       ErrorHelper.showErrorToast('Cannot remove players after fixtures are generated');
@@ -455,9 +437,6 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                                   final isCreator = member['is_creator'] == true ||
                                                    member['is_organiser'] == true ||
                                                    member['is_organizer'] == true;
-
-                                  // Debug print for each list item to check conditions
-                                  print('Player: $memberName, isCreator: $isCreator, _isCreator: $_isCreator, _hasFixtures: $_hasFixtures, showRemoveButton: ${_isCreator && !isCreator && !_hasFixtures}');
 
                                   return Card(
                                     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),

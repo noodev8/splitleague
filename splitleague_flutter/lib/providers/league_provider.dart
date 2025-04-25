@@ -195,6 +195,14 @@ class LeagueProvider extends ChangeNotifier {
     }
 
     notifyListeners();
+
+    // Force a second notification after a short delay to ensure UI updates
+    // This helps with edge cases where the first notification might not trigger a rebuild
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (!_disposed) {
+        notifyListeners();
+      }
+    });
   }
 
   // Load league members
@@ -421,6 +429,13 @@ class LeagueProvider extends ChangeNotifier {
       _filteredFixtures = [];
     }
 
+    notifyListeners();
+  }
+
+  // Clear success message
+  void clearSuccessMessage() {
+    _successMessage = null;
+    _fixturesCount = null;
     notifyListeners();
   }
 

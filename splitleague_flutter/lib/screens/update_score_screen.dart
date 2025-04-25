@@ -169,9 +169,9 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
           widget.onScoreUpdated!();
         }
 
-        // Pop screen
+        // Pop screen with result=true to indicate success
         if (mounted) {
-          Navigator.of(context).pop();
+          Navigator.of(context).pop(true);
         }
       } else {
         // Show error message

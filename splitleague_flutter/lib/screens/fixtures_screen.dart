@@ -74,13 +74,19 @@ class _FixturesScreenState extends State<FixturesScreen> {
       MaterialPageRoute(
         builder: (context) => UpdateScoreScreen(
           fixture: fixture,
-          onScoreUpdated: () => true,
+          onScoreUpdated: () {
+            // This callback is called when the score is updated
+            // We'll return true from the screen, so we don't need to do anything here
+            return true;
+          },
         ),
       ),
     );
 
-    // If score was updated, reload fixtures
+    // If score was updated, reload fixtures and clear any success messages
     if (result == true && mounted && !_isDisposing) {
+      // Clear any success messages to avoid showing breadcrumb at bottom
+      _leagueProvider.clearSuccessMessage();
       _leagueProvider.loadFixtures();
     }
   }
