@@ -9,7 +9,6 @@ import '../api/create_league_api.dart';
 import '../api/update_last_accessed_api.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
-import 'fixtures_screen.dart';
 
 class CreateLeagueScreen extends StatefulWidget {
   const CreateLeagueScreen({super.key});
@@ -42,9 +41,6 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
 
   // Error message
   String? _errorMessage;
-
-  // League code after creation
-  String? _leagueCode;
 
   @override
   void dispose() {
@@ -98,35 +94,34 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
         playEachOther: playEachOther,
       );
 
-      print('Create League Response: $response'); // Debug log
-
       // Check response
       if (response['return_code'] == 'SUCCESS') {
-        // Get league ID from the nested league object
+        // Get league ID and public code from the nested league object
         final leagueId = response['league']['id'];
-        print('Creating league - League ID: $leagueId'); // Debug log
+        final publicCode = response['league']['public_code'];
 
         if (leagueId != null) {
-          final updateResponse = await UpdateLastAccessedApi.updateLastAccessed(leagueId);
-          print('Update last accessed response: $updateResponse'); // Debug log
-        } else {
-          print('League ID is null!'); // Debug log
+          await UpdateLastAccessedApi.updateLastAccessed(leagueId);
         }
 
+        // Set loading state to false
+        setState(() {
+          _isLoading = false;
+        });
+
+        // Show the league PIN dialog
         if (mounted) {
-          Navigator.of(context).pop();
+          _showLeaguePinDialog(publicCode, leagueId);
         }
       } else {
         // Show error message with more detail
         setState(() {
           _errorMessage = ErrorHelper.getErrorMessage(response);
-          print('Error Message: $_errorMessage'); // Debug log
           _isLoading = false;
         });
       }
     } catch (e) {
       // Show detailed error message
-      print('Create League Error: $e'); // Debug log
       setState(() {
         _errorMessage = 'Error: ${e.toString()}';
         _isLoading = false;
@@ -134,29 +129,123 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     }
   }
 
-  // Copy league code to clipboard
-  void _copyLeagueCode() {
-    if (_leagueCode != null) {
-      Clipboard.setData(ClipboardData(text: _leagueCode!));
-      ErrorHelper.showSuccessToast('League code copied to clipboard');
-    }
-  }
 
-  // View league details
-  void _viewLeague() {
-    if (_leagueCode != null) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => FixturesScreen(
-            league: {
-              'league_id': int.tryParse(_leagueCode!) ?? 0,
-              'name': _leagueNameController.text.trim(),
-              'is_creator': true,
-            },
+
+  // Show league PIN dialog
+  void _showLeaguePinDialog(String pin, int leagueId) {
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-        ),
-      );
-    }
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'League created successfully!',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Share this code with others to join your league:',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 15),
+                ),
+                const SizedBox(height: 20),
+
+                // More prominent PIN display
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.blue.shade100, Colors.blue.shade50],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blue.withAlpha(51), // 0.2 opacity (51/255)
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        pin,
+                        style: const TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                          letterSpacing: 2,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.copy, size: 18),
+                        label: const Text('Copy Code'),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: pin));
+                          ErrorHelper.showSuccessToast('PIN copied to clipboard');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.blue,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(color: Colors.blue.shade200),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Close button
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close dialog
+                    Navigator.of(context).pop(); // Return to previous screen
+                  },
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                  child: const Text('Close'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ).then((_) {
+      // When dialog is dismissed (by any means), navigate back to previous screen
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    });
   }
 
   @override
@@ -801,56 +890,6 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                       ),
                     ),
                   if (_errorMessage != null) const SizedBox(height: 16),
-
-                  // League code display
-                  if (_leagueCode != null)
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withAlpha(30),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.withAlpha(100)),
-                      ),
-                      child: Column(
-                        children: [
-                          const Text(
-                            'League created successfully!',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Share this code with others to join your league:',
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                _leagueCode!,
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.copy, color: Colors.blue),
-                                onPressed: _copyLeagueCode,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: _viewLeague,
-                            style: AppStyles.primaryButtonStyle,
-                            child: const Text('View League'),
-                          ),
-                        ],
-                      ),
-                    ),
 
                   // Remove these lines
                   // if (_leagueCode == null) const SizedBox(height: 16),

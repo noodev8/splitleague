@@ -11,6 +11,7 @@ import '../api/remove_player_from_league_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
+import 'league_details_screen.dart';
 
 class PlayerListScreen extends StatefulWidget {
   final Map<String, dynamic> league;
@@ -148,6 +149,27 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.league['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          // Details button in AppBar
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'League Details',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => LeagueDetailsScreen(
+                    league: widget.league,
+                  ),
+                ),
+              ).then((_) {
+                // Force UI refresh when returning from details
+                if (mounted) {
+                  setState(() {});
+                }
+              });
+            },
+          ),
+        ],
       ),
       body: Container(
         color: AppStyles.backgroundColor,
@@ -219,6 +241,7 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Player count badge
                             Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: Container(
