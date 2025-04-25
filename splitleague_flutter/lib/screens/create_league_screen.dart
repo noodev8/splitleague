@@ -165,28 +165,38 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
       appBar: AppBar(
         title: const Text('Create League',
           style: TextStyle(
-            fontWeight: FontWeight.bold
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           )
         ),
+        backgroundColor: AppStyles.primaryColor,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: _isLoading
-                ? SpinKitThreeBounce(
-                    color: AppStyles.primaryColor,
+                ? const SpinKitThreeBounce(
+                    color: Colors.white,
                     size: 24,
                   )
                 : TextButton(
                     onPressed: _handleCreateLeague,
                     style: TextButton.styleFrom(
-                      foregroundColor: AppStyles.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     ),
-                    child: const Text(
-                      'Create',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check, size: 20),
+                        SizedBox(width: 4),
+                        Text(
+                          'Create',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
           ),
@@ -225,12 +235,21 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                           const SizedBox(height: 8),
                           TextFormField(
                             controller: _leagueNameController,
+                            textCapitalization: TextCapitalization.sentences,
                             decoration: AppStyles.inputDecoration(
                               'Max 30 chars',
                               prefixIcon: const Icon(Icons.sports_soccer),
                             ),
                             maxLength: 30,
                             buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                            // Validate on change to clear error message immediately
+                            onChanged: (value) {
+                              // Only validate if there was an error before
+                              if (_formKey.currentState != null) {
+                                // This will trigger validation and clear the error if valid
+                                _formKey.currentState!.validate();
+                              }
+                            },
                             validator: (value) {
                               if (value == null || value.isEmpty) {
                                 return 'Please enter a league name';
@@ -494,6 +513,12 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                                   inputFormatters: [
                                     FilteringTextInputFormatter.digitsOnly,
                                   ],
+                                  // Validate on change to clear error message immediately
+                                  onChanged: (value) {
+                                    if (_formKey.currentState != null) {
+                                      _formKey.currentState!.validate();
+                                    }
+                                  },
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
                                       return 'Required';
@@ -551,6 +576,12 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                                     inputFormatters: [
                                       FilteringTextInputFormatter.digitsOnly,
                                     ],
+                                    // Validate on change to clear error message immediately
+                                    onChanged: (value) {
+                                      if (_formKey.currentState != null) {
+                                        _formKey.currentState!.validate();
+                                      }
+                                    },
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
                                         return 'Required';
@@ -579,6 +610,12 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                                     inputFormatters: [
                                       FilteringTextInputFormatter.digitsOnly,
                                     ],
+                                    // Validate on change to clear error message immediately
+                                    onChanged: (value) {
+                                      if (_formKey.currentState != null) {
+                                        _formKey.currentState!.validate();
+                                      }
+                                    },
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
                                         return 'Required';
@@ -607,6 +644,12 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                                     inputFormatters: [
                                       FilteringTextInputFormatter.digitsOnly,
                                     ],
+                                    // Validate on change to clear error message immediately
+                                    onChanged: (value) {
+                                      if (_formKey.currentState != null) {
+                                        _formKey.currentState!.validate();
+                                      }
+                                    },
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
                                         return 'Required';
@@ -836,6 +879,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     );
   }
 }
+
 
 
 

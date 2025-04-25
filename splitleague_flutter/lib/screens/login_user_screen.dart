@@ -162,7 +162,12 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Get the bottom inset (keyboard height)
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
     return Scaffold(
+      // Explicitly set to true to ensure the body resizes when keyboard appears
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: const Text('SplitLeague',
           style: TextStyle(
@@ -177,7 +182,8 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
+                // Add padding at the bottom to account for keyboard height
+                padding: EdgeInsets.fromLTRB(24.0, 24.0, 24.0, bottomInset > 0 ? bottomInset + 24.0 : 24.0),
                 child: Container(
                   padding: const EdgeInsets.all(24),
                   decoration: AppStyles.cardDecoration,
@@ -285,21 +291,24 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
                         if (_errorMessage != null) const SizedBox(height: 24),
 
                         // Login button
-                        ElevatedButton(
-                          onPressed: _isLoading ? null : () {
-                            FocusScope.of(context).unfocus();  // Add this line
-                            _handleLogin();
-                          },
-                          style: AppStyles.primaryButtonStyle,
-                          child: _isLoading
-                              ? const SpinKitThreeBounce(
-                                  color: Colors.white,
-                                  size: 24,
-                                )
-                              : const Text(
-                                  'Login',
-                                  style: TextStyle(fontSize: 16),
-                                ),
+                        SizedBox(
+                          height: 50, // Fixed height for better tap target
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : () {
+                              FocusScope.of(context).unfocus();
+                              _handleLogin();
+                            },
+                            style: AppStyles.primaryButtonStyle,
+                            child: _isLoading
+                                ? const SpinKitThreeBounce(
+                                    color: Colors.white,
+                                    size: 24,
+                                  )
+                                : const Text(
+                                    'Login',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                          ),
                         ),
                         const SizedBox(height: 24),
 
@@ -424,27 +433,38 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
 
   @override
   Widget build(BuildContext context) {
+    // Get the bottom inset (keyboard height)
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
     return AlertDialog(
       title: const Text('Forgot Password'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('Enter your email address and we\'ll send you a link to reset your password.'),
-          const SizedBox(height: 16),
-          TextField(
-            controller: widget.emailController,
-            decoration: AppStyles.inputDecoration('Email'),
-            keyboardType: TextInputType.emailAddress,
-            enabled: !_isLoading,
-          ),
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.only(top: 16),
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
+      content: Padding(
+        // Add padding at the bottom to account for keyboard
+        padding: EdgeInsets.only(bottom: bottomInset > 0 ? 8.0 : 0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Enter your email address and we\'ll send you a link to reset your password.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: widget.emailController,
+              decoration: AppStyles.inputDecoration('Email'),
+              keyboardType: TextInputType.emailAddress,
+              enabled: !_isLoading,
+              // Auto-focus the text field
+              autofocus: true,
+              // Handle submit action
+              onSubmitted: (_) => _isLoading ? null : _handleForgotPassword(),
             ),
-        ],
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.only(top: 16),
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
