@@ -1,5 +1,20 @@
 ==== POSTMAN API TESTING GUIDE ====
 
+== Get App Version ==============================
+URL: http://localhost:3000/get_app_version
+Method: POST
+Headers: Content-Type: application/json
+Body:
+{
+  "platform": "android"
+}
+
+Notes:
+- Returns the minimum required app version for the specified platform
+- Valid platforms are those defined in the app_version_requirement table
+- Response includes platform and minimum_version
+======================================
+
 == Login User ==============================
 URL: http://localhost:3000/login_user
 Method: POST

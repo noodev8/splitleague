@@ -16,10 +16,12 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 async function sendVerificationEmail(email, name, verificationToken) {
   try {
     // Use the web verification route instead of the mobile deep link
-    const verificationLink = `${process.env.BASE_URL}/verify_web_email?token=${verificationToken}`;
+    // Use FRONTEND_URL or BASE_URL environment variable, with fallback
+    const baseUrl = process.env.BASE_URL || process.env.FRONTEND_URL || 'https://api.noodev8.com';
+    const verificationLink = `${baseUrl}/verify_web_email?token=${verificationToken}`;
 
     const data = await resend.emails.send({
-      from: `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_FROM}>`,  // This will show as "Noodev8 <no-reply@api.noodev8.com>"
+      from: process.env.EMAIL_NAME && process.env.EMAIL_FROM ? `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_FROM}>` : 'onboarding@resend.dev',  // Use the configured email format with fallback
       to: email,
       subject: 'Verify Your SplitLeague Account',
       html: `
@@ -51,11 +53,13 @@ async function sendVerificationEmail(email, name, verificationToken) {
 async function sendPasswordResetEmail(email, name, resetToken) {
   try {
     // Use the web reset password route instead of the mobile deep link
-    const resetLink = `${process.env.BASE_URL}/reset_password_web?token=${resetToken}`;
+    // Hardcoded base URL to ensure it works correctly
+    const baseUrl = process.env.BASE_URL || 'https://api.noodev8.com';
+    const resetLink = `${baseUrl}/reset_password_web?token=${resetToken}`;
 
     // Send the email
     const data = await resend.emails.send({
-      from: process.env.FROM_EMAIL || 'onboarding@resend.dev',  // Use the configured FROM_EMAIL or fallback to Resend's testing address
+      from: process.env.EMAIL_NAME && process.env.EMAIL_FROM ? `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_FROM}>` : 'onboarding@resend.dev',  // Use the configured email format with fallback
       to: email,
       subject: 'Reset Your SplitLeague Password',
       html: `
@@ -87,7 +91,7 @@ async function sendPasswordChangeConfirmationEmail(email, name) {
   try {
     // Send the email
     const data = await resend.emails.send({
-      from: process.env.FROM_EMAIL || 'onboarding@resend.dev',  // Use the configured FROM_EMAIL or fallback to Resend's testing address
+      from: process.env.EMAIL_NAME && process.env.EMAIL_FROM ? `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_FROM}>` : 'onboarding@resend.dev',  // Use the configured email format with fallback
       to: email,
       subject: 'Your SplitLeague Password Has Been Changed',
       html: `
@@ -113,7 +117,7 @@ async function sendVerificationSuccessEmail(email, name) {
   try {
     // Send the email
     const data = await resend.emails.send({
-      from: process.env.FROM_EMAIL || 'onboarding@resend.dev',  // Use the configured FROM_EMAIL or fallback to Resend's testing address
+      from: process.env.EMAIL_NAME && process.env.EMAIL_FROM ? `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_FROM}>` : 'onboarding@resend.dev',  // Use the configured email format with fallback
       to: email,
       subject: 'Your SplitLeague Email Has Been Verified',
       html: `

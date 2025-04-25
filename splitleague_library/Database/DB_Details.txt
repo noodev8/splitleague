@@ -4,6 +4,7 @@ league
 league_members
 fixture
 league_points
+app_version_requirement
 
 
 == Get Table Schema ==

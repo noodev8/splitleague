@@ -45,6 +45,9 @@ const reset_password_web = require('./routes/reset_password_web');
 const change_password = require('./routes/change_password');
 const update_profile = require('./routes/update_profile');
 
+// Import app version route
+const get_app_version = require('./routes/get_app_version');
+
 // Use routes
 app.use('/register_user', register_user);
 app.use('/login_user', login_user);
@@ -72,6 +75,9 @@ app.use('/reset_password', reset_password);
 app.use('/reset_password_web', reset_password_web);
 app.use('/change_password', change_password);
 app.use('/update_profile', update_profile);
+
+// Use app version route
+app.use('/get_app_version', get_app_version);
 
 // Root route
 app.get('/', (req, res) => {

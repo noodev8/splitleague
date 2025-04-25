@@ -4,10 +4,13 @@ Sets up the MaterialApp and handles initial routing based on authentication stat
 */
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'screens/login_user_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'helpers/auth_helper.dart';
+import 'helpers/config.dart';
+import 'helpers/version_helper.dart';
 import 'styles/app_styles.dart';
 import 'providers/league_provider.dart';
 import 'providers/accessibility_provider.dart';
@@ -104,10 +107,84 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
   Future<void> _checkLoginStatus() async {
     bool isLoggedIn = await AuthHelper.isLoggedIn();
 
+    // Check if the app version is valid
+    bool isVersionValid = await VersionHelper.isAppVersionValid();
+
     setState(() {
       _isLoggedIn = isLoggedIn;
       _isLoading = false;
     });
+
+    // Only show update required dialog if version is not valid
+    if (mounted && !isVersionValid) {
+      _showUpdateRequiredDialog();
+    }
+  }
+
+  // Show update required dialog
+  void _showUpdateRequiredDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User must update
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Update Required',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.system_update,
+                size: 48,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'A new version of SplitLeague is required to continue.',
+                style: TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Current version: ${Config.appVersion}',
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Please update to the latest version from the app store.',
+                style: TextStyle(fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text(
+                'Update Now',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () {
+                // Close the app - in a real app, this would redirect to the app store
+                Navigator.of(context).pop();
+                // Exit the app
+                SystemNavigator.pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
