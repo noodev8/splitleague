@@ -78,6 +78,7 @@ router.post('/', verifyToken, async (req, res) => {
         l.start_date,
         l.end_date,
         l.created_at,
+        l.allow_code_share,
         CASE WHEN l.created_by = $1 THEN true ELSE false END as is_creator,
         (
           SELECT COUNT(*) > 0
@@ -163,6 +164,7 @@ router.post('/', verifyToken, async (req, res) => {
       end_date: leagueData.end_date,
       created_at: leagueData.created_at,
       is_creator: leagueData.is_creator,
+      allow_code_share: leagueData.allow_code_share,
 
       // Include all fields from the league_points table
       points_for_win: pointsData.points_for_win,

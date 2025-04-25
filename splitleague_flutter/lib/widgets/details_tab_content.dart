@@ -71,34 +71,37 @@ class DetailsTabContent extends StatelessWidget {
                       ),
                     ),
                     if (!hasFixtures) ...[
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withAlpha(25),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: InkWell(
-                          onTap: () => onCopyToClipboard(leagueInfo['public_code']),
-                          child: Row(
-                            children: [
-                              Text(
-                                leagueInfo['public_code'] ?? 'Unknown',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
+                      // Only show the code if user is creator OR allow_code_share is true
+                      if (leagueInfo['is_creator'] == true || leagueInfo['allow_code_share'] == true) ...[
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withAlpha(25),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: InkWell(
+                            onTap: () => onCopyToClipboard(leagueInfo['public_code']),
+                            child: Row(
+                              children: [
+                                Text(
+                                  leagueInfo['public_code'] ?? 'Unknown',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 4),
-                              const Icon(
-                                Icons.copy,
-                                color: Colors.blue,
-                                size: 16,
-                              ),
-                            ],
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.copy,
+                                  color: Colors.blue,
+                                  size: 16,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ] else ...[
                       Container(
                         padding: const EdgeInsets.all(8),
