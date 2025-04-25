@@ -115,7 +115,8 @@ router.post('/', verifyToken, async (req, res) => {
       win_margin_threshold,
       play_each_other,
       start_date,
-      end_date
+      end_date,
+      allow_code_share
     } = req.body;
 
     // Check if required fields are provided
@@ -148,6 +149,9 @@ router.post('/', verifyToken, async (req, res) => {
       });
     }
 
+    // Log the allow_code_share value for debugging
+    console.log('Creating league with allow_code_share:', allow_code_share);
+
     // Begin transaction
     await client.query('BEGIN');
 
@@ -159,8 +163,9 @@ router.post('/', verifyToken, async (req, res) => {
         public_code,
         active,
         start_date,
-        end_date
-      ) VALUES ($1, $2, $3, $4, $5, $6)
+        end_date,
+        allow_code_share
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *`,
       [
         name,
@@ -168,7 +173,8 @@ router.post('/', verifyToken, async (req, res) => {
         publicCode,
         true, // Set active to true
         start_date || null,
-        end_date || null
+        end_date || null,
+        allow_code_share !== undefined ? allow_code_share : true // Default to true if not provided
       ]
     );
 
