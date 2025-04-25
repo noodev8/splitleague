@@ -63,6 +63,12 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
 
   // Generate fixtures for the league
   Future<void> _generateFixtures() async {
+    // Check if there are at least 2 players
+    if (_members.length < 2) {
+      ErrorHelper.showErrorToast('At least 2 players are needed to start the league');
+      return;
+    }
+
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
@@ -516,18 +522,24 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 8),
-                                      const Text(
-                                        'Once you start the league, fixtures will be generated for all current members. '
-                                        'No more members can be added after this point.',
+                                      Text(
+                                        _members.length < 2
+                                            ? 'You need at least 2 players to start the league. '
+                                              'Invite more players using the league code.'
+                                            : 'Once you start the league, fixtures will be generated for all current members. '
+                                              'No more members can be added after this point.',
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           fontSize: 14,
-                                          color: Colors.grey,
+                                          color: _members.length < 2 ? Colors.red.shade300 : Colors.grey,
                                         ),
                                       ),
                                       const SizedBox(height: 16),
+                                      // Check if there are at least 2 players
                                       ElevatedButton.icon(
-                                        onPressed: _isGeneratingFixtures ? null : _generateFixtures,
+                                        onPressed: _isGeneratingFixtures || _members.length < 2
+                                            ? null
+                                            : _generateFixtures,
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppStyles.primaryColor,
                                           foregroundColor: Colors.white,
@@ -535,6 +547,10 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(8),
                                           ),
+                                          // Use a different disabled color to indicate different reasons
+                                          disabledBackgroundColor: _members.length < 2
+                                              ? Colors.grey.shade400
+                                              : Colors.grey.shade300,
                                         ),
                                         icon: _isGeneratingFixtures
                                             ? const SizedBox(
@@ -546,8 +562,24 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                                                 ),
                                               )
                                             : const Icon(Icons.sports),
-                                        label: Text(_isGeneratingFixtures ? 'Generating...' : 'Start League'),
+                                        label: Text(_isGeneratingFixtures
+                                            ? 'Generating...'
+                                            : 'Start League'),
                                       ),
+
+                                      // Show message if there are fewer than 2 players
+                                      if (_members.length < 2)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 8.0),
+                                          child: Text(
+                                            'At least 2 players are needed to start the league',
+                                            style: TextStyle(
+                                              color: Colors.red.shade400,
+                                              fontSize: 12,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
                                     ],
                                   ),
                                 ),
