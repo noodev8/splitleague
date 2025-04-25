@@ -8,10 +8,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/get_league_members_api.dart';
 import '../api/remove_player_from_league_api.dart';
+import '../api/generate_fixtures_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
 import 'league_details_screen.dart';
+import 'fixtures_screen.dart';
 
 class PlayerListScreen extends StatefulWidget {
   final Map<String, dynamic> league;
@@ -41,6 +43,15 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
   // Flag to track if fixtures exist
   bool _hasFixtures = false;
 
+  // Flag to track if fixtures are being generated
+  bool _isGeneratingFixtures = false;
+
+  // Success message
+  String? _successMessage;
+
+  // Fixtures count
+  int? _fixturesCount;
+
   @override
   void initState() {
     super.initState();
@@ -48,6 +59,99 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
     print('League object: ${widget.league}');
     _loadMembers();
     _checkFixtures();
+  }
+
+  // Generate fixtures for the league
+  Future<void> _generateFixtures() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Start League'),
+        content: const Text(
+          'Are you sure you want to start the league and generate fixtures? '
+          'This will create matches for all current members. '
+          'No more members can be added after fixtures are generated.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.blue,
+            ),
+            child: const Text('Generate'),
+          ),
+        ],
+      ),
+    );
+
+    // If not confirmed, return
+    if (confirmed != true) {
+      return;
+    }
+
+    // Show loading indicator
+    setState(() {
+      _isGeneratingFixtures = true;
+      _successMessage = null;
+      _errorMessage = null;
+    });
+
+    try {
+      // Call API to generate fixtures
+      final response = await GenerateFixturesApi.generateFixtures(widget.league['league_id']);
+
+      if (response['return_code'] == 'SUCCESS') {
+        // Show success message
+        setState(() {
+          _isGeneratingFixtures = false;
+          _hasFixtures = true;
+          _successMessage = response['message'] ?? 'Fixtures generated successfully';
+          _fixturesCount = response['fixtures_created'];
+        });
+
+        // Show success toast
+        ErrorHelper.showSuccessToast(_successMessage!);
+
+        // Navigate to fixtures screen
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => FixturesScreen(
+                league: widget.league,
+              ),
+            ),
+          );
+        }
+      } else if (response['return_code'] == 'FIXTURES_ALREADY_EXIST') {
+        // If fixtures already exist, update our state
+        setState(() {
+          _isGeneratingFixtures = false;
+          _hasFixtures = true;
+          ErrorHelper.showErrorToast('Fixtures already exist for this league');
+        });
+      } else {
+        setState(() {
+          _isGeneratingFixtures = false;
+          _errorMessage = response['message'] ?? 'Failed to generate fixtures';
+        });
+
+        // Show error toast
+        ErrorHelper.showErrorToast(_errorMessage!);
+      }
+    } catch (e) {
+      setState(() {
+        _isGeneratingFixtures = false;
+        _errorMessage = 'An error occurred while generating fixtures';
+      });
+
+      // Show error toast
+      ErrorHelper.showErrorToast(_errorMessage!);
+    }
   }
 
   // Check if fixtures exist for this league
@@ -395,7 +499,60 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                                 },
                               ),
                             ),
-                            if (_isCreator)
+                            if (_isCreator) ...[
+                              // Start League button (only shown if no fixtures exist)
+                              if (!_hasFixtures)
+                                Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    children: [
+                                      const Divider(),
+                                      const SizedBox(height: 16),
+                                      const Text(
+                                        'Ready to start the league?',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      const Text(
+                                        'Once you start the league, fixtures will be generated for all current members. '
+                                        'No more members can be added after this point.',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      ElevatedButton.icon(
+                                        onPressed: _isGeneratingFixtures ? null : _generateFixtures,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppStyles.primaryColor,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                        icon: _isGeneratingFixtures
+                                            ? const SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child: CircularProgressIndicator(
+                                                  color: Colors.white,
+                                                  strokeWidth: 2,
+                                                ),
+                                              )
+                                            : const Icon(Icons.sports),
+                                        label: Text(_isGeneratingFixtures ? 'Generating...' : 'Start League'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                              // Note about player removal
                               Padding(
                                 padding: const EdgeInsets.all(16.0),
                                 child: Text(
@@ -410,6 +567,7 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                                   textAlign: TextAlign.center,
                                 ),
                               ),
+                            ],
                           ],
                         ),
         ),
