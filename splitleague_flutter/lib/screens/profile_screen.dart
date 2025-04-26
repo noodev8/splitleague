@@ -400,6 +400,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                 ),
                                 const Divider(),
+                                // Contact Us
+                                ListTile(
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.withAlpha(30),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.email_outlined,
+                                      color: Colors.blue,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  title: const Text(
+                                    'Contact Us',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  subtitle: const Text(
+                                    'Email us at info@splitleague.com',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  trailing: const Icon(Icons.open_in_new),
+                                  onTap: () => _launchURL('mailto:info@splitleague.com'),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
                                 // Privacy Policy
                                 ListTile(
                                   leading: Container(
