@@ -13,6 +13,7 @@ import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../helpers/config.dart';
 import '../styles/app_styles.dart';
+import '../widgets/app_logo.dart';
 import 'dashboard_screen.dart' as dashboard;
 import 'developer_screen.dart';
 import 'register_user_screen.dart' as register;
@@ -39,7 +40,7 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
 
   // Error message
   String? _errorMessage;
-
+  
   // Variables for developer mode tap detection
   int _tapCount = 0;
   DateTime? _lastTapTime;
@@ -173,7 +174,8 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
       appBar: AppBar(
         title: GestureDetector(
           onTap: _handleTitleTap,
-          child: const Text('SplitLeague',
+          child: const Text(
+            'SplitLeague',
             style: TextStyle(
               fontWeight: FontWeight.bold
             )
@@ -183,216 +185,254 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: Container(
-          color: AppStyles.backgroundColor,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF005F8A), // Top color from logo gradient
+                Color(0xFF00B3A4), // Bottom color from logo gradient
+              ],
+            ),
+          ),
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
                 // Add padding at the bottom to account for keyboard height
-                padding: EdgeInsets.fromLTRB(24.0, 24.0, 24.0, bottomInset > 0 ? bottomInset + 24.0 : 24.0),
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: AppStyles.cardDecoration,
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Sign in to continue',
-                          style: TextStyle(color: Colors.grey, fontSize: 16),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 24),
-                          child: Text(
-                            'SplitLeague helps friends run custom leagues and track scores\n— for any game, anytime, anywhere.',
-                            style: TextStyle(color: Colors.grey, fontSize: 14),
-                            textAlign: TextAlign.center,
+                padding: EdgeInsets.fromLTRB(24.0, 0, 24.0, bottomInset > 0 ? bottomInset + 24.0 : 24.0),
+                child: Column(
+                  children: [
+                    // Logo at the top
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      child: AppLogo(
+                        size: 100,
+                        showText: false,
+                        backgroundColor: Colors.white,
+                        opacity: 0.2,
+                      ),
+                    ),
+                    
+                    // Login form
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
                           ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Email field
-                        TextFormField(
-                          controller: _emailController,
-                          textInputAction: TextInputAction.next,
-                          onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                          decoration: AppStyles.inputDecoration(
-                            'Email',
-                            prefixIcon: const Icon(Icons.email),
-                          ),
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your email';
-                            }
-                            if (!value.contains('@')) {
-                              return 'Please enter a valid email';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Password field
-                        TextFormField(
-                          controller: _passwordController,
-                          textInputAction: TextInputAction.done,
-                          onFieldSubmitted: (_) {
-                            FocusScope.of(context).unfocus();
-                            _handleLogin();
-                          },
-                          decoration: AppStyles.inputDecoration(
-                            'Password',
-                            prefixIcon: const Icon(Icons.lock),
-                          ),
-                          obscureText: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a password';
-                            }
-                            return null;
-                          },
-                        ),
-                        // Forgot Password link
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {
-                              _showForgotPasswordDialog();
-                            },
-                            child: const Text(
-                              'Forgot Password?',
+                        ],
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text(
+                              'Sign in to continue',
                               style: TextStyle(
-                                color: AppStyles.primaryColor,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Error message
-                        if (_errorMessage != null)
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppStyles.errorColor.withAlpha(25),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              _errorMessage!,
-                              style: const TextStyle(
-                                color: AppStyles.errorColor,
-                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF005F8A),
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
                               textAlign: TextAlign.center,
                             ),
-                          ),
-                        if (_errorMessage != null) const SizedBox(height: 24),
-
-                        // Login button
-                        SizedBox(
-                          height: 50, // Fixed height for better tap target
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : () {
-                              FocusScope.of(context).unfocus();
-                              _handleLogin();
-                            },
-                            style: AppStyles.primaryButtonStyle,
-                            child: _isLoading
-                                ? const SpinKitThreeBounce(
-                                    color: Colors.white,
-                                    size: 24,
-                                  )
-                                : const Text(
-                                    'Login',
-                                    style: TextStyle(fontSize: 16),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        const SizedBox(height: 16),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Wrap(
-                            alignment: WrapAlignment.center,
-                            children: [
-                              const Text(
-                                'By signing in, you agree to our ',
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 12,
-                                ),
+                            const SizedBox(height: 8),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: Text(
+                                'Track scores, anytime, anywhere',
+                                style: TextStyle(color: Colors.grey, fontSize: 14),
+                                textAlign: TextAlign.center,
                               ),
-                              GestureDetector(
-                                onTap: () => _launchURL('https://www.noodev8.com/splitleague-terms-and-conditions/'),
-                                child: const Text(
-                                  'Terms of Service',
-                                  style: TextStyle(
-                                    color: AppStyles.primaryColor,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              const Text(
-                                ' and ',
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () => _launchURL('https://www.noodev8.com/privacy-policy/'),
-                                child: const Text(
-                                  'Privacy Policy',
-                                  style: TextStyle(
-                                    color: AppStyles.primaryColor,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-
-                        // Register link
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "Don't have an account? ",
-                              style: AppStyles.bodyStyle,
                             ),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => const register.RegisterUserScreen(),
-                                  ),
-                                );
+                            const SizedBox(height: 24),
+
+                            // Email field
+                            TextFormField(
+                              controller: _emailController,
+                              textInputAction: TextInputAction.next,
+                              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                              decoration: AppStyles.inputDecoration(
+                                'Email',
+                                prefixIcon: const Icon(Icons.email),
+                              ),
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your email';
+                                }
+                                if (!value.contains('@')) {
+                                  return 'Please enter a valid email';
+                                }
+                                return null;
                               },
-                              child: const Text(
-                                'Register',
-                                style: TextStyle(
-                                  color: AppStyles.primaryColor,
-                                  fontWeight: FontWeight.bold,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Password field
+                            TextFormField(
+                              controller: _passwordController,
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted: (_) {
+                                FocusScope.of(context).unfocus();
+                                _handleLogin();
+                              },
+                              decoration: AppStyles.inputDecoration(
+                                'Password',
+                                prefixIcon: const Icon(Icons.lock),
+                              ),
+                              obscureText: true,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter a password';
+                                }
+                                return null;
+                              },
+                            ),
+                            // Forgot Password link
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () {
+                                  _showForgotPasswordDialog();
+                                },
+                                child: const Text(
+                                  'Forgot Password?',
+                                  style: TextStyle(
+                                    color: AppStyles.primaryColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Error message
+                            if (_errorMessage != null)
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppStyles.errorColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  _errorMessage!,
+                                  style: const TextStyle(
+                                    color: AppStyles.errorColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            if (_errorMessage != null) const SizedBox(height: 24),
+
+                            // Login button
+                            SizedBox(
+                              height: 50, // Fixed height for better tap target
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : () {
+                                  FocusScope.of(context).unfocus();
+                                  _handleLogin();
+                                },
+                                style: AppStyles.primaryButtonStyle,
+                                child: _isLoading
+                                    ? const SpinKitThreeBounce(
+                                        color: Colors.white,
+                                        size: 24,
+                                      )
+                                    : const Text(
+                                        'Login',
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Terms and Privacy
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Wrap(
+                                alignment: WrapAlignment.center,
+                                children: [
+                                  const Text(
+                                    'By signing in, you agree to our ',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => _launchURL('https://www.noodev8.com/splitleague-terms-and-conditions/'),
+                                    child: const Text(
+                                      'Terms of Service',
+                                      style: TextStyle(
+                                        color: AppStyles.primaryColor,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  const Text(
+                                    ' and ',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => _launchURL('https://www.noodev8.com/privacy-policy/'),
+                                    child: const Text(
+                                      'Privacy Policy',
+                                      style: TextStyle(
+                                        color: AppStyles.primaryColor,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+
+                            // Register link
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  "Don't have an account? ",
+                                  style: AppStyles.bodyStyle,
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => const register.RegisterUserScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text(
+                                    'Register',
+                                    style: TextStyle(
+                                      color: AppStyles.primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
@@ -409,22 +449,22 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
       ErrorHelper.showErrorToast('Could not launch $url');
     }
   }
-
+  
   // Handle title tap for developer mode
   void _handleTitleTap() {
     final now = DateTime.now();
-
+    
     // Check if this is a consecutive tap (within 2 seconds)
-    if (_lastTapTime != null &&
+    if (_lastTapTime != null && 
         now.difference(_lastTapTime!).inSeconds < 2) {
       // Increment tap count
       _tapCount++;
-
+      
       // Check if we've reached 5 taps
       if (_tapCount == 5) {
         // Reset tap count
         _tapCount = 0;
-
+        
         // Navigate to developer screen
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -436,7 +476,7 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
       // Reset tap count if too much time has passed
       _tapCount = 1;
     }
-
+    
     // Update last tap time
     _lastTapTime = now;
   }
@@ -559,4 +599,3 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
     }
   }
 }
-

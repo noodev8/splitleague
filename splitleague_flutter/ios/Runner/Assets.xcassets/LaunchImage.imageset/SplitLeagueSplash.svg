@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Rounded rectangle background -->
+  <rect
+    x="25" y="25"
+    width="150" height="150"
+    rx="20" ry="20"
+    fill="#FFFFFF" fill-opacity="0.2"/>
+
+  <!-- "SL" Monogram -->
+  <text
+    x="100" y="110"
+    text-anchor="middle"
+    fill="#FFFFFF"
+    font-family="Arial, sans-serif"
+    font-weight="bold"
+    font-size="70">
+    SL
+  </text>
+
+  <!-- Three dots (league-table hint) -->
+  <g fill="#FFFFFF">
+    <circle cx="70" cy="150" r="7"/>
+    <circle cx="100" cy="150" r="7"/>
+    <circle cx="130" cy="150" r="7"/>
+  </g>
+</svg>

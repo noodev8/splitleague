@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+    width="512" height="512"
+    viewBox="0 0 512 512"
+    xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Define the background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#005F8A"/>
+      <stop offset="100%" stop-color="#00B3A4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded-corner background -->
+  <rect
+    x="0" y="0"
+    width="512" height="512"
+    rx="64" ry="64"
+    fill="url(#bgGradient)"/>
+
+  <!-- "SL" Monogram -->
+  <text
+    x="50%" y="45%"
+    text-anchor="middle"
+    fill="#FFFFFF"
+    font-family="Arial, sans-serif"
+    font-weight="bold"
+    font-size="200">
+    SL
+  </text>
+
+  <!-- Three dots (league-table hint) -->
+  <g fill="#FFFFFF">
+    <circle cx="196" cy="370" r="15"/>
+    <circle cx="256" cy="370" r="15"/>
+    <circle cx="316" cy="370" r="15"/>
+  </g>
+</svg>

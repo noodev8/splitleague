@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'screens/login_user_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/splash_screen.dart';
 import 'helpers/auth_helper.dart';
 import 'helpers/config.dart';
 import 'helpers/runtime_config.dart';
@@ -82,7 +83,7 @@ class SplitLeagueApp extends StatelessWidget {
             // Enable accessibility features
             showSemanticsDebugger: false, // Set to true for debugging accessibility
             theme: theme,
-            home: const AuthCheckScreen(),
+            home: const SplashScreen(),
           );
         },
       ),

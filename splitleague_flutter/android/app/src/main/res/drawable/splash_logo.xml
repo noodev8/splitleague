@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="150dp"
+    android:height="150dp"
+    android:viewportWidth="150"
+    android:viewportHeight="150">
+
+    <!-- Rounded rectangle background -->
+    <path
+        android:fillColor="#33FFFFFF"
+        android:pathData="M20,0L130,0C141.05,0 150,8.95 150,20L150,130C150,141.05 141.05,150 130,150L20,150C8.95,150 0,141.05 0,130L0,20C0,8.95 8.95,0 20,0Z" />
+
+    <!-- SL Text -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M45,50C45,50 45,65 45,65C45,65 65,65 65,65C65,65 65,70 65,70C65,70 45,70 45,70C45,70 45,90 45,90C45,90 40,90 40,90C40,90 40,50 40,50C40,50 60,50 60,50C60,50 60,55 60,55C60,55 45,55 45,55C45,55 45,50 45,50Z" />
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M75,50C75,50 75,85 75,85C75,85 95,85 95,85C95,85 95,90 95,90C95,90 70,90 70,90C70,90 70,50 70,50C70,50 75,50 75,50Z" />
+
+    <!-- Three dots -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M50,110m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M75,110m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+    
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M100,110m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+</vector>
