@@ -111,435 +111,446 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: const Color(0xFF005F8A),
+        elevation: 0,
         title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: Container(
-        color: AppStyles.backgroundColor,
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF005F8A), // Top color from logo gradient
+              Color(0xFF00B3A4), // Bottom color from logo gradient
+            ],
+          ),
+        ),
         child: SafeArea(
+          bottom: false,
           child: _isLoading
               ? const Center(
                   child: CircularProgressIndicator(),
                 )
-              : _userData == null
-                  ? const Center(
-                      child: Text('No user data found'),
-                    )
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Profile header
-                        Card(
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(24.0),
-                            child: Column(
-                              children: [
-                                // Avatar
-                                Stack(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 50,
-                                      backgroundColor: AppStyles.primaryColor.withAlpha(40),
-                                      child: Text(
-                                        _getInitials(_userData!['nickname']),
-                                        style: TextStyle(
-                                          fontSize: 36,
-                                          fontWeight: FontWeight.bold,
+              : SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      // Profile info card
+                      Card(
+                        elevation: 2,
+                        margin: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            children: [
+                              // Avatar
+                              Stack(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 50,
+                                    backgroundColor: AppStyles.primaryColor.withAlpha(40),
+                                    child: Text(
+                                      _getInitials(_userData!['nickname']),
+                                      style: TextStyle(
+                                        fontSize: 36,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppStyles.primaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    right: 0,
+                                    bottom: 0,
+                                    child: GestureDetector(
+                                      onTap: _navigateToEditProfile,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
                                           color: AppStyles.primaryColor,
-                                        ),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      right: 0,
-                                      bottom: 0,
-                                      child: GestureDetector(
-                                        onTap: _navigateToEditProfile,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: BoxDecoration(
-                                            color: AppStyles.primaryColor,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: Colors.white,
-                                              width: 2,
-                                            ),
-                                          ),
-                                          child: const Icon(
-                                            Icons.edit,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
                                             color: Colors.white,
-                                            size: 16,
+                                            width: 2,
                                           ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.edit,
+                                          color: Colors.white,
+                                          size: 16,
                                         ),
                                       ),
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
 
-                                // Name and Edit button
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        children: [
-                                          // Name
-                                          Text(
-                                            _userData!['name'],
-                                            style: const TextStyle(
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            textAlign: TextAlign.center,
+                              // Name and Edit button
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        // Name
+                                        Text(
+                                          _userData!['name'],
+                                          style: const TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                          // Nickname
-                                          Text(
-                                            '@${_userData!['nickname']}',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.grey[600],
-                                            ),
-                                            textAlign: TextAlign.center,
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        // Nickname
+                                        Text(
+                                          '@${_userData!['nickname']}',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.grey[600],
                                           ),
-                                        ],
-                                      ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-
-                                // Edit Profile Button
-                                TextButton.icon(
-                                  onPressed: _navigateToEditProfile,
-                                  icon: const Icon(Icons.edit),
-                                  label: const Text('Edit Profile'),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: AppStyles.primaryColor,
                                   ),
+                                ],
+                              ),
+
+                              // Edit Profile Button
+                              TextButton.icon(
+                                onPressed: _navigateToEditProfile,
+                                icon: const Icon(Icons.edit),
+                                label: const Text('Edit Profile'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppStyles.primaryColor,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 24),
+                      ),
+                      const SizedBox(height: 24),
 
-                        // User info section
-                        Card(
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Padding(
-                                  padding: EdgeInsets.only(left: 16.0, top: 8.0, bottom: 16.0),
-                                  child: Text(
-                                    'Account Information',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                      // User info section
+                      Card(
+                        elevation: 2,
+                        margin: const EdgeInsets.symmetric(horizontal: 32.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.only(left: 16.0, top: 8.0, bottom: 16.0),
+                                child: Text(
+                                  'Account Information',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                // Email
-                                _buildInfoItem(
-                                  icon: Icons.email,
-                                  title: 'Email',
-                                  value: _userData!['email'],
-                                ),
-                              ],
-                            ),
+                              ),
+                              // Email
+                              _buildInfoItem(
+                                icon: Icons.email,
+                                title: 'Email',
+                                value: _userData!['email'],
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 24),
+                      ),
+                      const SizedBox(height: 24),
 
-                        // Actions section
-                        Card(
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Padding(
-                                  padding: EdgeInsets.only(left: 16.0, top: 8.0, bottom: 16.0),
-                                  child: Text(
-                                    'Actions',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                      // Actions section
+                      Card(
+                        elevation: 2,
+                        margin: const EdgeInsets.symmetric(horizontal: 32.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.only(left: 16.0, top: 8.0, bottom: 16.0),
+                                child: Text(
+                                  'Actions',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                // Change Password button
-                                ListTile(
-                                  leading: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: AppStyles.primaryColor.withAlpha(30),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.lock_outline,
-                                      color: AppStyles.primaryColor,
-                                      size: 24,
-                                    ),
+                              ),
+                              // Change Password button
+                              ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppStyles.primaryColor.withAlpha(30),
+                                    shape: BoxShape.circle,
                                   ),
-                                  title: const Text(
-                                    'Change Password',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  subtitle: const Text(
-                                    'Update your account password',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  trailing: const Icon(Icons.chevron_right),
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) => const ChangePasswordScreen(),
-                                      ),
-                                    );
-                                  },
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                  child: Icon(
+                                    Icons.lock_outline,
+                                    color: AppStyles.primaryColor,
+                                    size: 24,
                                   ),
                                 ),
+                                title: const Text(
+                                  'Change Password',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                subtitle: const Text(
+                                  'Update your account password',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => const ChangePasswordScreen(),
+                                    ),
+                                  );
+                                },
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
 
-                                const SizedBox(height: 8),
+                              const SizedBox(height: 8),
 
-                                // Hidden Leagues button
-                                ListTile(
-                                  leading: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: AppStyles.primaryColor.withAlpha(30),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.visibility_off,
-                                      color: AppStyles.primaryColor,
-                                      size: 24,
-                                    ),
+                              // Hidden Leagues button
+                              ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppStyles.primaryColor.withAlpha(30),
+                                    shape: BoxShape.circle,
                                   ),
-                                  title: const Text(
-                                    'Hidden Leagues',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  subtitle: const Text(
-                                    'View and restore hidden leagues',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  trailing: const Icon(Icons.chevron_right),
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) => const HiddenLeaguesScreen(),
-                                      ),
-                                    );
-                                  },
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                  child: Icon(
+                                    Icons.visibility_off,
+                                    color: AppStyles.primaryColor,
+                                    size: 24,
                                   ),
                                 ),
-                                const Divider(),
-                                // Accessibility settings button
-                                ListTile(
-                                  leading: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.purple.withAlpha(30),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.accessibility_new,
-                                      color: Colors.purple,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  title: const Text(
-                                    'Accessibility Settings',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  subtitle: const Text(
-                                    'Customize accessibility options',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  trailing: const Icon(Icons.chevron_right),
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) => const AccessibilitySettingsScreen(),
-                                      ),
-                                    );
-                                  },
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                title: const Text(
+                                  'Hidden Leagues',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                const Divider(),
-                                // Contact Us
-                                ListTile(
-                                  leading: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.withAlpha(30),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.email_outlined,
-                                      color: Colors.blue,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  title: const Text(
-                                    'Contact Us',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  subtitle: const Text(
-                                    'Email us at info@splitleague.com',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  trailing: const Icon(Icons.open_in_new),
-                                  onTap: () => _launchURL('mailto:info@splitleague.com'),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                subtitle: const Text(
+                                  'View and restore hidden leagues',
+                                  style: TextStyle(
+                                    fontSize: 12,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                // Privacy Policy
-                                ListTile(
-                                  leading: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.teal.withAlpha(30),
-                                      shape: BoxShape.circle,
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => const HiddenLeaguesScreen(),
                                     ),
-                                    child: const Icon(
-                                      Icons.privacy_tip_outlined,
-                                      color: Colors.teal,
-                                      size: 24,
-                                    ),
+                                  );
+                                },
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              const Divider(),
+                              // Accessibility settings button
+                              ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.purple.withAlpha(30),
+                                    shape: BoxShape.circle,
                                   ),
-                                  title: const Text(
-                                    'Privacy Policy',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  subtitle: const Text(
-                                    'View our privacy policy',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  trailing: const Icon(Icons.open_in_new),
-                                  onTap: () => _launchURL('https://www.noodev8.com/privacy-policy/'),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                  child: const Icon(
+                                    Icons.accessibility_new,
+                                    color: Colors.purple,
+                                    size: 24,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                // Terms of Service
-                                ListTile(
-                                  leading: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.amber.withAlpha(30),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.description_outlined,
-                                      color: Colors.amber,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  title: const Text(
-                                    'Terms of Service',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  subtitle: const Text(
-                                    'View our terms of service',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  trailing: const Icon(Icons.open_in_new),
-                                  onTap: () => _launchURL('https://www.noodev8.com/splitleague-terms-and-conditions/'),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                title: const Text(
+                                  'Accessibility Settings',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                const Divider(),
-                                // Logout button
-                                ListTile(
-                                  leading: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.withAlpha(30),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.logout,
-                                      color: Colors.red,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  title: const Text(
-                                    'Logout',
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  subtitle: const Text(
-                                    'Sign out of your account',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  trailing: const Icon(Icons.chevron_right, color: Colors.red),
-                                  onTap: _handleLogout,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                subtitle: const Text(
+                                  'Customize accessibility options',
+                                  style: TextStyle(
+                                    fontSize: 12,
                                   ),
                                 ),
-                              ],
-                            ),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => const AccessibilitySettingsScreen(),
+                                    ),
+                                  );
+                                },
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              const Divider(),
+                              // Contact Us
+                              ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.withAlpha(30),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.email_outlined,
+                                    color: Colors.blue,
+                                    size: 24,
+                                  ),
+                                ),
+                                title: const Text(
+                                  'Contact Us',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                subtitle: const Text(
+                                  'Email us at info@splitleague.com',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                trailing: const Icon(Icons.open_in_new),
+                                onTap: () => _launchURL('mailto:info@splitleague.com'),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              // Privacy Policy
+                              ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.teal.withAlpha(30),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.privacy_tip_outlined,
+                                    color: Colors.teal,
+                                    size: 24,
+                                  ),
+                                ),
+                                title: const Text(
+                                  'Privacy Policy',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                subtitle: const Text(
+                                  'View our privacy policy',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                trailing: const Icon(Icons.open_in_new),
+                                onTap: () => _launchURL('https://www.noodev8.com/privacy-policy/'),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              // Terms of Service
+                              ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.withAlpha(30),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.description_outlined,
+                                    color: Colors.amber,
+                                    size: 24,
+                                  ),
+                                ),
+                                title: const Text(
+                                  'Terms of Service',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                subtitle: const Text(
+                                  'View our terms of service',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                trailing: const Icon(Icons.open_in_new),
+                                onTap: () => _launchURL('https://www.noodev8.com/splitleague-terms-and-conditions/'),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              const Divider(),
+                              // Logout button
+                              ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withAlpha(30),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.logout,
+                                    color: Colors.red,
+                                    size: 24,
+                                  ),
+                                ),
+                                title: const Text(
+                                  'Logout',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                subtitle: const Text(
+                                  'Sign out of your account',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                trailing: const Icon(Icons.chevron_right, color: Colors.red),
+                                onTap: _handleLogout,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-          ),
+                ),
+            ),
         ),
     );
   }
@@ -600,5 +611,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 }
+
+
 
 

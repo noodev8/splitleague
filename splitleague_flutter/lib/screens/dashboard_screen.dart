@@ -329,25 +329,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final String userName = _userData != null ? _userData!['nickname'] ?? 'User' : 'User';
 
     return Container(
-      color: AppStyles.backgroundColor,
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF005F8A), // Top color from logo gradient
+            Color(0xFF00B3A4), // Bottom color from logo gradient
+          ],
+        ),
+      ),
       child: Column(
         children: [
-          // Top gradient section
+          // Top section with user info
           Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF005F8A), // Top color - darker blue
-                  Color(0xFF0288D1), // Bottom color - lighter blue
-                ],
-              ),
-            ),
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 16.0), // Reduced top padding
+                padding: const EdgeInsets.fromLTRB(32.0, 8.0, 32.0, 16.0),
                 child: Row(
                   children: [
                     GestureDetector(
@@ -408,12 +409,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 complete: Icon(Icons.check, color: AppStyles.successColor),
               ),
               child: ListView(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8.0), // Reduced vertical padding from 16.0 to 8.0
                 children: [
                   // Error message
                   if (_errorMessage != null)
                     Container(
-                      margin: const EdgeInsets.only(bottom: 16),
+                      margin: const EdgeInsets.only(bottom: 8.0), // Reduced from 16.0
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: AppStyles.errorColor.withAlpha(25),
@@ -444,14 +445,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             const SizedBox(height: 16),
                             const Text(
                               'You are not a member of any leagues yet.',
-                              style: AppStyles.bodyStyle,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Create or join a league to get started',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: AppStyles.secondaryTextColor,
+                                color: Colors.white.withOpacity(0.7),
                               ),
                             ),
                           ],
@@ -463,15 +467,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   if (_leagues.isNotEmpty)
                     ...List.generate(
                       _leagues.length,
-                      (index) => LeagueCard(
-                        league: _leagues[index],
-                        onTap: () {
-                          final leagueId = _leagues[index]['league_id'];
-                          UpdateLastAccessedApi.updateLastAccessed(leagueId);
-                          final league = _leagues[index];
-                          _checkFixturesAndNavigate(league);
-                        },
-                        onRemove: _handleRemoveLeague,
+                      (index) => Padding(
+                        padding: const EdgeInsets.only(bottom: 2.0), // Reduced from 4.0 to 2.0
+                        child: LeagueCard(
+                          league: _leagues[index],
+                          onTap: () {
+                            final leagueId = _leagues[index]['league_id'];
+                            UpdateLastAccessedApi.updateLastAccessed(leagueId);
+                            final league = _leagues[index];
+                            _checkFixturesAndNavigate(league);
+                          },
+                          onRemove: _handleRemoveLeague,
+                        ),
                       ),
                     ),
                 ],
