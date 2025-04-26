@@ -8,10 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../api/register_user_api.dart';
-// import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
-// import 'dashboard_screen.dart' as dashboard;
+// import '../widgets/app_logo.dart';
 
 class RegisterUserScreen extends StatefulWidget {
   const RegisterUserScreen({super.key});
@@ -119,9 +118,13 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Get the bottom inset (keyboard height)
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Register',
+        title: const Text(
+          'Register',
           style: TextStyle(
             fontWeight: FontWeight.bold
           )
@@ -130,241 +133,277 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: Container(
-          color: AppStyles.backgroundColor,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF005F8A), // Top color from logo gradient
+                Color(0xFF00B3A4), // Bottom color from logo gradient
+              ],
+            ),
+          ),
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: AppStyles.cardDecoration,
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Create your account',
-                          style: TextStyle(color: AppStyles.secondaryTextColor, fontSize: 16),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Name field
-                        TextFormField(
-                          controller: _nameController,
-                          textCapitalization: TextCapitalization.words,
-                          textInputAction: TextInputAction.next,
-                          decoration: AppStyles.inputDecoration(
-                            'Full Name',
-                            prefixIcon: const Icon(Icons.person),
+                padding: EdgeInsets.fromLTRB(24.0, 0, 24.0, bottomInset > 0 ? bottomInset + 24.0 : 24.0),
+                child: Column(
+                  children: [
+                    // Remove the Padding widget containing AppLogo
+                    
+                    // Registration form
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your name';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Nickname field (changed to Display Name)
-                        TextFormField(
-                          controller: _nicknameController,
-                          textCapitalization: TextCapitalization.words,
-                          textInputAction: TextInputAction.next,
-                          decoration: AppStyles.inputDecoration(
-                            'Display Name',
-                            prefixIcon: const Icon(Icons.person_outline),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a display name';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Email field
-                        TextFormField(
-                          controller: _emailController,
-                          textInputAction: TextInputAction.next,
-                          decoration: AppStyles.inputDecoration(
-                            'Email',
-                            prefixIcon: const Icon(Icons.email),
-                          ),
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your email';
-                            }
-                            if (!value.contains('@')) {
-                              return 'Please enter a valid email';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Password field
-                        TextFormField(
-                          controller: _passwordController,
-                          textInputAction: TextInputAction.next,
-                          decoration: AppStyles.inputDecoration(
-                            'Password',
-                            prefixIcon: const Icon(Icons.lock),
-                          ),
-                          obscureText: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a password';
-                            }
-                            if (value.length < 4) {
-                              return 'Password must be at least 4 characters';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Confirm password field
-                        TextFormField(
-                          controller: _confirmPasswordController,
-                          textInputAction: TextInputAction.done,
-                          onFieldSubmitted: (_) {
-                            FocusScope.of(context).unfocus();
-                            _handleRegister();
-                          },
-                          decoration: AppStyles.inputDecoration(
-                            'Confirm Password',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                          ),
-                          obscureText: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please confirm your password';
-                            }
-                            if (value != _passwordController.text) {
-                              return 'Passwords do not match';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Error message
-                        if (_errorMessage != null)
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppStyles.errorColor.withAlpha(25),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              _errorMessage!,
-                              style: const TextStyle(
-                                color: AppStyles.errorColor,
-                                fontWeight: FontWeight.w500,
+                        ],
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text(
+                              'Create your account',
+                              style: TextStyle(
+                                color: Color(0xFF005F8A),
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
                               textAlign: TextAlign.center,
                             ),
-                          ),
-                        if (_errorMessage != null) const SizedBox(height: 24),
+                            const SizedBox(height: 24),
 
-                        // Register button
-                        ElevatedButton(
-                          onPressed: _isLoading ? null : () {
-                            FocusScope.of(context).unfocus();  // Add this line
-                            _handleRegister();
-                          },
-                          style: AppStyles.primaryButtonStyle,
-                          child: _isLoading
-                              ? const SpinKitThreeBounce(
-                                  color: Colors.white,
-                                  size: 24,
-                                )
-                              : const Text(
-                                  'Register',
-                                  style: TextStyle(fontSize: 16),
-                                ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Terms and Privacy Policy
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Wrap(
-                            alignment: WrapAlignment.center,
-                            children: [
-                              const Text(
-                                'By registering, you agree to our ',
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 12,
-                                ),
+                            // Name field
+                            TextFormField(
+                              controller: _nameController,
+                              textCapitalization: TextCapitalization.words,
+                              textInputAction: TextInputAction.next,
+                              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                              decoration: AppStyles.inputDecoration(
+                                'Full Name',
+                                prefixIcon: const Icon(Icons.person),
                               ),
-                              GestureDetector(
-                                onTap: () => _launchURL('https://www.noodev8.com/splitleague-terms-and-conditions/'),
-                                child: const Text(
-                                  'Terms of Service',
-                                  style: TextStyle(
-                                    color: AppStyles.primaryColor,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              const Text(
-                                ' and ',
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () => _launchURL('https://www.noodev8.com/privacy-policy/'),
-                                child: const Text(
-                                  'Privacy Policy',
-                                  style: TextStyle(
-                                    color: AppStyles.primaryColor,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Login link
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "Already have an account? ",
-                              style: AppStyles.bodyStyle,
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.of(context).pop();
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your name';
+                                }
+                                return null;
                               },
-                              child: const Text(
-                                'Login',
-                                style: TextStyle(
-                                  color: AppStyles.primaryColor,
-                                  fontWeight: FontWeight.bold,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Nickname field (changed to Display Name)
+                            TextFormField(
+                              controller: _nicknameController,
+                              textCapitalization: TextCapitalization.words,
+                              textInputAction: TextInputAction.next,
+                              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                              decoration: AppStyles.inputDecoration(
+                                'Display Name',
+                                prefixIcon: const Icon(Icons.person_outline),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter a display name';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Email field
+                            TextFormField(
+                              controller: _emailController,
+                              textInputAction: TextInputAction.next,
+                              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                              decoration: AppStyles.inputDecoration(
+                                'Email',
+                                prefixIcon: const Icon(Icons.email),
+                              ),
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your email';
+                                }
+                                if (!value.contains('@')) {
+                                  return 'Please enter a valid email';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Password field
+                            TextFormField(
+                              controller: _passwordController,
+                              textInputAction: TextInputAction.next,
+                              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                              decoration: AppStyles.inputDecoration(
+                                'Password',
+                                prefixIcon: const Icon(Icons.lock),
+                              ),
+                              obscureText: true,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter a password';
+                                }
+                                if (value.length < 4) {
+                                  return 'Password must be at least 4 characters';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Confirm password field
+                            TextFormField(
+                              controller: _confirmPasswordController,
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted: (_) {
+                                FocusScope.of(context).unfocus();
+                                _handleRegister();
+                              },
+                              decoration: AppStyles.inputDecoration(
+                                'Confirm Password',
+                                prefixIcon: const Icon(Icons.lock_outline),
+                              ),
+                              obscureText: true,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please confirm your password';
+                                }
+                                if (value != _passwordController.text) {
+                                  return 'Passwords do not match';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Error message
+                            if (_errorMessage != null)
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppStyles.errorColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  _errorMessage!,
+                                  style: const TextStyle(
+                                    color: AppStyles.errorColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
                               ),
+                            if (_errorMessage != null) const SizedBox(height: 24),
+
+                            // Register button
+                            SizedBox(
+                              height: 50, // Fixed height for better tap target
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : () {
+                                  FocusScope.of(context).unfocus();
+                                  _handleRegister();
+                                },
+                                style: AppStyles.primaryButtonStyle,
+                                child: _isLoading
+                                    ? const SpinKitThreeBounce(
+                                        color: Colors.white,
+                                        size: 24,
+                                      )
+                                    : const Text(
+                                        'Register',
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Terms and Privacy Policy
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Wrap(
+                                alignment: WrapAlignment.center,
+                                children: [
+                                  const Text(
+                                    'By registering, you agree to our ',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => _launchURL('https://www.noodev8.com/splitleague-terms-and-conditions/'),
+                                    child: const Text(
+                                      'Terms of Service',
+                                      style: TextStyle(
+                                        color: AppStyles.primaryColor,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  const Text(
+                                    ' and ',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => _launchURL('https://www.noodev8.com/privacy-policy/'),
+                                    child: const Text(
+                                      'Privacy Policy',
+                                      style: TextStyle(
+                                        color: AppStyles.primaryColor,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Login link
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  "Already have an account? ",
+                                  style: AppStyles.bodyStyle,
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: const Text(
+                                    'Login',
+                                    style: TextStyle(
+                                      color: AppStyles.primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
@@ -382,9 +421,4 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
     }
   }
 }
-
-
-
-
-
 
