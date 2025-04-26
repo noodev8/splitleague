@@ -146,7 +146,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       radius: 50,
                                       backgroundColor: AppStyles.primaryColor.withAlpha(40),
                                       child: Text(
-                                        _getInitials(_userData!['name']),
+                                        _getInitials(_userData!['nickname']),
                                         style: TextStyle(
                                           fontSize: 36,
                                           fontWeight: FontWeight.bold,
@@ -547,15 +547,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Helper method to get initials from name
-  String _getInitials(String name) {
-    if (name.isEmpty) return '';
+  // Helper method to get initials from nickname
+  String _getInitials(String nickname) {
+    if (nickname.isEmpty) return '';
 
-    List<String> nameParts = name.split(' ');
-    if (nameParts.length > 1) {
-      return nameParts[0][0].toUpperCase() + nameParts[1][0].toUpperCase();
+    List<String> nicknameParts = nickname.split(' ');
+    if (nicknameParts.length > 1) {
+      return nicknameParts[0][0].toUpperCase() + nicknameParts[1][0].toUpperCase();
     } else {
-      return name[0].toUpperCase();
+      return nickname[0].toUpperCase();
     }
   }
 
@@ -567,3 +567,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 }
+
+

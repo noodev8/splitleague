@@ -170,18 +170,18 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Nickname field
+                        // Nickname field (changed to Display Name)
                         TextFormField(
                           controller: _nicknameController,
                           textCapitalization: TextCapitalization.words,
                           textInputAction: TextInputAction.next,
                           decoration: AppStyles.inputDecoration(
-                            'Nickname',
+                            'Display Name',
                             prefixIcon: const Icon(Icons.person_outline),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter a nickname';
+                              return 'Please enter a display name';
                             }
                             return null;
                           },
