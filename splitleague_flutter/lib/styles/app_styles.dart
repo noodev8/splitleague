@@ -12,15 +12,15 @@ class AppStyles {
   static const Color backgroundColor = Color(0xFFF5F5F5);
   static const Color textColor = Color(0xFF212121);
   static const Color secondaryTextColor = Color(0xFF757575);
-  static const Color errorColor = Color(0xFFD32F2F);
   static const Color successColor = Color(0xFF388E3C);
   static const Color cardColor = Color(0xFFFFFFFF);
 
   // Ice theme colors
-  static const Color iceBlue = Color(0xFF4FC3F7);
-  static const Color iceLightBlue = Color(0xFFE1F5FE);
-  static const Color iceWhite = Color(0xFFF5F7FA);
-  static const Color iceDarkBlue = Color(0xFF0288D1);
+  static const Color iceWhite = Color(0xFFFFFFFF);
+  static const Color iceLightBlue = Color(0xFFE3F2FD);
+  static const Color iceBlue = Color(0xFF0288D1);
+  static const Color iceDarkBlue = Color(0xFF005F8A);
+  static const Color errorColor = Color(0xFFD32F2F);
 
   // Text Styles
   static const TextStyle headingStyle = TextStyle(
