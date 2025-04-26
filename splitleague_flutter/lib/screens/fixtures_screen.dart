@@ -229,117 +229,130 @@ class _FixturesScreenState extends State<FixturesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top section with padding
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-
-
-                    // Navigation buttons - improved design
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withAlpha(51), // 0.2 opacity (51/255)
-                            spreadRadius: 1,
-                            blurRadius: 3,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          // Standings button
-                          Expanded(
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => StandingsScreen(
-                                      league: widget.league,
-                                    ),
-                                  ),
-                                ).then((_) {
-                                  // Force UI refresh when returning from standings
-                                  if (mounted) {
-                                    setState(() {});
-                                  }
-                                });
-                              },
-                              borderRadius: const BorderRadius.horizontal(left: Radius.circular(10)),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                decoration: const BoxDecoration(
-                                  border: Border(
-                                    right: BorderSide(color: Colors.black12, width: 0.5),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.leaderboard, color: AppStyles.primaryColor, size: 20),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Standings',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: AppStyles.primaryColor,
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // Details button
-                          Expanded(
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => LeagueDetailsScreen(
-                                      league: widget.league,
-                                    ),
-                                  ),
-                                ).then((_) {
-                                  // Force UI refresh when returning from details
-                                  if (mounted) {
-                                    setState(() {});
-                                  }
-                                });
-                              },
-                              borderRadius: const BorderRadius.horizontal(right: Radius.circular(10)),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.info_outline, color: AppStyles.primaryColor, size: 20),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Details',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: AppStyles.primaryColor,
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                  // Top section with unified design
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withAlpha(30),
+                          spreadRadius: 0,
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                    child: Column(
+                      children: [
+                        // Navigation buttons - unified design
+                        Row(
+                          children: [
+                            // Fixtures label (current screen)
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: AppStyles.primaryColor,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.sports_soccer, color: Colors.white, size: 18),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Fixtures',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+
+                            // Standings button
+                            Expanded(
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.of(context).pushReplacement(
+                                    MaterialPageRoute(
+                                      builder: (context) => StandingsScreen(
+                                        league: widget.league,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.leaderboard, color: AppStyles.primaryColor, size: 18),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Standings',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: AppStyles.primaryColor,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+
+                            // Details button
+                            Expanded(
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.of(context).pushReplacement(
+                                    MaterialPageRoute(
+                                      builder: (context) => LeagueDetailsScreen(
+                                        league: widget.league,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.info_outline, color: AppStyles.primaryColor, size: 18),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Details',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: AppStyles.primaryColor,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -347,7 +360,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                   // Fixtures content - takes remaining space
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: const EdgeInsets.all(16.0),
                       child: FixturesTabContent(
                       isCreator: leagueProvider.isCreator,
                       isLoadingFixtures: leagueProvider.isLoadingFixtures,

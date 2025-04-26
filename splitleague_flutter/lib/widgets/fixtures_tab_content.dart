@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../widgets/fixture_card.dart';
 import '../widgets/error_display.dart';
-import '../widgets/skeleton_loading.dart';
 import '../styles/app_styles.dart';
 
 class FixturesTabContent extends StatelessWidget {
@@ -135,186 +134,170 @@ class FixturesTabContent extends StatelessWidget {
 
         // Fixtures section (only shown when fixtures exist)
         if (fixtures.isNotEmpty) ...[
-          // Filter controls section
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
+          // Filter controls section - unified design
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withAlpha(20),
+                  spreadRadius: 0,
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Played status filter row - improved design
-                Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        height: 36,
+                // Played status filter row - unified design
+                Row(
+                  children: [
+                    const Text(
+                      'Status:',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Container(
+                        height: 32,
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(18),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withAlpha(30),
-                              spreadRadius: 0,
-                              blurRadius: 2,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            _buildFilterChip(
-                              label: 'All',
-                              isSelected: filterPlayedStatus == null,
-                              onTap: onClearPlayedStatusFilter != null
-                                ? () {
-                                    // Simply apply the filter without scroll manipulation
-                                    onClearPlayedStatusFilter!.call();
-                                  }
-                                : null,
-                              isFirst: true,
+                            Expanded(
+                              child: _buildFilterChip(
+                                label: 'All',
+                                isSelected: filterPlayedStatus == null,
+                                onTap: onClearPlayedStatusFilter != null
+                                  ? () => onClearPlayedStatusFilter!.call()
+                                  : null,
+                                isFirst: true,
+                              ),
                             ),
-                            _buildFilterChip(
-                              label: 'Played',
-                              isSelected: filterPlayedStatus == 'played',
-                              onTap: onApplyPlayedStatusFilter != null
-                                ? () {
-                                    // Simply apply the filter without scroll manipulation
-                                    onApplyPlayedStatusFilter!('played');
-                                  }
-                                : null,
+                            Expanded(
+                              child: _buildFilterChip(
+                                label: 'Played',
+                                isSelected: filterPlayedStatus == 'played',
+                                onTap: onApplyPlayedStatusFilter != null
+                                  ? () => onApplyPlayedStatusFilter!('played')
+                                  : null,
+                              ),
                             ),
-                            _buildFilterChip(
-                              label: 'Not Played',
-                              isSelected: filterPlayedStatus == 'not_played',
-                              onTap: onApplyPlayedStatusFilter != null
-                                ? () {
-                                    // Simply apply the filter without scroll manipulation
-                                    onApplyPlayedStatusFilter!('not_played');
-                                  }
-                                : null,
-                              isLast: true,
+                            Expanded(
+                              child: _buildFilterChip(
+                                label: 'Not Played',
+                                isSelected: filterPlayedStatus == 'not_played',
+                                onTap: onApplyPlayedStatusFilter != null
+                                  ? () => onApplyPlayedStatusFilter!('not_played')
+                                  : null,
+                                isLast: true,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
 
-                // Player filter row - improved design
-                Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withAlpha(30),
-                        spreadRadius: 0,
-                        blurRadius: 2,
-                        offset: const Offset(0, 1),
+                const SizedBox(height: 12),
+
+                // Player filter row - unified design
+                Row(
+                  children: [
+                    const Text(
+                      'Player:',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey,
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      // Filter menu button
-                      Material(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(8),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(8),
-                          onTap: () => onShowFilterMenu(context),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.filter_list,
-                                  color: filterPlayerId != null ? AppStyles.primaryColor : Colors.grey.shade700,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Player',
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Player selection button
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => onShowFilterMenu(context),
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          height: 32,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(6),
+                            border: filterPlayerId != null
+                              ? Border.all(color: AppStyles.primaryColor, width: 1)
+                              : null,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.person,
+                                size: 16,
+                                color: filterPlayerId != null ? AppStyles.primaryColor : Colors.grey.shade700,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  filterPlayerId != null ? (filterPlayerName ?? 'Selected Player') : 'All Players',
                                   style: TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 13,
                                     color: filterPlayerId != null ? AppStyles.primaryColor : Colors.grey.shade700,
-                                    fontWeight: FontWeight.w500,
+                                    fontWeight: filterPlayerId != null ? FontWeight.w500 : FontWeight.normal,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (filterPlayerId != null)
+                                InkWell(
+                                  onTap: onClearFilter,
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(2.0),
+                                    child: Icon(
+                                      Icons.close,
+                                      size: 16,
+                                      color: AppStyles.primaryColor,
+                                    ),
                                   ),
                                 ),
-                              ],
-                            ),
+                            ],
                           ),
                         ),
                       ),
+                    ),
 
-                      // Player filter indicator
-                      Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(
-                            filterPlayerId != null ? (filterPlayerName ?? 'Selected Player') : 'All Players',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: filterPlayerId != null ? AppStyles.primaryColor : Colors.grey.shade700,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
+                    const SizedBox(width: 8),
+
+                    // Refresh button
+                    InkWell(
+                      onTap: onLoadFixtures,
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        height: 32,
+                        width: 32,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.refresh,
+                          size: 16,
+                          color: Colors.grey,
                         ),
                       ),
-
-                      // Clear filter button
-                      if (filterPlayerId != null)
-                        Material(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(8),
-                            onTap: onClearFilter,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Icon(
-                                Icons.close,
-                                size: 18,
-                                color: AppStyles.primaryColor,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                      // Divider
-                      Container(
-                        height: 24,
-                        width: 1,
-                        margin: const EdgeInsets.symmetric(horizontal: 8),
-                        color: Colors.grey.withAlpha(100),
-                      ),
-
-                      // Refresh button
-                      Material(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(8),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(8),
-                          onTap: onLoadFixtures,
-                          child: const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Icon(
-                              Icons.refresh,
-                              size: 20,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -334,15 +317,22 @@ class FixturesTabContent extends StatelessWidget {
 
         // Fixtures list
         if (isLoadingFixtures || isLoadingMembers)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Column(
-              children: List.generate(
-                3,
-                (index) => const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
-                  child: SkeletonFixtureCard(),
-                ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading fixtures...',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
             ),
           )
@@ -484,25 +474,26 @@ class FixturesTabContent extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.horizontal(
-        left: isFirst ? const Radius.circular(18) : Radius.zero,
-        right: isLast ? const Radius.circular(18) : Radius.zero,
+        left: isFirst ? const Radius.circular(6) : Radius.zero,
+        right: isLast ? const Radius.circular(6) : Radius.zero,
       ),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isSelected ? AppStyles.primaryColor : Colors.transparent,
           borderRadius: BorderRadius.horizontal(
-            left: isFirst ? const Radius.circular(18) : Radius.zero,
-            right: isLast ? const Radius.circular(18) : Radius.zero,
+            left: isFirst ? const Radius.circular(6) : Radius.zero,
+            right: isLast ? const Radius.circular(6) : Radius.zero,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
             color: isSelected ? Colors.white : Colors.black87,
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
+          textAlign: TextAlign.center,
         ),
       ),
     );
