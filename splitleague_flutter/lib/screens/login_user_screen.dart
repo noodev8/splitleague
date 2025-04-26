@@ -14,6 +14,7 @@ import '../helpers/error_helper.dart';
 import '../helpers/config.dart';
 import '../styles/app_styles.dart';
 import 'dashboard_screen.dart' as dashboard;
+import 'developer_screen.dart';
 import 'register_user_screen.dart' as register;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -38,6 +39,10 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
 
   // Error message
   String? _errorMessage;
+
+  // Variables for developer mode tap detection
+  int _tapCount = 0;
+  DateTime? _lastTapTime;
 
   @override
   void dispose() {
@@ -166,10 +171,13 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
       // Explicitly set to true to ensure the body resizes when keyboard appears
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: const Text('SplitLeague',
-          style: TextStyle(
-            fontWeight: FontWeight.bold
-          )
+        title: GestureDetector(
+          onTap: _handleTitleTap,
+          child: const Text('SplitLeague',
+            style: TextStyle(
+              fontWeight: FontWeight.bold
+            )
+          ),
         ),
       ),
       body: GestureDetector(
@@ -400,6 +408,37 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       ErrorHelper.showErrorToast('Could not launch $url');
     }
+  }
+
+  // Handle title tap for developer mode
+  void _handleTitleTap() {
+    final now = DateTime.now();
+
+    // Check if this is a consecutive tap (within 2 seconds)
+    if (_lastTapTime != null &&
+        now.difference(_lastTapTime!).inSeconds < 2) {
+      // Increment tap count
+      _tapCount++;
+
+      // Check if we've reached 5 taps
+      if (_tapCount == 5) {
+        // Reset tap count
+        _tapCount = 0;
+
+        // Navigate to developer screen
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const DeveloperScreen(),
+          ),
+        );
+      }
+    } else {
+      // Reset tap count if too much time has passed
+      _tapCount = 1;
+    }
+
+    // Update last tap time
+    _lastTapTime = now;
   }
 
   // Show forgot password dialog

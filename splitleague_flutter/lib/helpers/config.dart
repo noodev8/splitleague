@@ -15,5 +15,5 @@ class Config {
   // static const String baseUrl = 'http://77.68.13.150:3003'; // Test Server
 
   // App version information
-  static const String appVersion = '1.01';
+  static const String appVersion = '1.02';
 }

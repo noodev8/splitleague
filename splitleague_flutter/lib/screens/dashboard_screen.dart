@@ -15,6 +15,7 @@ import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
 import '../widgets/league_card.dart';
 import 'create_league_screen.dart';
+import 'developer_screen.dart';
 import 'fixtures_screen.dart';
 import 'join_league_screen.dart';
 import 'player_list_screen.dart';
@@ -45,6 +46,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // Refresh controller for pull-to-refresh
   final RefreshController _refreshController = RefreshController(initialRefresh: false);
+
+  // Variables for developer mode tap detection
+  int _tapCount = 0;
+  DateTime? _lastTapTime;
 
   @override
   void initState() {
@@ -235,11 +240,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  // Handle title tap for developer mode
+  void _handleTitleTap() {
+    final now = DateTime.now();
+
+    // Check if this is a consecutive tap (within 2 seconds)
+    if (_lastTapTime != null &&
+        now.difference(_lastTapTime!).inSeconds < 2) {
+      // Increment tap count
+      _tapCount++;
+
+      // Check if we've reached 5 taps
+      if (_tapCount == 5) {
+        // Reset tap count
+        _tapCount = 0;
+
+        // Navigate to developer screen
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const DeveloperScreen(),
+          ),
+        );
+      }
+    } else {
+      // Reset tap count if too much time has passed
+      _tapCount = 1;
+    }
+
+    // Update last tap time
+    _lastTapTime = now;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SplitLeague', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: GestureDetector(
+          onTap: _handleTitleTap,
+          child: const Text('SplitLeague', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
