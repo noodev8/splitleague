@@ -106,9 +106,53 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF005F8A),
+        elevation: 0,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: _isLoading
+                ? const SpinKitThreeBounce(
+                    color: Colors.white,
+                    size: 24,
+                  )
+                : TextButton(
+                    onPressed: _handleSave,
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check, size: 20),
+                        SizedBox(width: 4),
+                        Text(
+                          'Save',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
       ),
       body: Container(
-        color: AppStyles.backgroundColor,
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF005F8A), // Top color from logo gradient
+              Color(0xFF00B3A4), // Bottom color from logo gradient
+            ],
+          ),
+        ),
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -121,13 +165,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   Center(
                     child: CircleAvatar(
                       radius: 50,
-                      backgroundColor: AppStyles.primaryColor.withAlpha(40),
+                      backgroundColor: Colors.white.withOpacity(0.2),
                       child: Text(
                         _getInitials(_nameController.text.trim()),
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 36,
                           fontWeight: FontWeight.bold,
-                          color: AppStyles.primaryColor,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -137,6 +181,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   // Name field
                   Card(
                     elevation: 2,
+                    color: Colors.white.withOpacity(0.9),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -160,9 +205,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Nickname field (changed to Display Name)
+                  // Nickname field (Display Name)
                   Card(
                     elevation: 2,
+                    color: Colors.white.withOpacity(0.9),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -184,50 +230,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
 
                   // Error message
                   if (_errorMessage != null)
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppStyles.errorColor.withAlpha(25),
+                        color: Colors.red.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         _errorMessage!,
                         style: const TextStyle(
-                          color: AppStyles.errorColor,
+                          color: Colors.white,
                           fontWeight: FontWeight.w500,
                         ),
                         textAlign: TextAlign.center,
                       ),
                     ),
-                  if (_errorMessage != null) const SizedBox(height: 24),
-
-                  // Save button
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleSave,
-                        style: AppStyles.primaryButtonStyle,
-                        child: _isLoading
-                            ? const SpinKitThreeBounce(
-                                color: Colors.white,
-                                size: 24,
-                              )
-                            : const Text(
-                                'Save Changes',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),

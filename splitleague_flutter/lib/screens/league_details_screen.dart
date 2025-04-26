@@ -94,8 +94,18 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
       appBar: AppBar(
         title: Text(
           widget.league['name'],
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF005F8A), // Top color from logo gradient
+                Color(0xFF00B3A4), // Bottom color from logo gradient
+              ],
+            ),
           ),
         ),
       ),
@@ -264,4 +274,6 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
     );
   }
 }
+
+
 
