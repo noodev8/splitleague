@@ -116,8 +116,6 @@ class LeagueProvider extends ChangeNotifier {
 
   // Initialize with league ID and creator status
   void initLeague(dynamic leagueId, bool isCreator) {
-    print('→ initLeague($leagueId, $isCreator) at ${DateTime.now()}');
-
     // Reset the disposed flag to allow data loading
     _disposed = false;
 
@@ -294,10 +292,7 @@ class LeagueProvider extends ChangeNotifier {
 
   // Load standings
   Future<void> loadStandings() async {
-    print('loadStandings($_currentLeagueId) start at ${DateTime.now()}');
-
     if (_currentLeagueId == null || _disposed) {
-      print('loadStandings early return: _currentLeagueId=$_currentLeagueId, _disposed=$_disposed');
       return;
     }
 
@@ -312,18 +307,15 @@ class LeagueProvider extends ChangeNotifier {
         _standings = List<Map<String, dynamic>>.from(response['standings'] ?? []);
         _isLoadingStandings = false;
         _standingsErrorMessage = null;
-        print('loadStandings done at ${DateTime.now()}, ${_standings.length} rows');
       } else {
         _standings = [];
         _isLoadingStandings = false;
         _standingsErrorMessage = response['message'] ?? 'Failed to load standings';
-        print('loadStandings failed: ${response['message']}');
       }
     } catch (e) {
       _standings = [];
       _isLoadingStandings = false;
       _standingsErrorMessage = 'An error occurred while loading standings';
-      print('loadStandings exception: $e');
     }
 
     notifyListeners();  // Safe, because it only ever runs after first frame
