@@ -10,14 +10,18 @@ import 'screens/login_user_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'helpers/auth_helper.dart';
 import 'helpers/config.dart';
+import 'helpers/runtime_config.dart';
 import 'helpers/version_helper.dart';
 import 'styles/app_styles.dart';
 import 'providers/league_provider.dart';
 import 'providers/accessibility_provider.dart';
 
-void main() {
+void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize runtime configuration
+  await RuntimeConfig().initialize();
 
   // Run the app
   runApp(const SplitLeagueApp());
