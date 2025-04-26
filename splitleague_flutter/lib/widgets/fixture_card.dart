@@ -4,7 +4,6 @@ Used in the fixtures screen to show match details
 */
 
 import 'package:flutter/material.dart';
-import '../helpers/animation_helper.dart';
 import '../helpers/accessibility_helper.dart';
 import '../styles/app_styles.dart';
 
@@ -91,14 +90,19 @@ class FixtureCard extends StatelessWidget {
       label: semanticLabel,
       button: onTap != null,
       enabled: onTap != null,
-      child: AnimatedCard(
+      child: Card(
         margin: const EdgeInsets.only(bottom: 4), // Reduced spacing
-        borderRadius: BorderRadius.circular(8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
         elevation: 1.5, // Slightly reduced elevation
         // Different background color for played matches
         color: played ? Colors.blue.shade50 : Colors.white,
-        onTap: onTap != null ? () => onTap!(fixture) : null,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Reduced vertical padding
+        child: InkWell(
+          onTap: onTap != null ? () => onTap!(fixture) : null,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Reduced vertical padding
       child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -305,7 +309,9 @@ class FixtureCard extends StatelessWidget {
               ),
             ],
           ),
-    ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -3,7 +3,6 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../widgets/fixture_card.dart';
 import '../widgets/error_display.dart';
 import '../widgets/skeleton_loading.dart';
-import '../helpers/animation_helper.dart';
 import '../styles/app_styles.dart';
 
 class FixturesTabContent extends StatelessWidget {
@@ -454,24 +453,15 @@ class FixturesTabContent extends StatelessWidget {
                   // We're using a simple approximation since we're now using a SingleChildScrollView
                   final estimatedPosition = index * 120.0;
 
-                  // Scroll to the position with animation
-                  scrollController!.animateTo(
-                    estimatedPosition,
-                    duration: const Duration(milliseconds: 500),
-                    curve: Curves.easeInOut,
-                  );
+                  // Scroll to the position without animation for smoother experience
+                  scrollController!.jumpTo(estimatedPosition);
                 });
               }
 
-              return FadeSlideAnimation(
-                duration: Duration(milliseconds: 300 + index * 50), // Faster animation
-                curve: AnimCurves.spring,
-                beginOffset: const Offset(0.0, 0.15), // Reduced slide
-                beginOpacity: 0.0,
-                child: FixtureCard(
-                  fixture: fixture,
-                  onTap: onNavigateToUpdateScore,
-                ),
+              // Removed animation for smoother performance
+              return FixtureCard(
+                fixture: fixture,
+                onTap: onNavigateToUpdateScore,
               );
             },
           ),
