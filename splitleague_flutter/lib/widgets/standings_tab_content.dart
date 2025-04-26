@@ -129,6 +129,20 @@ class StandingsTabContent extends StatelessWidget {
                           ),
                         ),
                       ],
+                      // Bonus column for PTS type
+                      if (winType == 'PTS')
+                        SizedBox(
+                          width: 30,
+                          child: Text(
+                            'B',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade700,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      // Points column
                       SizedBox(
                         width: 40,
                         child: Text(
@@ -239,6 +253,19 @@ class StandingsTabContent extends StatelessWidget {
                                 ),
                               ),
                             ],
+                            // Bonus points for PTS type
+                            if (winType == 'PTS')
+                              SizedBox(
+                                width: 30,
+                                child: Text(
+                                  '${player['bonus_points'] ?? 0}',
+                                  style: TextStyle(
+                                    color: (player['bonus_points'] ?? 0) > 0 ? Colors.purple : Colors.grey,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
                             // Points
                             SizedBox(
                               width: 40,

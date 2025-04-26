@@ -13,7 +13,7 @@ class AccessibilityHelper {
     final player2 = fixture['player2_nickname'] ?? fixture['player2_name'] ?? 'Player 2';
     final date = fixture['scheduled_date'] ?? 'Unscheduled';
     final played = fixture['played'] == true;
-    
+
     if (played) {
       final score1 = fixture['player1_score'] ?? 0;
       final score2 = fixture['player2_score'] ?? 0;
@@ -29,10 +29,10 @@ class AccessibilityHelper {
     final playerCount = league['player_count'] ?? 0;
     final isOrganizer = league['is_organizer'] == true;
     final hasFixtures = league['has_fixtures'] == true;
-    
+
     String status = hasFixtures ? 'Active' : 'Not started';
     String role = isOrganizer ? 'You are the organizer' : 'You are a member';
-    
+
     return '$name. $playerCount players. Status: $status. $role';
   }
 
@@ -42,18 +42,21 @@ class AccessibilityHelper {
     final played = player['played'] ?? 0;
     final points = player['points'] ?? 0;
     final isCurrentUser = player['is_current_user'] == true;
-    
+
     String userIndicator = isCurrentUser ? 'You are ' : '';
-    
+
     if (winType == 'WIN') {
       return '$userIndicator$name. Position $position. Played $played matches. Won $points matches.';
     } else {
       final won = player['won'] ?? 0;
       final drawn = player['drawn'] ?? 0;
       final lost = player['lost'] ?? 0;
-      
+
       if (winType == 'WDL') {
         return '$userIndicator$name. Position $position. Played $played matches. Won $won, drawn $drawn, lost $lost. Points: $points.';
+      } else if (winType == 'PTS') {
+        final bonusPoints = player['bonus_points'] ?? 0;
+        return '$userIndicator$name. Position $position. Played $played matches. Won $won, lost $lost. Bonus points: $bonusPoints. Total points: $points.';
       } else {
         return '$userIndicator$name. Position $position. Played $played matches. Won $won, lost $lost. Points: $points.';
       }

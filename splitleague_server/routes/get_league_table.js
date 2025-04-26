@@ -148,6 +148,8 @@ router.post('/', verifyToken, async (req, res) => {
         playerStats.score_for = 0;
         playerStats.score_against = 0;
         playerStats.score_diff = 0;
+        playerStats.base_points = 0;
+        playerStats.bonus_points = 0;
       }
 
       return playerStats;
@@ -190,16 +192,19 @@ router.post('/', verifyToken, async (req, res) => {
 
           // Base points for win
           standings[player1Index].points += league.points_for_win;
+          standings[player1Index].base_points += league.points_for_win;
 
           // Bonus points for winning by margin
           const margin = fixture.player_1_score - fixture.player_2_score;
           if (margin >= league.win_margin_threshold) {
             standings[player1Index].points += league.points_for_win_margin;
+            standings[player1Index].bonus_points += league.points_for_win_margin;
           }
 
           // Points for close loss
           if (margin < league.win_margin_threshold) {
             standings[player2Index].points += league.points_for_close_loss;
+            standings[player2Index].bonus_points += league.points_for_close_loss;
           }
         } else if (fixture.player_2_score > fixture.player_1_score) {
           // Player 2 wins
@@ -208,16 +213,19 @@ router.post('/', verifyToken, async (req, res) => {
 
           // Base points for win
           standings[player2Index].points += league.points_for_win;
+          standings[player2Index].base_points += league.points_for_win;
 
           // Bonus points for winning by margin
           const margin = fixture.player_2_score - fixture.player_1_score;
           if (margin >= league.win_margin_threshold) {
             standings[player2Index].points += league.points_for_win_margin;
+            standings[player2Index].bonus_points += league.points_for_win_margin;
           }
 
           // Points for close loss
           if (margin < league.win_margin_threshold) {
             standings[player1Index].points += league.points_for_close_loss;
+            standings[player1Index].bonus_points += league.points_for_close_loss;
           }
         } else {
           // Draw (equal scores)
@@ -227,6 +235,8 @@ router.post('/', verifyToken, async (req, res) => {
           // Points for draw
           standings[player1Index].points += league.points_for_draw;
           standings[player2Index].points += league.points_for_draw;
+          standings[player1Index].base_points += league.points_for_draw;
+          standings[player2Index].base_points += league.points_for_draw;
         }
       } else if (winType === 'WIN') {
         // Win-only league (like Pool)
