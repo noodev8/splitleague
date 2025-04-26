@@ -881,8 +881,9 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Code sharing settings section
-                  Card(
+                  // Code sharing settings section - Commenting out instead of deleting
+                  // Keeping _allowCodeShare state variable and its usage in _handleCreateLeague
+                  /* Card(
                     elevation: 2,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -909,14 +910,14 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'Allow players to see and share league code',
+                                      'Allow players to see the league code after joining',
                                       style: TextStyle(
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'When disabled, only you can see and share the league code',
+                                      'When disabled, only you can see the league code on in the details screen',
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Colors.grey.shade600,
@@ -939,7 +940,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                         ],
                       ),
                     ),
-                  ),
+                  ), */
 
                   const SizedBox(height: 24),
 
@@ -989,6 +990,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     );
   }
 }
+
 
 
 

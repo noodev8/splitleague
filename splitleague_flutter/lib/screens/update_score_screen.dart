@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/update_fixture_score_api.dart';
 import '../helpers/auth_helper.dart';
-import '../helpers/error_helper.dart';
+//import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
 
 class UpdateScoreScreen extends StatefulWidget {
@@ -161,9 +161,6 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
 
       // Check response
       if (response['return_code'] == 'SUCCESS') {
-        // Show success message
-        ErrorHelper.showSuccessToast(response['message'] ?? 'Score updated successfully');
-
         // Call onScoreUpdated callback if provided
         if (widget.onScoreUpdated != null) {
           widget.onScoreUpdated!();
@@ -173,6 +170,9 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
         if (mounted) {
           Navigator.of(context).pop(true);
         }
+
+        // Remove the success toast since we're already showing feedback
+        // ErrorHelper.showSuccessToast(response['message'] ?? 'Score updated successfully');
       } else {
         // Show error message
         setState(() {
@@ -621,3 +621,4 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
     );
   }
 }
+
