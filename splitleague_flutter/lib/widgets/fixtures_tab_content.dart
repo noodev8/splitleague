@@ -69,6 +69,10 @@ class FixturesTabContent extends StatelessWidget {
       controller: scrollController,
       // Add padding to ensure there's enough space at the bottom
       padding: const EdgeInsets.only(bottom: 16.0),
+      // Use a unique key based on the filter status to force rebuild when filters change
+      key: ValueKey('fixtures_scroll_${filterPlayedStatus ?? "all"}'),
+      // Use BouncingScrollPhysics for more reliable scrolling behavior
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -165,7 +169,7 @@ class FixturesTabContent extends StatelessWidget {
                               isSelected: filterPlayedStatus == null,
                               onTap: onClearPlayedStatusFilter != null
                                 ? () {
-                                    // Clear filter and force UI refresh
+                                    // Simply apply the filter without scroll manipulation
                                     onClearPlayedStatusFilter!.call();
                                   }
                                 : null,
@@ -176,7 +180,7 @@ class FixturesTabContent extends StatelessWidget {
                               isSelected: filterPlayedStatus == 'played',
                               onTap: onApplyPlayedStatusFilter != null
                                 ? () {
-                                    // Apply filter and force UI refresh
+                                    // Simply apply the filter without scroll manipulation
                                     onApplyPlayedStatusFilter!('played');
                                   }
                                 : null,
@@ -186,7 +190,7 @@ class FixturesTabContent extends StatelessWidget {
                               isSelected: filterPlayedStatus == 'not_played',
                               onTap: onApplyPlayedStatusFilter != null
                                 ? () {
-                                    // Apply filter and force UI refresh
+                                    // Simply apply the filter without scroll manipulation
                                     onApplyPlayedStatusFilter!('not_played');
                                   }
                                 : null,
@@ -436,10 +440,10 @@ class FixturesTabContent extends StatelessWidget {
             showPullToRefresh: false,
           )
         else
-          // Use a ListView.builder with shrinkWrap and physics to avoid Expanded
+          // Use a ListView.builder with shrinkWrap
           ListView.builder(
             shrinkWrap: true, // Important to avoid overflow
-            physics: const NeverScrollableScrollPhysics(), // Disable scrolling as parent handles it
+            physics: const ClampingScrollPhysics(), // Allow scrolling within the parent
             itemCount: (filterPlayerId != null || filterPlayedStatus != null) ? filteredFixtures.length : fixtures.length,
             itemBuilder: (context, index) {
               final fixture = (filterPlayerId != null || filterPlayedStatus != null) ? filteredFixtures[index] : fixtures[index];

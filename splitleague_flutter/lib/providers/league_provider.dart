@@ -58,6 +58,10 @@ class LeagueProvider extends ChangeNotifier {
   bool _isFirstLoad = true;
   bool get isFirstLoad => _isFirstLoad;
 
+  // Track if we're applying a filter (to prevent scrolling)
+  bool _isApplyingFilter = false;
+  bool get isApplyingFilter => _isApplyingFilter;
+
   // Standings
   List<Map<String, dynamic>> _standings = [];
   List<Map<String, dynamic>> get standings => _standings;
