@@ -129,6 +129,19 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
             fontWeight: FontWeight.bold
           )
         ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF005F8A), // Top color from logo gradient
+                Color(0xFF00B3A4), // Bottom color from logo gradient
+              ],
+            ),
+          ),
+        ),
+        elevation: 0, // Remove shadow to blend with body gradient
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
@@ -421,4 +434,5 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
     }
   }
 }
+
 
