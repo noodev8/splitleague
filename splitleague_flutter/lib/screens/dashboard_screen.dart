@@ -275,9 +275,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: const Color(0xFF005F8A), // Solid light blue color for header
+        elevation: 0, // Remove shadow
         title: GestureDetector(
           onTap: _handleTitleTap,
-          child: const Text('SplitLeague', style: TextStyle(fontWeight: FontWeight.bold)),
+          child: const Text('SplitLeague', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         ),
       ),
       body: _isLoading
@@ -331,135 +333,155 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Container(
       color: AppStyles.backgroundColor,
-      child: SafeArea(
-        child: Column(
-          children: [
-            // Scrollable content
-            Expanded(
-              child: SmartRefresher(
-                controller: _refreshController,
-                onRefresh: _onRefresh,
-                header: const WaterDropHeader(
-                  waterDropColor: AppStyles.primaryColor,
-                  complete: Icon(Icons.check, color: AppStyles.successColor),
-                ),
-                child: ListView(
-                  padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          // Top gradient section
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF005F8A), // Top color - darker blue
+                  Color(0xFF0288D1), // Bottom color - lighter blue
+                ],
+              ),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
                   children: [
-                    // Profile card - now scrollable
-                    Card(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const ProfileScreen(),
+                          ),
+                        );
+                      },
+                      child: CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Colors.white.withAlpha(50),
+                        child: Text(
+                          _getInitials(userName),
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => const ProfileScreen(),
-                                  ),
-                                );
-                              },
-                              child: CircleAvatar(
-                                radius: 30,
-                                backgroundColor: AppStyles.primaryColor.withAlpha(30),
-                                child: Text(
-                                  _getInitials(userName),
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppStyles.primaryColor,
-                                  ),
-                                ),
-                              ),
+                    ),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Your Leagues',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          userName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Scrollable content
+          Expanded(
+            child: SmartRefresher(
+              controller: _refreshController,
+              onRefresh: _onRefresh,
+              header: const WaterDropHeader(
+                waterDropColor: AppStyles.primaryColor,
+                complete: Icon(Icons.check, color: AppStyles.successColor),
+              ),
+              child: ListView(
+                padding: const EdgeInsets.all(16.0),
+                children: [
+                  // Error message
+                  if (_errorMessage != null)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppStyles.errorColor.withAlpha(25),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, color: AppStyles.errorColor),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(color: AppStyles.errorColor),
                             ),
-                            const SizedBox(width: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  // Empty state
+                  if (_leagues.isEmpty && _errorMessage == null)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(height: 16),
+                            const Text(
+                              'You are not a member of any leagues yet.',
+                              style: AppStyles.bodyStyle,
+                            ),
+                            const SizedBox(height: 8),
                             Text(
-                              userName,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
+                              'Create or join a league to get started',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppStyles.secondaryTextColor,
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                    // Error message
-                    if (_errorMessage != null)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppStyles.errorColor.withAlpha(25),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: AppStyles.errorColor),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _errorMessage!,
-                                style: const TextStyle(color: AppStyles.errorColor),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
 
-                    // Empty state
-                    if (_leagues.isEmpty && _errorMessage == null)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const SizedBox(height: 16),
-                              const Text(
-                                'You are not a member of any leagues yet.',
-                                style: AppStyles.bodyStyle,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Create or join a league to get started',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: AppStyles.secondaryTextColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                  // Leagues list
+                  if (_leagues.isNotEmpty)
+                    ...List.generate(
+                      _leagues.length,
+                      (index) => LeagueCard(
+                        league: _leagues[index],
+                        onTap: () {
+                          final leagueId = _leagues[index]['league_id'];
+                          UpdateLastAccessedApi.updateLastAccessed(leagueId);
+                          final league = _leagues[index];
+                          _checkFixturesAndNavigate(league);
+                        },
+                        onRemove: _handleRemoveLeague,
                       ),
-
-                    // Leagues list
-                    if (_leagues.isNotEmpty)
-                      ...List.generate(
-                        _leagues.length,
-                        (index) => LeagueCard(
-                          league: _leagues[index],
-                          onTap: () {
-                            final leagueId = _leagues[index]['league_id'];
-                            UpdateLastAccessedApi.updateLastAccessed(leagueId);
-                            final league = _leagues[index];
-                            _checkFixturesAndNavigate(league);
-                          },
-                          onRemove: _handleRemoveLeague,
-                        ),
-                      ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
