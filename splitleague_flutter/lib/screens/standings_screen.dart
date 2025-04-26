@@ -34,39 +34,26 @@ class _StandingsScreenState extends State<StandingsScreen> {
   @override
   void initState() {
     super.initState();
-    // Start initialization after the first build
-    Future.microtask(() {
-      if (mounted) {
-        _initializeLeagueProvider();
-      }
+
+    // Defer provider setup until after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _isDisposing) return;
+
+      _leagueProvider = Provider.of<LeagueProvider>(context, listen: false);
+
+      // 1) Kick off all our loads immediately (creator=false for now)
+      _leagueProvider.initLeague(widget.league['league_id'], false);
+
+      // 2) Then load real creator-flag asynchronously
+      AuthHelper.getUserData().then((userData) {
+        if (!mounted || _isDisposing) return;
+
+        final isCreator = userData != null &&
+            widget.league['creator_id'] != null &&
+            userData['id'].toString() == widget.league['creator_id'].toString();
+        _leagueProvider.setCreator(isCreator);
+      });
     });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Store reference to the provider without resetting it
-    // This preserves filter states when navigating between screens
-    _leagueProvider = Provider.of<LeagueProvider>(context, listen: false);
-  }
-
-  // Initialize the league provider with the current league
-  Future<void> _initializeLeagueProvider() async {
-    if (_isDisposing) return;  // Don't initialize if disposing
-
-    // Check if current user is the creator
-    final userData = await AuthHelper.getUserData();
-    final isCreator = userData != null &&
-        widget.league['creator_id'] != null &&
-        userData['id'].toString() == widget.league['creator_id'].toString();
-
-    // Initialize the league provider
-    if (!_isDisposing) {  // Check again before updating
-      _leagueProvider.initLeague(widget.league['league_id'], isCreator);
-
-      // Load standings specifically
-      _leagueProvider.loadStandings();
-    }
   }
 
   @override
