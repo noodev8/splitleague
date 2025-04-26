@@ -50,6 +50,14 @@ class LeagueProvider extends ChangeNotifier {
   String? _fixturesErrorMessage;
   String? get fixturesErrorMessage => _fixturesErrorMessage;
 
+  // Track the last updated fixture ID for scrolling
+  int? _lastUpdatedFixtureId;
+  int? get lastUpdatedFixtureId => _lastUpdatedFixtureId;
+
+  // Track if this is the first load of fixtures
+  bool _isFirstLoad = true;
+  bool get isFirstLoad => _isFirstLoad;
+
   // Standings
   List<Map<String, dynamic>> _standings = [];
   List<Map<String, dynamic>> get standings => _standings;
@@ -158,6 +166,13 @@ class LeagueProvider extends ChangeNotifier {
 
       if (response['return_code'] == 'SUCCESS') {
         _fixtures = List<Map<String, dynamic>>.from(response['fixtures'] ?? []);
+
+        // Sort fixtures by ID on first load
+        if (_isFirstLoad && _fixtures.isNotEmpty) {
+          _sortFixturesById();
+          _isFirstLoad = false;
+        }
+
         _isLoadingFixtures = false;
         _fixturesErrorMessage = null;
 
@@ -176,6 +191,7 @@ class LeagueProvider extends ChangeNotifier {
         _fixtures = [];
         _isLoadingFixtures = false;
         _fixturesErrorMessage = null; // Don't set an error message for this case
+        _isFirstLoad = false; // Reset first load flag
       } else {
         _fixtures = [];
         _isLoadingFixtures = false;
@@ -183,6 +199,7 @@ class LeagueProvider extends ChangeNotifier {
           response,
           'Failed to load fixtures'
         );
+        _isFirstLoad = false; // Reset first load flag
       }
     } catch (e) {
       _fixtures = [];
@@ -191,6 +208,7 @@ class LeagueProvider extends ChangeNotifier {
         e,
         'An error occurred while loading fixtures'
       );
+      _isFirstLoad = false; // Reset first load flag
       // Error is already logged by handleException
     }
 
@@ -203,6 +221,33 @@ class LeagueProvider extends ChangeNotifier {
         notifyListeners();
       }
     });
+  }
+
+  // Sort fixtures by ID
+  void _sortFixturesById() {
+    _fixtures.sort((a, b) {
+      final aId = a['id'] is int ? a['id'] : int.tryParse(a['id'].toString()) ?? 0;
+      final bId = b['id'] is int ? b['id'] : int.tryParse(b['id'].toString()) ?? 0;
+      return aId.compareTo(bId);
+    });
+  }
+
+  // Set the last updated fixture ID for scrolling
+  void setLastUpdatedFixtureId(dynamic fixtureId) {
+    if (fixtureId == null) return;
+
+    // Convert to int if needed
+    _lastUpdatedFixtureId = fixtureId is int
+        ? fixtureId
+        : int.tryParse(fixtureId.toString());
+
+    notifyListeners();
+  }
+
+  // Clear the last updated fixture ID
+  void clearLastUpdatedFixtureId() {
+    _lastUpdatedFixtureId = null;
+    notifyListeners();
   }
 
   // Load league members
@@ -558,6 +603,8 @@ class LeagueProvider extends ChangeNotifier {
     _generateErrorMessage = null;
     _successMessage = null;
     _fixturesCount = null;
+    _lastUpdatedFixtureId = null;
+    _isFirstLoad = true;
 
     // Only notify listeners if requested (avoid during disposal)
     // and if the provider hasn't been disposed

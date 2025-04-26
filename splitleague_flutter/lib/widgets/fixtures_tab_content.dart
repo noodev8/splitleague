@@ -22,6 +22,8 @@ class FixturesTabContent extends StatelessWidget {
   final String? membersErrorMessage;
   final String? successMessage;
   final int? fixturesCount;
+  final int? lastUpdatedFixtureId;
+  final ScrollController? scrollController;
 
   final Function() onGenerateFixtures;
   final Function() onLoadFixtures;
@@ -49,6 +51,8 @@ class FixturesTabContent extends StatelessWidget {
     required this.membersErrorMessage,
     required this.successMessage,
     required this.fixturesCount,
+    this.lastUpdatedFixtureId,
+    this.scrollController,
     required this.onGenerateFixtures,
     required this.onLoadFixtures,
     required this.onShowFilterMenu,
@@ -61,9 +65,14 @@ class FixturesTabContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+    // Use a SingleChildScrollView to make the entire content scrollable
+    return SingleChildScrollView(
+      controller: scrollController,
+      // Add padding to ensure there's enough space at the bottom
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
         // Generate fixtures section (only for league creator and if no fixtures exist)
         if (isCreator && fixtures.isEmpty && !isLoadingFixtures) ...[
           const Text(
@@ -428,25 +437,46 @@ class FixturesTabContent extends StatelessWidget {
             showPullToRefresh: false,
           )
         else
-          Column(
-            children: List.generate(
-              (filterPlayerId != null || filterPlayedStatus != null) ? filteredFixtures.length : fixtures.length,
-              (index) {
-                final fixture = (filterPlayerId != null || filterPlayedStatus != null) ? filteredFixtures[index] : fixtures[index];
-                return FadeSlideAnimation(
-                  duration: Duration(milliseconds: 300 + index * 50), // Faster animation
-                  curve: AnimCurves.spring,
-                  beginOffset: const Offset(0.0, 0.15), // Reduced slide
-                  beginOpacity: 0.0,
-                  child: FixtureCard(
-                    fixture: fixture,
-                    onTap: onNavigateToUpdateScore,
-                  ),
-                );
-              },
-            ),
+          // Use a ListView.builder with shrinkWrap and physics to avoid Expanded
+          ListView.builder(
+            shrinkWrap: true, // Important to avoid overflow
+            physics: const NeverScrollableScrollPhysics(), // Disable scrolling as parent handles it
+            itemCount: (filterPlayerId != null || filterPlayedStatus != null) ? filteredFixtures.length : fixtures.length,
+            itemBuilder: (context, index) {
+              final fixture = (filterPlayerId != null || filterPlayedStatus != null) ? filteredFixtures[index] : fixtures[index];
+              final fixtureId = fixture['id'] is int ? fixture['id'] : int.tryParse(fixture['id'].toString()) ?? 0;
+
+              // Check if this is the fixture we need to scroll to
+              if (lastUpdatedFixtureId != null && fixtureId == lastUpdatedFixtureId && scrollController != null) {
+                // Use a post-frame callback to ensure the widget is built before scrolling
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  // Calculate approximate position (each card is about 120 pixels high)
+                  // We're using a simple approximation since we're now using a SingleChildScrollView
+                  final estimatedPosition = index * 120.0;
+
+                  // Scroll to the position with animation
+                  scrollController!.animateTo(
+                    estimatedPosition,
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeInOut,
+                  );
+                });
+              }
+
+              return FadeSlideAnimation(
+                duration: Duration(milliseconds: 300 + index * 50), // Faster animation
+                curve: AnimCurves.spring,
+                beginOffset: const Offset(0.0, 0.15), // Reduced slide
+                beginOpacity: 0.0,
+                child: FixtureCard(
+                  fixture: fixture,
+                  onTap: onNavigateToUpdateScore,
+                ),
+              );
+            },
           ),
-      ],
+        ],
+      ),
     );
   }
 

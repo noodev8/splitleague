@@ -32,6 +32,9 @@ class _FixturesScreenState extends State<FixturesScreen> {
   // Flag to track if we're disposing
   bool _isDisposing = false;
 
+  // ScrollController for fixtures list
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -70,6 +73,9 @@ class _FixturesScreenState extends State<FixturesScreen> {
 
   // Navigate to update score screen
   void _navigateToUpdateScore(Map<String, dynamic> fixture) async {
+    // Store the fixture ID before navigating
+    final fixtureId = fixture['id'];
+
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => UpdateScoreScreen(
@@ -87,6 +93,11 @@ class _FixturesScreenState extends State<FixturesScreen> {
     if (result == true && mounted && !_isDisposing) {
       // Clear any success messages to avoid showing breadcrumb at bottom
       _leagueProvider.clearSuccessMessage();
+
+      // Set the last updated fixture ID for scrolling after reload
+      _leagueProvider.setLastUpdatedFixtureId(fixtureId);
+
+      // Reload fixtures
       _leagueProvider.loadFixtures();
     }
   }
@@ -193,6 +204,8 @@ class _FixturesScreenState extends State<FixturesScreen> {
   void dispose() {
     // Mark as disposing to prevent further updates
     _isDisposing = true;
+    // Dispose of the scroll controller
+    _scrollController.dispose();
     // Clear the league provider data when leaving the screen
     _leagueProvider.clearData();
     super.dispose();
@@ -213,11 +226,15 @@ class _FixturesScreenState extends State<FixturesScreen> {
             color: AppStyles.backgroundColor,
             child: SafeArea(
               bottom: false,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top section with padding
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
 
 
                     // Navigation buttons - improved design
@@ -323,9 +340,15 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
+                      ],
+                    ),
+                  ),
 
-                    // Fixtures content
-                    FixturesTabContent(
+                  // Fixtures content - takes remaining space
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: FixturesTabContent(
                       isCreator: leagueProvider.isCreator,
                       isLoadingFixtures: leagueProvider.isLoadingFixtures,
                       isLoadingMembers: leagueProvider.isLoadingMembers,
@@ -341,8 +364,21 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       membersErrorMessage: leagueProvider.membersErrorMessage,
                       successMessage: leagueProvider.successMessage,
                       fixturesCount: leagueProvider.fixturesCount,
+                      lastUpdatedFixtureId: leagueProvider.lastUpdatedFixtureId,
+                      scrollController: _scrollController,
                       onGenerateFixtures: () => leagueProvider.generateFixtures(context),
-                      onLoadFixtures: leagueProvider.loadFixtures,
+                      onLoadFixtures: () {
+                        // Clear the last updated fixture ID after loading fixtures
+                        // to prevent scrolling on subsequent loads
+                        leagueProvider.loadFixtures().then((_) {
+                          if (leagueProvider.lastUpdatedFixtureId != null) {
+                            // Wait a bit to ensure the UI has updated before clearing
+                            Future.delayed(const Duration(seconds: 1), () {
+                              leagueProvider.clearLastUpdatedFixtureId();
+                            });
+                          }
+                        });
+                      },
                       onShowFilterMenu: _showFilterMenu,
                       onNavigateToUpdateScore: _navigateToUpdateScore,
                       onRemovePlayerFromLeague: (playerId, playerName) =>
@@ -351,8 +387,9 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       onApplyPlayedStatusFilter: leagueProvider.applyPlayedStatusFilter,
                       onClearPlayedStatusFilter: leagueProvider.clearPlayedStatusFilter,
                     ),
-                  ],
-                ),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
