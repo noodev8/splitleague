@@ -183,16 +183,16 @@ class FixtureCard extends StatelessWidget {
                             child: Row(
                               children: [
                                 Icon(
-                                  Icons.remove_circle,
+                                  Icons.add_circle,  // Changed from remove_circle
                                   size: 12,
-                                  color: Colors.orange,
+                                  color: Colors.green,  // Changed from Colors.orange
                                 ),
                                 const SizedBox(width: 4),
                                 const Text(
-                                  'Close',
+                                  'Bonus',  // Changed from 'Close'
                                   style: TextStyle(
                                     fontSize: 10,
-                                    color: Colors.orange,
+                                    color: Colors.green,  // Changed from Colors.orange
                                   ),
                                 ),
                               ],
@@ -287,17 +287,17 @@ class FixtureCard extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 const Text(
-                                  'Close',
+                                  'Bonus',  // Changed from 'Close'
                                   style: TextStyle(
                                     fontSize: 10,
-                                    color: Colors.orange,
+                                    color: Colors.green,  // Changed from Colors.orange
                                   ),
                                 ),
                                 const SizedBox(width: 4),
                                 Icon(
-                                  Icons.remove_circle,
+                                  Icons.add_circle,  // Changed from remove_circle
                                   size: 12,
-                                  color: Colors.orange,
+                                  color: Colors.green,  // Changed from Colors.orange
                                 ),
                               ],
                             ),
