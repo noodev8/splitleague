@@ -189,6 +189,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  // Helper method to get initials from nickname
+  String _getInitials(String nickname) {
+    if (nickname.isEmpty) return '';
+
+    List<String> nicknameParts = nickname.split(' ');
+    if (nicknameParts.length > 1) {
+      return nicknameParts[0][0].toUpperCase() + nicknameParts[1][0].toUpperCase();
+    } else {
+      return nickname[0].toUpperCase();
+    }
+  }
+
   // Navigate to selected tab
   void _onTabTapped(int index) {
     if (index == 1) {
@@ -317,7 +329,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               child: CircleAvatar(
                                 radius: 30,
                                 backgroundColor: AppStyles.primaryColor.withAlpha(30),
-                                child: Icon(Icons.person, color: AppStyles.primaryColor, size: 36),
+                                child: Text(
+                                  _getInitials(userName),
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppStyles.primaryColor,
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 16),
