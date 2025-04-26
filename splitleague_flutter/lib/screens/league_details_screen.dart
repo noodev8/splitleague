@@ -8,7 +8,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/league_provider.dart';
 import '../widgets/details_tab_content.dart';
-import '../widgets/skeleton_loading.dart';
 import '../helpers/auth_helper.dart';
 import '../styles/app_styles.dart';
 
@@ -110,7 +109,12 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
                   children: [
                     // Details content
                     leagueProvider.isLoadingLeagueInfo
-                      ? const SkeletonLeagueDetails()
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(24.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
                       : DetailsTabContent(
                           leagueInfo: leagueProvider.leagueInfo,
                           hasFixtures: leagueProvider.fixtures.isNotEmpty,
