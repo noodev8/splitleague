@@ -74,9 +74,6 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
         await AuthHelper.saveToken(response['token']);
         await AuthHelper.saveUserData(response['user']);
 
-        // Show success message
-        ErrorHelper.showSuccessToast('Login successful!');
-
         // Navigate to dashboard
         if (mounted) {
           Navigator.of(context).pushReplacement(

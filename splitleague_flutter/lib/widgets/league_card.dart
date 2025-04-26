@@ -23,7 +23,7 @@ class LeagueCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // Get league data using league_id instead of id where needed
     final String name = league['name'] ?? 'Unnamed League';
-    final bool isCreator = league['is_creator'] ?? false;
+    // final bool isCreator = league['is_creator'] ?? false;
     final int playerCount = league['player_count'] ?? 0;
 
     // Create semantic label for screen readers
@@ -87,18 +87,19 @@ class LeagueCard extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (isCreator)
-                      Semantics(
-                        label: 'You are the organizer of this league',
-                        child: Container(
-                          margin: const EdgeInsets.only(right: 8),
-                          child: const Icon(
-                            Icons.star,
-                            color: Colors.amber,
-                            size: 20,
-                          ),
-                        ),
-                      ),
+                    // // Show star icon for league creator
+                    // if (isCreator)
+                    //   Semantics(
+                    //     label: 'You are the organizer of this league',
+                    //     child: Container(
+                    //       margin: const EdgeInsets.only(right: 8),
+                    //       child: const Icon(
+                    //         Icons.star,
+                    //         color: Colors.amber,
+                    //         size: 20,
+                    //       ),
+                    //     ),
+                    //   ),
 
                     // Show remove option for all users
                     if (onRemove != null)
