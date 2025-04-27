@@ -278,10 +278,8 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.league['name'],
-          style: const TextStyle(fontWeight: FontWeight.bold)
-        ),
+        title: Text(widget.league['name'] ?? 'League Players'),
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -291,8 +289,8 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
               Navigator.of(context).pushReplacement(
                 PageRouteBuilder(
                   pageBuilder: (context, animation, secondaryAnimation) => const DashboardScreen(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
                   transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
                 ),
               );
             }
@@ -311,294 +309,214 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
           ),
         ),
       ),
-      body: Container(
-        color: AppStyles.backgroundColor,
-        child: SafeArea(
-          bottom: false,
-          child: _isLoading
-              ? const Center(
-                  child: SpinKitThreeBounce(
-                    color: AppStyles.primaryColor,
-                    size: 24,
-                  ),
-                )
-              : _errorMessage != null
-                  ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              color: Colors.red,
-                              size: 48,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              _errorMessage!,
-                              style: const TextStyle(
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadMembers,
-                              style: AppStyles.primaryButtonStyle,
-                              child: const Text('Retry'),
-                            ),
-                          ],
+      body: _isLoading
+        ? const Center(
+            child: SpinKitCircle(
+              color: Colors.blue,
+              size: 50.0,
+            ),
+          )
+        : _errorMessage != null
+          ? Center(
+              child: Text(
+                _errorMessage!,
+                style: const TextStyle(color: Colors.red),
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Header text
+                        Text(
+                          'League Players',
+                          style: AppStyles.sectionHeading,
                         ),
-                      ),
-                    )
-                  : _members.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
+                        const SizedBox(height: 16),
+
+                        // Player count
+                        Text(
+                          '${_members.length} players joined',
+                          style: AppStyles.subtitle,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Players list
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _members.length,
+                          itemBuilder: (context, index) {
+                            final member = _members[index];
+                            final memberId = member['id'];
+                            final memberName = member['nickname'] ?? member['name'] ?? 'Unknown Player';
+                            final isCreator = member['is_creator'] == true ||
+                                            member['is_organiser'] == true ||
+                                            member['is_organizer'] == true;
+
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 8.0),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  child: Text(
+                                    memberName.substring(0, 1).toUpperCase(),
+                                  ),
+                                ),
+                                title: Text(memberName),
+                                subtitle: isCreator 
+                                  ? const Text('League Organizer', 
+                                      style: TextStyle(color: Colors.blue)
+                                    )
+                                  : null,
+                                trailing: _isCreator && !isCreator && !_hasFixtures
+                                  ? IconButton(
+                                      icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                                      onPressed: () => _removePlayer(memberId, memberName),
+                                    )
+                                  : null,
+                              ),
+                            );
+                          },
+                        ),
+
+                        // Generate fixtures section
+                        if (_isCreator && !_hasFixtures) ...[
+                          const Divider(height: 32),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.blue.shade100),
+                            ),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
-                                  Icons.people,
-                                  size: 48,
-                                  color: Colors.grey.shade400,
-                                ),
-                                const SizedBox(height: 16),
                                 const Text(
-                                  'No players in this league yet',
+                                  'Generate Fixtures',
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'Ready to start the league? Generate fixtures for all members based on the "Play Each Other" setting.',
+                                  style: TextStyle(fontSize: 14),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton.icon(
+                                  onPressed: _isGeneratingFixtures ? null : _generateFixtures,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  icon: _isGeneratingFixtures
+                                      ? SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                          ),
+                                        )
+                                      : const Icon(Icons.sports),
+                                  label: Text(_isGeneratingFixtures ? 'Generating...' : 'Generate Fixtures'),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _hasFixtures
+                                      ? 'Note: Players cannot be removed after fixtures are generated.'
+                                      : 'Note: You can remove players before fixtures are generated.',
+                                  style: TextStyle(
+                                    color: _hasFixtures ? Colors.red.shade700 : Colors.grey.shade700,
+                                    fontStyle: FontStyle.italic,
+                                    fontSize: 12,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
                               ],
                             ),
                           ),
-                        )
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Player count badge
-                            Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: AppStyles.primaryColor.withAlpha(30),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.people, color: AppStyles.primaryColor, size: 16),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '${_members.length} Players',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: AppStyles.primaryColor,
-                                      ),
+
+                          // Error message
+                          if (_generateErrorMessage != null)
+                            Container(
+                              margin: const EdgeInsets.only(top: 16),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.red.shade100),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.error_outline, color: Colors.red.shade700),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _generateErrorMessage!,
+                                      style: TextStyle(color: Colors.red.shade700),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                  TextButton(
+                                    onPressed: _generateFixtures,
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.red.shade700,
+                                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    ),
+                                    child: const Text('Retry'),
+                                  ),
+                                ],
                               ),
                             ),
-                            Expanded(
-                              child: ListView.builder(
-                                itemCount: _members.length,
-                                itemBuilder: (context, index) {
-                                  final member = _members[index];
-                                  final memberId = member['id'];
-                                  final memberName = member['nickname'] ?? member['name'] ?? 'Unknown Player';
-                                  // Check multiple possible fields for creator status
-                                  final isCreator = member['is_creator'] == true ||
-                                                   member['is_organiser'] == true ||
-                                                   member['is_organizer'] == true;
 
-                                  // Debug print for each list item to check conditions
-                                  print('Player: $memberName, isCreator: $isCreator, _isCreator: $_isCreator, _hasFixtures: $_hasFixtures, showRemoveButton: ${_isCreator && !isCreator && !_hasFixtures}');
-
-                                  return Card(
-                                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                          // Success message
+                          if (_successMessage != null)
+                            Container(
+                              margin: const EdgeInsets.only(top: 16),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.green.shade100),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.check_circle, color: Colors.green.shade700),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _fixturesCount != null
+                                          ? '$_successMessage\n$_fixturesCount fixtures created'
+                                          : _successMessage!,
+                                      style: TextStyle(color: Colors.green.shade700),
                                     ),
-                                    child: ListTile(
-                                      leading: CircleAvatar(
-                                        backgroundColor: Colors.grey.shade100,
-                                        child: Icon(
-                                          Icons.person,
-                                          color: Colors.grey.shade700,
-                                        ),
-                                      ),
-                                      title: Text(
-                                        memberName,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,  // All names now bold
-                                        ),
-                                      ),
-                                      subtitle: isCreator
-                                          ? const Text(
-                                              'Organiser',
-                                              style: TextStyle(
-                                                color: AppStyles.primaryColor,
-                                                fontSize: 12,
-                                              ),
-                                            )
-                                          : null,
-                                      trailing: _isCreator && !isCreator && !_hasFixtures
-                                          ? Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.red.withAlpha(25),
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: IconButton(
-                                                icon: const Icon(Icons.remove_circle, color: Colors.red),
-                                                onPressed: () => _removePlayer(memberId, memberName),
-                                                tooltip: 'Remove player',
-                                              ),
-                                            )
-                                          : null,
-                                    ),
-                                  );
-                                },
+                                  ),
+                                ],
                               ),
                             ),
-                            // Generate fixtures section (only for league creator and if no fixtures exist)
-                            if (_isCreator && !_hasFixtures) ...[
-                              const Divider(height: 32),
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.shade50,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.blue.shade100),
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Text(
-                                      'Generate Fixtures',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.blue,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    const Text(
-                                      'Ready to start the league? Generate fixtures for all members based on the "Play Each Other" setting.',
-                                      style: TextStyle(fontSize: 14),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    ElevatedButton.icon(
-                                      onPressed: _isGeneratingFixtures ? null : _generateFixtures,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue,
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                      icon: _isGeneratingFixtures
-                                          ? SizedBox(
-                                              height: 20,
-                                              width: 20,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                valueColor: AlwaysStoppedAnimation<Color>(
-                                                  Colors.white,
-                                                ),
-                                              ),
-                                            )
-                                          : const Icon(Icons.sports),
-                                      label: Text(_isGeneratingFixtures ? 'Generating...' : 'Generate Fixtures'),
-                                    ),
-                                    // Add note at the bottom of the container with proper spacing
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      _hasFixtures
-                                          ? 'Note: Players cannot be removed after fixtures are generated.'
-                                          : 'Note: You can remove players before fixtures are generated.',
-                                      style: TextStyle(
-                                        color: _hasFixtures ? Colors.red.shade700 : Colors.grey.shade700,
-                                        fontStyle: FontStyle.italic,
-                                        fontSize: 12,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // Error message
-                              if (_generateErrorMessage != null)
-                                Container(
-                                  margin: const EdgeInsets.only(top: 16),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.red.shade100),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.error_outline, color: Colors.red.shade700),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          _generateErrorMessage!,
-                                          style: TextStyle(color: Colors.red.shade700),
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: _generateFixtures,
-                                        style: TextButton.styleFrom(
-                                          foregroundColor: Colors.red.shade700,
-                                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                                        ),
-                                        child: const Text('Retry'),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                              // Success message
-                              if (_successMessage != null)
-                                Container(
-                                  margin: const EdgeInsets.only(top: 16),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.green.shade100),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.check_circle, color: Colors.green.shade700),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          _fixturesCount != null
-                                              ? '$_successMessage\n$_fixturesCount fixtures created'
-                                              : _successMessage!,
-                                          style: TextStyle(color: Colors.green.shade700),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ],
-                        ),
-        ),
-      ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }
@@ -752,5 +670,9 @@ class EmptyStateDisplay extends StatelessWidget {
     );
   }
 }
+
+
+
+
 
 

@@ -45,6 +45,18 @@ class AppStyles {
     color: secondaryTextColor,
   );
 
+  static const TextStyle sectionHeading = TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.bold,
+    color: textColor,
+  );
+
+  static const TextStyle subtitle = TextStyle(
+    fontSize: 14,
+    color: secondaryTextColor,
+    fontWeight: FontWeight.w500,
+  );
+
   // Button Styles
   static final ButtonStyle primaryButtonStyle = ElevatedButton.styleFrom(
     backgroundColor: primaryColor,
