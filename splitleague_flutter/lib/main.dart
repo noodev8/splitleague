@@ -6,6 +6,7 @@ Sets up the MaterialApp and handles initial routing based on authentication stat
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'screens/login_user_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/splash_screen.dart';
@@ -68,22 +69,36 @@ class SplitLeagueApp extends StatelessWidget {
           // Apply high contrast if needed
           final theme = accessibilityProvider.getThemeData(baseTheme);
 
-          return MaterialApp(
-            builder: (context, child) {
-              return MediaQuery(
-                // Apply text scaling
-                data: MediaQuery.of(context).copyWith(
-                  textScaler: TextScaler.linear(textScaleFactor),
-                ),
-                child: child!,
-              );
-            },
-            title: 'SplitLeague',
-            debugShowCheckedModeBanner: false,
-            // Enable accessibility features
-            showSemanticsDebugger: false, // Set to true for debugging accessibility
-            theme: theme,
-            home: const SplashScreen(),
+          return RefreshConfiguration(
+            // Make pull-to-refresh less sensitive
+            headerTriggerDistance: 120.0, // Default is 80.0, higher means less sensitive
+            dragSpeedRatio: 0.7, // Default is 1.0, lower means more drag required
+            // Adjust spring animation to feel less "jumpy"
+            springDescription: const SpringDescription(
+              mass: 2.5,       // Default is 2.2
+              stiffness: 120,  // Default is 150, lower means less "snap back" force
+              damping: 20,     // Default is 16, higher means more damping
+            ),
+            // Other configuration options
+            enableScrollWhenRefreshCompleted: true,
+            enableBallisticRefresh: false,
+            child: MaterialApp(
+              builder: (context, child) {
+                return MediaQuery(
+                  // Apply text scaling
+                  data: MediaQuery.of(context).copyWith(
+                    textScaler: TextScaler.linear(textScaleFactor),
+                  ),
+                  child: child!,
+                );
+              },
+              title: 'SplitLeague',
+              debugShowCheckedModeBanner: false,
+              // Enable accessibility features
+              showSemanticsDebugger: false, // Set to true for debugging accessibility
+              theme: theme,
+              home: const SplashScreen(),
+            ),
           );
         },
       ),

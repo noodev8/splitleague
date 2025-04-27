@@ -423,9 +423,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: SmartRefresher(
               controller: _refreshController,
               onRefresh: _onRefresh,
-              header: const WaterDropHeader(
-                waterDropColor: AppStyles.primaryColor,
-                complete: Icon(Icons.check, color: AppStyles.successColor),
+              // Add custom physics to make it less sensitive
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              // Use ClassicHeader which is less sensitive to accidental pulls
+              header: const ClassicHeader(
+                refreshStyle: RefreshStyle.Behind, // Less intrusive style
+                height: 60.0, // Smaller height than default
+                completeText: '',
+                refreshingText: 'Updating...',
+                releaseText: '',
+                idleText: '',
+                textStyle: TextStyle(color: Colors.white70),
+                // Use minimal, subtle icons or no icons at all
+                failedIcon: Icon(Icons.error, color: Colors.white70, size: 18.0),
+                completeIcon: Icon(Icons.check, color: AppStyles.successColor, size: 18.0),
+                idleIcon: SizedBox.shrink(), // No icon in idle state
+                releaseIcon: SizedBox.shrink(), // No icon in release state
+                refreshingIcon: SizedBox(
+                  width: 20.0,
+                  height: 20.0,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.0,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                  ),
+                ),
               ),
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8.0), // Reduced vertical padding from 16.0 to 8.0
@@ -474,7 +497,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               'Create or join a league to get started',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.white.withOpacity(0.7),
+                                color: Colors.white.withOpacity(0.7), // Using withOpacity for backward compatibility
                               ),
                             ),
                           ],
