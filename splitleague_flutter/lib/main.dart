@@ -11,7 +11,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/splash_screen.dart';
 import 'helpers/auth_helper.dart';
 import 'helpers/config.dart';
-import 'helpers/runtime_config.dart';
+// import 'helpers/runtime_config.dart';
 import 'helpers/version_helper.dart';
 import 'styles/app_styles.dart';
 import 'providers/league_provider.dart';
@@ -22,7 +22,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize runtime configuration
-  await RuntimeConfig().initialize();
+  // await RuntimeConfig().initialize();
 
   // Run the app
   runApp(const SplitLeagueApp());
