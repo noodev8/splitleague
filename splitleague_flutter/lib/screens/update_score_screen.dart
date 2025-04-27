@@ -73,21 +73,11 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
           final int player2Id = widget.fixture['player_2_id'];
           final bool isCreator = widget.fixture['is_creator'] ?? false;
 
-          // Debug prints
-          print('Authorization check:');
-          print('User ID: $userId');
-          print('Player1 ID: $player1Id');
-          print('Player2 ID: $player2Id');
-          print('Is Creator: $isCreator');
-
           // User is authorized if they are the league creator or one of the players
           _isAuthorized = isCreator || userId == player1Id || userId == player2Id;
           
           // Set creator flag (only league creators can void fixtures)
           _isCreator = isCreator;
-
-          print('Is Authorized: $_isAuthorized');
-          print('Is Creator: $_isCreator');
         }
       });
     }

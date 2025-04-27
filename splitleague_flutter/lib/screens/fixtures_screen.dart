@@ -51,23 +51,15 @@ class _FixturesScreenState extends State<FixturesScreen> {
   Future<void> _initializeLeagueProvider() async {
     // Check if current user is the creator
     final userData = await AuthHelper.getUserData();
-    print('User Data: $userData'); // Debug print
-    print('Full League Object: ${widget.league}'); // Debug print
-    print('League Creator ID: ${widget.league['creator_id']}'); // Debug print
-    print('League Created By: ${widget.league['created_by']}'); // Debug print
     
     // Check both creator_id and created_by fields
     final creatorId = widget.league['creator_id'] ?? widget.league['created_by'];
     final isCreator = userData != null &&
                       creatorId != null &&
                       userData['id'].toString() == creatorId.toString();
-    
-    print('Creator ID used: $creatorId'); // Debug print
-    print('Is Creator calculated: $isCreator'); // Debug print
 
     // Initialize the league provider
     _leagueProvider.initLeague(widget.league['league_id'], isCreator);
-    print('League Provider isCreator after init: ${_leagueProvider.isCreator}'); // Debug print
   }
 
   @override
@@ -75,15 +67,11 @@ class _FixturesScreenState extends State<FixturesScreen> {
     super.didChangeDependencies();
     // Store reference to the provider
     _leagueProvider = Provider.of<LeagueProvider>(context, listen: false);
-    print('Provider initialized in didChangeDependencies'); // Debug print
-    print('Current League ID: ${_leagueProvider.currentLeagueId}'); // Debug print
-    print('Is Creator in provider: ${_leagueProvider.isCreator}'); // Debug print
 
     // We don't want to reset the provider here as it would clear filter states
     // Instead, we'll initialize it if it's not already initialized with this league
     if (_leagueProvider.currentLeagueId != widget.league['league_id']) {
       _leagueProvider.reset();
-      print('Provider reset due to different league ID'); // Debug print
     }
   }
 
@@ -92,11 +80,6 @@ class _FixturesScreenState extends State<FixturesScreen> {
     // Create a new map with all existing fixture data plus the creator status
     final updatedFixture = Map<String, dynamic>.from(fixture);
     updatedFixture['is_creator'] = _leagueProvider.isCreator;
-    
-    print('Debug - Creator status check:');
-    print('Provider isCreator: ${_leagueProvider.isCreator}');
-    print('Updated fixture: $updatedFixture');
-    print('is_creator in fixture: ${updatedFixture['is_creator']}');
 
     final result = await Navigator.of(context).push(
       MaterialPageRoute(

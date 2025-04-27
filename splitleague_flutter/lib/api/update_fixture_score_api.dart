@@ -33,7 +33,6 @@ class UpdateFixtureScoreApi {
     int? player2Score,
     String? result
   }) async {
-    // Create the request URL
     final url = Uri.parse('${Config.baseUrl}/update_fixture_score');
 
     try {
