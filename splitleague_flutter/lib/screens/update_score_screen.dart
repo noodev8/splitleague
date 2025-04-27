@@ -203,6 +203,18 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Update Score', style: TextStyle(fontWeight: FontWeight.bold)),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF005F8A), // Top color from logo gradient
+                Color(0xFF00B3A4), // Bottom color from logo gradient
+              ],
+            ),
+          ),
+        ),
       ),
       body: Container(
         color: AppStyles.backgroundColor,
