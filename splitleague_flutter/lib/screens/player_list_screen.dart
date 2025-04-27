@@ -11,7 +11,8 @@ import '../api/remove_player_from_league_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
-import 'league_details_screen.dart';
+//import 'league_details_screen.dart';
+import 'dashboard_screen.dart';
 
 class PlayerListScreen extends StatefulWidget {
   final Map<String, dynamic> league;
@@ -213,25 +214,38 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.league['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-        actions: [
-          // Details button in AppBar
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            tooltip: 'League Details',
-            onPressed: () {
-              Navigator.of(context).push(
+        title: Text(
+          widget.league['name'], 
+          style: const TextStyle(fontWeight: FontWeight.bold)
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              Navigator.of(context).pushReplacement(
                 PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) => LeagueDetailsScreen(
-                    league: widget.league,
-                  ),
+                  pageBuilder: (context, animation, secondaryAnimation) => const DashboardScreen(),
                   transitionDuration: Duration.zero,
                   reverseTransitionDuration: Duration.zero,
                 ),
               );
-            },
+            }
+          },
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF005F8A), // Top color from logo gradient
+                Color(0xFF00B3A4), // Bottom color from logo gradient
+              ],
+            ),
           ),
-        ],
+        ),
       ),
       body: Container(
         color: AppStyles.backgroundColor,
@@ -412,6 +426,8 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
     );
   }
 }
+
+
 
 
 
