@@ -175,7 +175,7 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
         title: GestureDetector(
           onTap: _handleTitleTap,
           child: const Text(
-            'SplitLeague',
+            'Split League',  // Changed from 'SplitLeague'
             style: TextStyle(
               fontWeight: FontWeight.bold
             )
@@ -612,5 +612,6 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
     }
   }
 }
+
 
 

@@ -30,7 +30,7 @@ class AppLogo extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Logo container with rounded corners
+        // Logo container
         Container(
           width: size,
           height: size,
@@ -73,24 +73,23 @@ class AppLogo extends StatelessWidget {
         // App name text (optional)
         if (showText) ...[
           const SizedBox(height: 16),
-          const Text(
-            'SplitLeague',
+          Text(
+            'Split League',  // Changed from 'SplitLeague'
             style: TextStyle(
-              color: Colors.white,
+              color: textColor,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
-          
-          // Subtitle (optional)
           if (subtitle != null) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
               subtitle!,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: textColor,
                 fontSize: 14,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ],
@@ -110,3 +109,6 @@ class AppLogo extends StatelessWidget {
     );
   }
 }
+
+
+

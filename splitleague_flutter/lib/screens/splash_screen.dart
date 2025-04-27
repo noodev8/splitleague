@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../helpers/auth_helper.dart';
 import '../helpers/version_helper.dart';
-import '../styles/app_styles.dart';
+// import '../styles/app_styles.dart';
 import '../widgets/app_logo.dart';
 import 'dashboard_screen.dart';
 import 'login_user_screen.dart';
