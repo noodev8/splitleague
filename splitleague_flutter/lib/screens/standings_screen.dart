@@ -11,6 +11,7 @@ import '../helpers/auth_helper.dart';
 import '../styles/app_styles.dart';
 import 'fixtures_screen.dart';
 import 'league_details_screen.dart';
+import 'dashboard_screen.dart';
 
 class StandingsScreen extends StatefulWidget {
   final Map<String, dynamic> league;
@@ -74,6 +75,21 @@ class _StandingsScreenState extends State<StandingsScreen> {
           style: const TextStyle(
             fontWeight: FontWeight.bold,
           ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              // If we can't pop, navigate to the dashboard using MaterialPageRoute
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const DashboardScreen(),
+                ),
+              );
+            }
+          },
         ),
         flexibleSpace: Container(
           decoration: const BoxDecoration(

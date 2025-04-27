@@ -12,6 +12,7 @@ import '../styles/app_styles.dart';
 import 'update_score_screen.dart';
 import 'standings_screen.dart';
 import 'league_details_screen.dart';
+import 'dashboard_screen.dart';
 
 class FixturesScreen extends StatefulWidget {
   final Map<String, dynamic> league;
@@ -75,6 +76,10 @@ class _FixturesScreenState extends State<FixturesScreen> {
   void _navigateToUpdateScore(Map<String, dynamic> fixture) async {
     // Store the fixture ID before navigating
     final fixtureId = fixture['id'];
+
+    // Debug print to check fixture data before passing to UpdateScoreScreen
+    print('Navigating to UpdateScoreScreen with fixture: $fixture');
+    print('is_creator in fixture: ${fixture['is_creator']}');
 
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
@@ -219,6 +224,21 @@ class _FixturesScreenState extends State<FixturesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.league['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              // If we can't pop, navigate to the dashboard using MaterialPageRoute
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const DashboardScreen(),
+                ),
+              );
+            }
+          },
+        ),
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(

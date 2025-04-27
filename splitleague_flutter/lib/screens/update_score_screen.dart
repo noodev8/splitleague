@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/update_fixture_score_api.dart';
+import '../api/void_fixture_api.dart';
 import '../helpers/auth_helper.dart';
 //import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
@@ -36,8 +37,9 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
   // Result selection for WIN/WDL win types
   String? _selectedResult;
 
-  // Loading state
+  // Loading states
   bool _isSubmitting = false;
+  bool _isVoiding = false;
 
   // Error message
   String? _errorMessage;
@@ -48,8 +50,9 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
   // User data
   Map<String, dynamic>? _userData;
 
-  // Authorization flag
+  // Authorization flags
   bool _isAuthorized = false;
+  bool _isCreator = false;
 
   @override
   void initState() {
@@ -94,8 +97,18 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
         final int player2Id = widget.fixture['player_2_id'];
         final bool isCreator = widget.fixture['is_creator'] ?? false;
 
+        // Debug print to check if is_creator flag is being set correctly
+        print('Fixture data: ${widget.fixture}');
+        print('User ID: $userId, Player1 ID: $player1Id, Player2 ID: $player2Id');
+        print('Is Creator from fixture: $isCreator');
+
         // User is authorized if they are the league creator or one of the players
         _isAuthorized = isCreator || userId == player1Id || userId == player2Id;
+
+        // Set creator flag (only league creators can void fixtures)
+        _isCreator = isCreator;
+
+        print('_isCreator set to: $_isCreator');
       }
 
       // Update UI
@@ -103,6 +116,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
         setState(() {});
       }
     } catch (e) {
+      print('Error in _loadUserDataAndCheckAuth: $e');
       // Handle error silently
       // This is not critical functionality
     }
@@ -184,6 +198,74 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
       // Show error message
       setState(() {
         _isSubmitting = false;
+        _errorMessage = 'An error occurred. Please try again.';
+      });
+    }
+  }
+
+  // Handle void fixture
+  Future<void> _handleVoidFixture() async {
+    // Show confirmation dialog
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Void Fixture'),
+        content: const Text(
+          'Are you sure you want to void this fixture? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Void Fixture'),
+          ),
+        ],
+      ),
+    );
+
+    // If user cancels, do nothing
+    if (confirm != true) {
+      return;
+    }
+
+    // Set loading state
+    setState(() {
+      _isVoiding = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Call void fixture API
+      final response = await VoidFixtureApi.voidFixture(widget.fixture['id']);
+
+      // Check response
+      if (response['return_code'] == 'SUCCESS') {
+        // Call onScoreUpdated callback if provided (to refresh fixtures list)
+        if (widget.onScoreUpdated != null) {
+          widget.onScoreUpdated!();
+        }
+
+        // Pop screen with result=true to indicate success
+        if (mounted) {
+          Navigator.of(context).pop(true);
+        }
+      } else {
+        // Show error message
+        setState(() {
+          _isVoiding = false;
+          _errorMessage = response['message'];
+        });
+      }
+    } catch (e) {
+      // Show error message
+      setState(() {
+        _isVoiding = false;
         _errorMessage = 'An error occurred. Please try again.';
       });
     }
@@ -603,7 +685,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _isSubmitting || !_isAuthorized ? null : _handleSubmit,
+                      onPressed: _isSubmitting || _isVoiding || !_isAuthorized ? null : _handleSubmit,
                       style: AppStyles.primaryButtonStyle,
                       child: _isSubmitting
                           ? const SpinKitThreeBounce(
@@ -613,6 +695,27 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                           : Text(_winType == 'PTS' ? 'Submit Score' : 'Submit Result'),
                     ),
                   ),
+
+                  // Void fixture button (only for league creators)
+                  if (_isCreator) ...[
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isSubmitting || _isVoiding ? null : _handleVoidFixture,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: _isVoiding
+                            ? const SpinKitThreeBounce(
+                                color: Colors.white,
+                                size: 24,
+                              )
+                            : const Text('Void Fixture'),
+                      ),
+                    ),
+                  ],
 
                   // Note
                   const SizedBox(height: 16),

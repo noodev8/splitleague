@@ -26,7 +26,8 @@ Success Response:
       "player_1_score": null,           // integer - Player 1 score (null if not played)
       "player_2_score": null,           // integer - Player 2 score (null if not played)
       "created_at": "2025-04-10T12:00:00.000Z", // timestamp - Creation date
-      "win_type": "PTS"                 // string - League win type ("PTS", "WIN", or "WDL")
+      "win_type": "PTS",                // string - League win type ("PTS", "WIN", or "WDL")
+      "is_creator": true                // boolean - Whether the current user is the league creator
     }
   ]
 }
@@ -100,7 +101,8 @@ router.post('/', verifyToken, async (req, res) => {
         COALESCE(lp.win_type, 'PTS') as win_type,
         lp.win_margin_threshold,
         lp.points_for_win_margin,
-        lp.points_for_close_loss
+        lp.points_for_close_loss,
+        CASE WHEN l.created_by = $2 THEN true ELSE false END as is_creator
        FROM
         fixture f
        JOIN
@@ -109,12 +111,14 @@ router.post('/', verifyToken, async (req, res) => {
         app_user p2 ON f.player_2_id = p2.id
        LEFT JOIN
         league_points lp ON f.league_id = lp.league_id
+       JOIN
+        league l ON f.league_id = l.id
        WHERE
         f.league_id = $1
        ORDER BY
         f.scheduled_date NULLS FIRST,
         f.id ASC`,
-      [league_id]
+      [league_id, userId]
     );
 
     if (fixturesResult.rows.length === 0) {
@@ -123,6 +127,10 @@ router.post('/', verifyToken, async (req, res) => {
         message: 'No fixtures found for this league'
       });
     }
+
+    // Debug log to check if is_creator flag is being set
+    console.log('User ID:', userId);
+    console.log('First fixture is_creator:', fixturesResult.rows[0].is_creator);
 
     // Return success response with fixtures data
     return res.status(200).json({
