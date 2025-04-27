@@ -104,9 +104,11 @@ class LeagueProvider extends ChangeNotifier {
 
   // Set creator status
   void setCreator(bool creator) {
+    print('Setting creator status to: $creator'); // Debug print
     if (_isCreator != creator) {
       _isCreator = creator;
-      notifyListeners();  // Safe, because it only ever runs after first frame
+      print('Creator status updated to: $_isCreator'); // Debug print
+      notifyListeners();
     }
   }
 

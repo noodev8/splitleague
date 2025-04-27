@@ -47,62 +47,72 @@ class _FixturesScreenState extends State<FixturesScreen> {
     });
   }
 
+  // Initialize the league provider with the current league
+  Future<void> _initializeLeagueProvider() async {
+    // Check if current user is the creator
+    final userData = await AuthHelper.getUserData();
+    print('User Data: $userData'); // Debug print
+    print('Full League Object: ${widget.league}'); // Debug print
+    print('League Creator ID: ${widget.league['creator_id']}'); // Debug print
+    print('League Created By: ${widget.league['created_by']}'); // Debug print
+    
+    // Check both creator_id and created_by fields
+    final creatorId = widget.league['creator_id'] ?? widget.league['created_by'];
+    final isCreator = userData != null &&
+                      creatorId != null &&
+                      userData['id'].toString() == creatorId.toString();
+    
+    print('Creator ID used: $creatorId'); // Debug print
+    print('Is Creator calculated: $isCreator'); // Debug print
+
+    // Initialize the league provider
+    _leagueProvider.initLeague(widget.league['league_id'], isCreator);
+    print('League Provider isCreator after init: ${_leagueProvider.isCreator}'); // Debug print
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Store reference to the provider
     _leagueProvider = Provider.of<LeagueProvider>(context, listen: false);
+    print('Provider initialized in didChangeDependencies'); // Debug print
+    print('Current League ID: ${_leagueProvider.currentLeagueId}'); // Debug print
+    print('Is Creator in provider: ${_leagueProvider.isCreator}'); // Debug print
 
     // We don't want to reset the provider here as it would clear filter states
     // Instead, we'll initialize it if it's not already initialized with this league
     if (_leagueProvider.currentLeagueId != widget.league['league_id']) {
       _leagueProvider.reset();
+      print('Provider reset due to different league ID'); // Debug print
     }
-  }
-
-  // Initialize the league provider with the current league
-  Future<void> _initializeLeagueProvider() async {
-    // Check if current user is the creator
-    final userData = await AuthHelper.getUserData();
-    final isCreator = userData != null &&
-        widget.league['creator_id'] != null &&
-        userData['id'].toString() == widget.league['creator_id'].toString();
-
-    // Initialize the league provider
-    _leagueProvider.initLeague(widget.league['league_id'], isCreator);
   }
 
   // Navigate to update score screen
   void _navigateToUpdateScore(Map<String, dynamic> fixture) async {
-    // Store the fixture ID before navigating
-    final fixtureId = fixture['id'];
-
-    // Debug print to check fixture data before passing to UpdateScoreScreen
-    print('Navigating to UpdateScoreScreen with fixture: $fixture');
-    print('is_creator in fixture: ${fixture['is_creator']}');
+    // Create a new map with all existing fixture data plus the creator status
+    final updatedFixture = Map<String, dynamic>.from(fixture);
+    updatedFixture['is_creator'] = _leagueProvider.isCreator;
+    
+    print('Debug - Creator status check:');
+    print('Provider isCreator: ${_leagueProvider.isCreator}');
+    print('Updated fixture: $updatedFixture');
+    print('is_creator in fixture: ${updatedFixture['is_creator']}');
 
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => UpdateScoreScreen(
-          fixture: fixture,
+          fixture: updatedFixture,
           onScoreUpdated: () {
-            // This callback is called when the score is updated
-            // We'll return true from the screen, so we don't need to do anything here
+            _leagueProvider.loadFixtures();
             return true;
           },
         ),
       ),
     );
 
-    // If score was updated, reload fixtures and clear any success messages
     if (result == true && mounted && !_isDisposing) {
-      // Clear any success messages to avoid showing breadcrumb at bottom
       _leagueProvider.clearSuccessMessage();
-
-      // Set the last updated fixture ID for scrolling after reload
-      _leagueProvider.setLastUpdatedFixtureId(fixtureId);
-
-      // Reload fixtures
+      _leagueProvider.setLastUpdatedFixtureId(fixture['id']);
       _leagueProvider.loadFixtures();
     }
   }

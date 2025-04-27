@@ -57,68 +57,39 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
   @override
   void initState() {
     super.initState();
-
-    // Get the win type from the fixture
-    _winType = widget.fixture['win_type'] ?? 'PTS';
-
-    // Pre-fill scores if they exist
-    if (widget.fixture['played'] == true) {
-      if (_winType == 'PTS') {
-        _player1ScoreController.text = widget.fixture['player_1_score']?.toString() ?? '';
-        _player2ScoreController.text = widget.fixture['player_2_score']?.toString() ?? '';
-      } else {
-        // For WIN or WDL types, determine the result from the scores
-        final player1Score = widget.fixture['player_1_score'] ?? 0;
-        final player2Score = widget.fixture['player_2_score'] ?? 0;
-
-        if (player1Score > player2Score) {
-          _selectedResult = 'WIN_1';
-        } else if (player2Score > player1Score) {
-          _selectedResult = 'WIN_2';
-        } else if (player1Score == 1 && player2Score == 1) {
-          _selectedResult = 'DRAW';
-        }
-      }
-    }
-
-    // Load user data and check authorization
-    _loadUserDataAndCheckAuth();
+    // Initialize win type from fixture data
+    _winType = widget.fixture['win_type'];
+    _loadUserData();
   }
 
-  // Load user data and check if user is authorized to update this fixture
-  Future<void> _loadUserDataAndCheckAuth() async {
-    try {
-      // Load user data from secure storage
-      _userData = await AuthHelper.getUserData();
+  Future<void> _loadUserData() async {
+    _userData = await AuthHelper.getUserData();
 
-      if (_userData != null) {
-        final int userId = _userData!['id'];
-        final int player1Id = widget.fixture['player_1_id'];
-        final int player2Id = widget.fixture['player_2_id'];
-        final bool isCreator = widget.fixture['is_creator'] ?? false;
+    if (mounted) {
+      setState(() {
+        if (_userData != null) {
+          final int userId = _userData!['id'];
+          final int player1Id = widget.fixture['player_1_id'];
+          final int player2Id = widget.fixture['player_2_id'];
+          final bool isCreator = widget.fixture['is_creator'] ?? false;
 
-        // Debug print to check if is_creator flag is being set correctly
-        print('Fixture data: ${widget.fixture}');
-        print('User ID: $userId, Player1 ID: $player1Id, Player2 ID: $player2Id');
-        print('Is Creator from fixture: $isCreator');
+          // Debug prints
+          print('Authorization check:');
+          print('User ID: $userId');
+          print('Player1 ID: $player1Id');
+          print('Player2 ID: $player2Id');
+          print('Is Creator: $isCreator');
 
-        // User is authorized if they are the league creator or one of the players
-        _isAuthorized = isCreator || userId == player1Id || userId == player2Id;
+          // User is authorized if they are the league creator or one of the players
+          _isAuthorized = isCreator || userId == player1Id || userId == player2Id;
+          
+          // Set creator flag (only league creators can void fixtures)
+          _isCreator = isCreator;
 
-        // Set creator flag (only league creators can void fixtures)
-        _isCreator = isCreator;
-
-        print('_isCreator set to: $_isCreator');
-      }
-
-      // Update UI
-      if (mounted) {
-        setState(() {});
-      }
-    } catch (e) {
-      print('Error in _loadUserDataAndCheckAuth: $e');
-      // Handle error silently
-      // This is not critical functionality
+          print('Is Authorized: $_isAuthorized');
+          print('Is Creator: $_isCreator');
+        }
+      });
     }
   }
 
