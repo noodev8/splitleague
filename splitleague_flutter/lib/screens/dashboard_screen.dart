@@ -140,35 +140,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       if (hasFixtures) {
         // Navigate to fixtures screen if fixtures exist
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => FixturesScreen(
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => FixturesScreen(
               league: league,
             ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
           ),
-        ).then((_) => _loadData());
+        );
       } else {
         // Navigate to player list screen if no fixtures
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => PlayerListScreen(
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => PlayerListScreen(
               league: league,
             ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
           ),
-        ).then((_) => _loadData());
+        );
       }
     } catch (e) {
       if (!mounted) return;
 
       // If there's an error, default to fixtures screen
       ErrorHelper.showErrorToast('Error checking league status');
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => FixturesScreen(
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => FixturesScreen(
             league: league,
           ),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
         ),
-      ).then((_) => _loadData());
+      );
     }
   }
 

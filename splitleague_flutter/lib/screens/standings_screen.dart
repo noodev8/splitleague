@@ -187,10 +187,12 @@ class _StandingsScreenState extends State<StandingsScreen> {
                               child: InkWell(
                                 onTap: () {
                                   Navigator.of(context).pushReplacement(
-                                    MaterialPageRoute(
-                                      builder: (context) => LeagueDetailsScreen(
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation, secondaryAnimation) => LeagueDetailsScreen(
                                         league: widget.league,
                                       ),
+                                      transitionDuration: Duration.zero,
+                                      reverseTransitionDuration: Duration.zero,
                                     ),
                                   );
                                 },
@@ -247,6 +249,7 @@ class _StandingsScreenState extends State<StandingsScreen> {
     );
   }
 }
+
 
 
 

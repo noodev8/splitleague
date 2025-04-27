@@ -292,10 +292,12 @@ class _FixturesScreenState extends State<FixturesScreen> {
                               child: InkWell(
                                 onTap: () {
                                   Navigator.of(context).pushReplacement(
-                                    MaterialPageRoute(
-                                      builder: (context) => StandingsScreen(
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation, secondaryAnimation) => StandingsScreen(
                                         league: widget.league,
                                       ),
+                                      transitionDuration: Duration.zero,
+                                      reverseTransitionDuration: Duration.zero,
                                     ),
                                   );
                                 },
@@ -331,10 +333,12 @@ class _FixturesScreenState extends State<FixturesScreen> {
                               child: InkWell(
                                 onTap: () {
                                   Navigator.of(context).pushReplacement(
-                                    MaterialPageRoute(
-                                      builder: (context) => LeagueDetailsScreen(
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation, secondaryAnimation) => LeagueDetailsScreen(
                                         league: widget.league,
                                       ),
+                                      transitionDuration: Duration.zero,
+                                      reverseTransitionDuration: Duration.zero,
                                     ),
                                   );
                                 },

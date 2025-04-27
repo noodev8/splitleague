@@ -221,17 +221,14 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
             tooltip: 'League Details',
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => LeagueDetailsScreen(
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => LeagueDetailsScreen(
                     league: widget.league,
                   ),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
                 ),
-              ).then((_) {
-                // Force UI refresh when returning from details
-                if (mounted) {
-                  setState(() {});
-                }
-              });
+              );
             },
           ),
         ],
@@ -415,6 +412,7 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
     );
   }
 }
+
 
 
 

@@ -142,10 +142,12 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
                               child: InkWell(
                                 onTap: () {
                                   Navigator.of(context).pushReplacement(
-                                    MaterialPageRoute(
-                                      builder: (context) => FixturesScreen(
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation, secondaryAnimation) => FixturesScreen(
                                         league: widget.league,
                                       ),
+                                      transitionDuration: Duration.zero,
+                                      reverseTransitionDuration: Duration.zero,
                                     ),
                                   );
                                 },
@@ -181,10 +183,12 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
                               child: InkWell(
                                 onTap: () {
                                   Navigator.of(context).pushReplacement(
-                                    MaterialPageRoute(
-                                      builder: (context) => StandingsScreen(
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation, secondaryAnimation) => StandingsScreen(
                                         league: widget.league,
                                       ),
+                                      transitionDuration: Duration.zero,
+                                      reverseTransitionDuration: Duration.zero,
                                     ),
                                   );
                                 },
@@ -274,6 +278,8 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
     );
   }
 }
+
+
 
 
 
