@@ -128,10 +128,6 @@ router.post('/', verifyToken, async (req, res) => {
       });
     }
 
-    // Debug log to check if is_creator flag is being set
-    console.log('User ID:', userId);
-    console.log('First fixture is_creator:', fixturesResult.rows[0].is_creator);
-
     // Return success response with fixtures data
     return res.status(200).json({
       return_code: 'SUCCESS',
