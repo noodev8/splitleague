@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../widgets/fixture_card.dart';
 import '../widgets/error_display.dart';
 import '../styles/app_styles.dart';
@@ -8,26 +7,19 @@ class FixturesTabContent extends StatelessWidget {
   final bool isCreator;
   final bool isLoadingFixtures;
   final bool isLoadingMembers;
-  final bool isGeneratingFixtures;
   final List<Map<String, dynamic>> fixtures;
   final List<Map<String, dynamic>> filteredFixtures;
-  final List<Map<String, dynamic>> leagueMembers;
   final String? filterPlayerId;
   final String? filterPlayerName;
   final String? filterPlayedStatus;
-  final String? generateErrorMessage;
   final String? fixturesErrorMessage;
-  final String? membersErrorMessage;
   final String? successMessage;
-  final int? fixturesCount;
   final int? lastUpdatedFixtureId;
   final ScrollController? scrollController;
 
-  final Function() onGenerateFixtures;
   final Function() onLoadFixtures;
   final Function(BuildContext) onShowFilterMenu;
   final Function(Map<String, dynamic>) onNavigateToUpdateScore;
-  final Function(int, String) onRemovePlayerFromLeague;
   final Function() onClearFilter;
   final Function(String)? onApplyPlayedStatusFilter;
   final Function()? onClearPlayedStatusFilter;
@@ -37,25 +29,18 @@ class FixturesTabContent extends StatelessWidget {
     required this.isCreator,
     required this.isLoadingFixtures,
     required this.isLoadingMembers,
-    required this.isGeneratingFixtures,
     required this.fixtures,
     required this.filteredFixtures,
-    required this.leagueMembers,
     required this.filterPlayerId,
     required this.filterPlayerName,
     this.filterPlayedStatus,
-    required this.generateErrorMessage,
     required this.fixturesErrorMessage,
-    required this.membersErrorMessage,
     required this.successMessage,
-    required this.fixturesCount,
     this.lastUpdatedFixtureId,
     this.scrollController,
-    required this.onGenerateFixtures,
     required this.onLoadFixtures,
     required this.onShowFilterMenu,
     required this.onNavigateToUpdateScore,
-    required this.onRemovePlayerFromLeague,
     required this.onClearFilter,
     this.onApplyPlayedStatusFilter,
     this.onClearPlayedStatusFilter,
@@ -75,59 +60,10 @@ class FixturesTabContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-        // Generate fixtures section (only for league creator and if no fixtures exist)
-        if (isCreator && fixtures.isEmpty && !isLoadingFixtures) ...[
-          const Text(
-            'Generate Fixtures',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          const Text(
-            'As the league organiser, you can generate fixtures for all members of the league. '
-            'This will create matches based on the "Play Each Other" setting.',
-            style: TextStyle(fontSize: 16),
-          ),
-          const SizedBox(height: 24),
-
-          // Generate fixtures button
-          ElevatedButton.icon(
-            onPressed: isGeneratingFixtures ? null : onGenerateFixtures,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-            icon: const Icon(Icons.sports),
-            label: isGeneratingFixtures
-                ? const SpinKitThreeBounce(
-                    color: Colors.white,
-                    size: 24,
-                  )
-                : const Text('Generate Fixtures'),
-          ),
-          const SizedBox(height: 24),
-        ],
-
-        // Generate error message
-        if (generateErrorMessage != null) ...[
-          ErrorDisplay(
-            message: generateErrorMessage!,
-            onRetry: onGenerateFixtures,
-            retryText: 'Try Again',
-          ),
-          const SizedBox(height: 24),
-        ],
-
         // Success message
         if (successMessage != null) ...[
           SuccessDisplay(
-            message: fixturesCount != null
-              ? '$successMessage\nCreated $fixturesCount fixtures'
-              : successMessage!,
+            message: successMessage!,
           ),
           const SizedBox(height: 24),
         ],
@@ -307,7 +243,7 @@ class FixturesTabContent extends StatelessWidget {
         const SizedBox(height: 16),
 
         // Fixtures error message - only show for actual errors, not just empty fixtures
-        if (!isCreator && fixturesErrorMessage != null && !fixturesErrorMessage!.contains('No fixtures')) ...[
+        if (fixturesErrorMessage != null && !fixturesErrorMessage!.contains('No fixtures')) ...[
           ErrorDisplay(
             message: fixturesErrorMessage!,
             onRetry: onLoadFixtures,
@@ -337,68 +273,11 @@ class FixturesTabContent extends StatelessWidget {
             ),
           )
         else if (fixtures.isEmpty)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (isCreator) ...[
-                // League members section for creator
-                const Text(
-                  'League Members',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Check that all players have joined before generating fixtures.',
-                  style: TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 16),
-
-                // Show league members list
-                if (leagueMembers.isNotEmpty)
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: leagueMembers.length,
-                    itemBuilder: (context, index) {
-                      final member = leagueMembers[index];
-                      final bool isCreatorMember = member['is_creator'] == true;
-                      final int memberId = member['id'];
-                      final String memberName = member['nickname'] ?? member['name'] ?? 'Unknown Player';
-
-                      return ListTile(
-                        leading: Icon(
-                          isCreatorMember ? Icons.star : Icons.person,
-                          color: isCreatorMember ? Colors.amber : null,
-                        ),
-                        title: Text(memberName),
-                        // Only show delete button for non-creator members and if current user is creator
-                        trailing: isCreator && !isCreatorMember
-                            ? IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => onRemovePlayerFromLeague(memberId, memberName),
-                                tooltip: 'Remove player',
-                              )
-                            : null,
-                      );
-                    },
-                  )
-                else if (membersErrorMessage != null)
-                  Text(
-                    membersErrorMessage!,
-                    style: TextStyle(color: Colors.red.shade700),
-                  ),
-              ] else ...[
-                // Message for non-creator members
-                EmptyStateDisplay(
-                  message: 'No Fixtures Yet',
-                  icon: Icons.sports_soccer,
-                  showPullToRefresh: false,
-                ),
-              ],
-            ],
+          // Message for when no fixtures exist
+          EmptyStateDisplay(
+            message: 'No Fixtures Yet',
+            icon: Icons.sports_soccer,
+            showPullToRefresh: false,
           )
         else if ((filterPlayerId != null || filterPlayedStatus != null) && filteredFixtures.isEmpty)
           EmptyStateDisplay(
@@ -500,5 +379,96 @@ class FixturesTabContent extends StatelessWidget {
   }
 }
 
+// Success display widget
+class SuccessDisplay extends StatelessWidget {
+  final String message;
 
+  const SuccessDisplay({
+    super.key,
+    required this.message,
+  });
 
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.green.shade200),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.check_circle,
+            color: Colors.green,
+            size: 32,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.green,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Empty state display widget
+class EmptyStateDisplay extends StatelessWidget {
+  final String message;
+  final IconData icon;
+  final String? actionText;
+  final VoidCallback? onAction;
+  final bool showPullToRefresh;
+
+  const EmptyStateDisplay({
+    super.key,
+    required this.message,
+    required this.icon,
+    this.actionText,
+    this.onAction,
+    this.showPullToRefresh = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 64,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 16,
+              ),
+            ),
+            if (actionText != null && onAction != null) ...[
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: onAction,
+                child: Text(actionText!),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}

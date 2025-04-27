@@ -402,21 +402,15 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       isCreator: leagueProvider.isCreator,
                       isLoadingFixtures: leagueProvider.isLoadingFixtures,
                       isLoadingMembers: leagueProvider.isLoadingMembers,
-                      isGeneratingFixtures: leagueProvider.isGeneratingFixtures,
                       fixtures: leagueProvider.fixtures,
                       filteredFixtures: leagueProvider.filteredFixtures,
-                      leagueMembers: leagueProvider.leagueMembers,
                       filterPlayerId: leagueProvider.filterPlayerId,
                       filterPlayerName: leagueProvider.filterPlayerName,
                       filterPlayedStatus: leagueProvider.filterPlayedStatus,
-                      generateErrorMessage: leagueProvider.generateErrorMessage,
                       fixturesErrorMessage: leagueProvider.fixturesErrorMessage,
-                      membersErrorMessage: leagueProvider.membersErrorMessage,
                       successMessage: leagueProvider.successMessage,
-                      fixturesCount: leagueProvider.fixturesCount,
                       lastUpdatedFixtureId: leagueProvider.lastUpdatedFixtureId,
                       scrollController: _scrollController,
-                      onGenerateFixtures: () => leagueProvider.generateFixtures(context),
                       onLoadFixtures: () {
                         // Clear the last updated fixture ID after loading fixtures
                         // to prevent scrolling on subsequent loads
@@ -431,8 +425,6 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       },
                       onShowFilterMenu: _showFilterMenu,
                       onNavigateToUpdateScore: _navigateToUpdateScore,
-                      onRemovePlayerFromLeague: (playerId, playerName) =>
-                          leagueProvider.removePlayerFromLeague(context, playerId, playerName),
                       onClearFilter: leagueProvider.clearFilter,
                       onApplyPlayedStatusFilter: leagueProvider.applyPlayedStatusFilter,
                       onClearPlayedStatusFilter: leagueProvider.clearPlayedStatusFilter,

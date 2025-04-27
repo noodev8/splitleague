@@ -2,15 +2,18 @@
 Screen for displaying the list of players in a league
 Only shown if the league has not yet started (no fixtures)
 Only the organizer can remove players from the list
+Also allows the league organizer to generate fixtures
 */
 
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:provider/provider.dart';
 import '../api/get_league_members_api.dart';
 import '../api/remove_player_from_league_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
+import '../providers/league_provider.dart';
 //import 'league_details_screen.dart';
 import 'dashboard_screen.dart';
 
@@ -42,11 +45,27 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
   // Flag to track if fixtures exist
   bool _hasFixtures = false;
 
+  // Generate fixtures state
+  bool _isGeneratingFixtures = false;
+  String? _generateErrorMessage;
+  String? _successMessage;
+  int? _fixturesCount;
+
+  // League provider
+  late LeagueProvider _leagueProvider;
+
   @override
   void initState() {
     super.initState();
     _loadMembers();
     _checkFixtures();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize the league provider
+    _leagueProvider = Provider.of<LeagueProvider>(context, listen: false);
   }
 
   // Check if fixtures exist for this league
@@ -126,6 +145,51 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
       setState(() {
         _errorMessage = 'An error occurred while loading members';
         _isLoading = false;
+      });
+    }
+  }
+
+  // Generate fixtures
+  Future<void> _generateFixtures() async {
+    setState(() {
+      _isGeneratingFixtures = true;
+      _generateErrorMessage = null;
+      _successMessage = null;
+      _fixturesCount = null;
+    });
+
+    try {
+      // Initialize the league provider if needed
+      if (_leagueProvider.currentLeagueId != widget.league['league_id']) {
+        _leagueProvider.initLeague(widget.league['league_id'], _isCreator);
+      }
+
+      // Call the generate fixtures method from the provider
+      final result = await _leagueProvider.generateFixtures(context);
+
+      if (result) {
+        // Update success state
+        setState(() {
+          _isGeneratingFixtures = false;
+          _successMessage = _leagueProvider.successMessage;
+          _fixturesCount = _leagueProvider.fixturesCount;
+          _hasFixtures = true; // Update fixtures exist flag
+        });
+
+        // Reload members to refresh UI
+        _loadMembers();
+      } else {
+        // Update error state
+        setState(() {
+          _isGeneratingFixtures = false;
+          _generateErrorMessage = _leagueProvider.generateErrorMessage;
+        });
+      }
+    } catch (e) {
+      // Handle error
+      setState(() {
+        _isGeneratingFixtures = false;
+        _generateErrorMessage = 'An error occurred while generating fixtures';
       });
     }
   }
@@ -215,7 +279,7 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.league['name'], 
+          widget.league['name'],
           style: const TextStyle(fontWeight: FontWeight.bold)
         ),
         leading: IconButton(
@@ -404,6 +468,100 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                                 },
                               ),
                             ),
+                            // Generate fixtures section (only for league creator and if no fixtures exist)
+                            if (_isCreator && !_hasFixtures) ...[
+                              const SizedBox(height: 24),
+                              const Divider(),
+                              const SizedBox(height: 16),
+
+                              const Text(
+                                'Generate Fixtures',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                                child: Text(
+                                  'As the league organiser, you can generate fixtures for all members of the league. '
+                                  'This will create matches based on the "Play Each Other" setting.',
+                                  style: TextStyle(fontSize: 16),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+
+                              // Generate fixtures button
+                              Center(
+                                child: ElevatedButton.icon(
+                                  onPressed: _isGeneratingFixtures ? null : _generateFixtures,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  ),
+                                  icon: const Icon(Icons.sports),
+                                  label: _isGeneratingFixtures
+                                      ? const SpinKitThreeBounce(
+                                          color: Colors.white,
+                                          size: 24,
+                                        )
+                                      : const Text('Generate Fixtures'),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+
+                            // Generate error message
+                            if (_generateErrorMessage != null) ...[
+                              const SizedBox(height: 16),
+                              ErrorDisplay(
+                                message: _generateErrorMessage!,
+                                onRetry: _generateFixtures,
+                                retryText: 'Try Again',
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+
+                            // Success message
+                            if (_successMessage != null) ...[
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                margin: const EdgeInsets.symmetric(horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.green.shade200),
+                                ),
+                                child: Column(
+                                  children: [
+                                    const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                      size: 32,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      _fixturesCount != null
+                                        ? '$_successMessage\nCreated $_fixturesCount fixtures'
+                                        : _successMessage!,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        color: Colors.green,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+
                             if (_isCreator)
                               Padding(
                                 padding: const EdgeInsets.all(16.0),
@@ -427,9 +585,152 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
   }
 }
 
+// Success display widget
+class SuccessDisplay extends StatelessWidget {
+  final String message;
 
+  const SuccessDisplay({
+    super.key,
+    required this.message,
+  });
 
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.green.shade200),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.check_circle,
+            color: Colors.green,
+            size: 32,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.green,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
+// Error display widget
+class ErrorDisplay extends StatelessWidget {
+  final String message;
+  final VoidCallback? onRetry;
+  final String retryText;
 
+  const ErrorDisplay({
+    super.key,
+    required this.message,
+    this.onRetry,
+    this.retryText = 'Retry',
+  });
 
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.error_outline,
+            color: Colors.red,
+            size: 32,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.red.shade700,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          if (onRetry != null) ...[
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: onRetry,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade100,
+                foregroundColor: Colors.red.shade700,
+              ),
+              child: Text(retryText),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
+// Empty state display widget
+class EmptyStateDisplay extends StatelessWidget {
+  final String message;
+  final IconData icon;
+  final String? actionText;
+  final VoidCallback? onAction;
+  final bool showPullToRefresh;
+
+  const EmptyStateDisplay({
+    super.key,
+    required this.message,
+    required this.icon,
+    this.actionText,
+    this.onAction,
+    this.showPullToRefresh = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 64,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 16,
+              ),
+            ),
+            if (actionText != null && onAction != null) ...[
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: onAction,
+                child: Text(actionText!),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
