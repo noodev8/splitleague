@@ -14,7 +14,7 @@ import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
 import '../providers/league_provider.dart';
-//import 'league_details_screen.dart';
+import 'fixtures_screen.dart';
 import 'dashboard_screen.dart';
 
 class PlayerListScreen extends StatefulWidget {
@@ -176,8 +176,17 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
           _hasFixtures = true; // Update fixtures exist flag
         });
 
-        // Reload members to refresh UI
-        _loadMembers();
+        // Navigate to fixtures screen
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => FixturesScreen(
+              league: widget.league,
+            ),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+            transitionDuration: Duration.zero,
+          ),
+        );
       } else {
         // Update error state
         setState(() {
@@ -670,9 +679,5 @@ class EmptyStateDisplay extends StatelessWidget {
     );
   }
 }
-
-
-
-
 
 

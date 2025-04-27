@@ -58,12 +58,14 @@ class FixturesTabContent extends StatelessWidget {
       // Use BouncingScrollPhysics for more reliable scrolling behavior
       physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center, // Change this from start to center
         children: [
         // Success message
         if (successMessage != null) ...[
-          SuccessDisplay(
-            message: successMessage!,
+          Center( // Add this wrapper
+            child: SuccessDisplay(
+              message: successMessage!,
+            ),
           ),
           const SizedBox(height: 24),
         ],
@@ -392,13 +394,14 @@ class SuccessDisplay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 32, vertical: 16), // Increased horizontal margin and added vertical margin
       decoration: BoxDecoration(
         color: Colors.green.shade50,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.green.shade200),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center, // Added to center content vertically
         children: [
           const Icon(
             Icons.check_circle,
