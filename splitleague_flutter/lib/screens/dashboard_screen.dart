@@ -279,44 +279,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF005F8A),
-        elevation: 0,
-        toolbarHeight: 10, // Remove AppBar height
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF005F8A), // Top color from logo gradient
+            Color(0xFF00B3A4), // Bottom color from logo gradient
+          ],
+        ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildCurrentTab(),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: AppStyles.primaryColor,
-        unselectedItemColor: AppStyles.secondaryTextColor,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline),
-            activeIcon: Icon(Icons.add_circle),
-            label: 'Create',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.group_add_outlined),
-            activeIcon: Icon(Icons.group_add),
-            label: 'Join',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_circle_outlined),
-            activeIcon: Icon(Icons.account_circle),
-            label: 'Profile',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        onTap: _onTabTapped,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,  // Make scaffold background transparent
+        appBar: AppBar(
+          backgroundColor: Colors.transparent, // Make AppBar background transparent
+          elevation: 0,
+          toolbarHeight: 10,
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _buildCurrentTab(),
+        bottomNavigationBar: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: AppStyles.primaryColor,
+          unselectedItemColor: AppStyles.secondaryTextColor,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.add_circle_outline),
+              activeIcon: Icon(Icons.add_circle),
+              label: 'Create',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.group_add_outlined),
+              activeIcon: Icon(Icons.group_add),
+              label: 'Join',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.account_circle_outlined),
+              activeIcon: Icon(Icons.account_circle),
+              label: 'Profile',
+            ),
+          ],
+          currentIndex: _selectedIndex,
+          onTap: _onTabTapped,
+        ),
       ),
     );
   }

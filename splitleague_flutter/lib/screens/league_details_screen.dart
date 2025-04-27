@@ -103,10 +103,11 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
             if (Navigator.of(context).canPop()) {
               Navigator.of(context).pop();
             } else {
-              // If we can't pop, navigate to the dashboard using MaterialPageRoute
               Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => const DashboardScreen(),
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => const DashboardScreen(),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
                 ),
               );
             }
@@ -294,6 +295,7 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
     );
   }
 }
+
 
 
 
