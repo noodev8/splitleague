@@ -22,6 +22,7 @@ Return Codes:
 "FIXTURE_NOT_FOUND"
 "MISSING_FIELDS"
 "SERVER_ERROR"
+"LAST_FIXTURE"
 =======================================================================================================================================
 */
 
@@ -35,7 +36,7 @@ router.post('/', verifyToken, async (req, res) => {
   try {
     // Extract fixture_id from request body
     const { fixture_id } = req.body;
-    
+
     // Validate that fixture_id is provided
     if (!fixture_id) {
       return res.status(400).json({
@@ -43,10 +44,10 @@ router.post('/', verifyToken, async (req, res) => {
         message: 'Fixture ID is required'
       });
     }
-    
+
     // Get the current user ID from the token
     const userId = req.userId;
-    
+
     // First, check if the fixture exists and get league information
     const fixtureResult = await pool.query(
       `SELECT f.*, l.created_by as league_creator
@@ -55,7 +56,7 @@ router.post('/', verifyToken, async (req, res) => {
        WHERE f.id = $1`,
       [fixture_id]
     );
-    
+
     // If no fixture found, return error
     if (fixtureResult.rows.length === 0) {
       return res.status(404).json({
@@ -63,9 +64,9 @@ router.post('/', verifyToken, async (req, res) => {
         message: 'Fixture not found'
       });
     }
-    
+
     const fixture = fixtureResult.rows[0];
-    
+
     // Check if user is authorized to void the fixture
     // Only the league creator should be able to void fixtures
     if (fixture.league_creator != userId) {
@@ -74,23 +75,39 @@ router.post('/', verifyToken, async (req, res) => {
         message: 'Only the league organizer can void fixtures'
       });
     }
-    
+
+    // Check if this is the last fixture in the league
+    const fixtureCountResult = await pool.query(
+      'SELECT COUNT(*) FROM fixture WHERE league_id = $1',
+      [fixture.league_id]
+    );
+
+    const fixtureCount = parseInt(fixtureCountResult.rows[0].count);
+
+    // If there's only one fixture, it's the last one - reject the request
+    if (fixtureCount === 1) {
+      return res.status(400).json({
+        return_code: 'LAST_FIXTURE',
+        message: 'Cannot void the last fixture in a league'
+      });
+    }
+
     // Delete the fixture from the database
     await pool.query(
       'DELETE FROM fixture WHERE id = $1',
       [fixture_id]
     );
-    
+
     // Return success response
     return res.status(200).json({
       return_code: 'SUCCESS',
       message: 'Fixture successfully voided'
     });
-    
+
   } catch (error) {
     // Log the error for debugging
     console.error('Error in void_fixture route:', error);
-    
+
     // Return server error response
     return res.status(500).json({
       return_code: 'SERVER_ERROR',

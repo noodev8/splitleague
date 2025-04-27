@@ -1,0 +1,14 @@
+-- Declare email "variable"
+WITH vars AS (
+  SELECT 'aandreou25@gmail.com'::TEXT AS user_email
+)
+
+-- Declare email "variable"
+SELECT 
+  l.id,
+  l.name,
+  l.public_code,
+  l.active
+FROM league l
+INNER JOIN app_user u ON l.created_by = u.id
+INNER JOIN vars v ON u.email = v.user_email;

@@ -5,7 +5,7 @@
 -- Dumped from database version 11.18 (Debian 11.18-0+deb10u1)
 -- Dumped by pg_dump version 17.4
 
--- Started on 2025-04-25 23:17:08
+-- Started on 2025-04-27 18:01:43
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -416,7 +416,7 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 GRANT ALL ON SCHEMA public TO splitleague_dev_user;
 
 
--- Completed on 2025-04-25 23:17:09
+-- Completed on 2025-04-27 18:01:46
 
 --
 -- PostgreSQL database dump complete
