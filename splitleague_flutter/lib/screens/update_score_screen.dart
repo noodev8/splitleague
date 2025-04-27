@@ -59,6 +59,27 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
     super.initState();
     // Initialize win type from fixture data
     _winType = widget.fixture['win_type'];
+    
+    // Initialize scores if they exist
+    if (widget.fixture['played'] == true) {
+      if (_winType == 'PTS') {
+        _player1ScoreController.text = widget.fixture['player_1_score']?.toString() ?? '';
+        _player2ScoreController.text = widget.fixture['player_2_score']?.toString() ?? '';
+      } else {
+        // For WIN/WDL types, set the selected result based on scores
+        final p1Score = widget.fixture['player_1_score'];
+        final p2Score = widget.fixture['player_2_score'];
+        
+        if (p1Score == 1 && p2Score == 0) {
+          _selectedResult = 'WIN_1';
+        } else if (p1Score == 0 && p2Score == 1) {
+          _selectedResult = 'WIN_2';
+        } else if (p1Score == 1 && p2Score == 1) {
+          _selectedResult = 'DRAW';
+        }
+      }
+    }
+    
     _loadUserData();
   }
 
@@ -657,27 +678,6 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                     ),
                   ),
 
-                  // Void fixture button (only for league creators)
-                  if (_isCreator) ...[
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isSubmitting || _isVoiding ? null : _handleVoidFixture,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: _isVoiding
-                            ? const SpinKitThreeBounce(
-                                color: Colors.white,
-                                size: 24,
-                              )
-                            : const Text('Void Fixture'),
-                      ),
-                    ),
-                  ],
-
                   // Note
                   const SizedBox(height: 16),
                   const Text(
@@ -688,6 +688,32 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                       fontStyle: FontStyle.italic,
                     ),
                   ),
+
+                  // Void fixture button (only for league creators)
+                  if (_isCreator) ...[
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: _isSubmitting || _isVoiding ? null : _handleVoidFixture,
+                        icon: Icon(
+                          Icons.remove_circle_outline,
+                          size: 16,
+                          color: Colors.grey[700],
+                        ),
+                        label: Text(
+                          'Void Fixture',
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 14,
+                          ),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
