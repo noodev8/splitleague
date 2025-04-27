@@ -18,16 +18,15 @@ class RuntimeConfig {
   RuntimeConfig._internal();
   
   // Default base URL (used if no custom URL is set)
-  static const String defaultBaseUrl = 'http://77.68.13.150:3003'; // Default server
+  static const String defaultBaseUrl = 'https://test.splitleague.noodev8.com'; // Default server
   
   // Available base URLs for quick selection (development environments)
   static const Map<String, String> availableBaseUrls = {
     'Default': defaultBaseUrl,
-    'Home': 'http://192.168.1.88:3003',
-    'Chippy': 'http://192.168.1.174:3000',
-    'Cumberland': 'http://192.168.1.94:3000',
-    'Grays': 'http://10.249.1.230:43352',
-    'Test Server': 'https://api.noodev8.com',
+    'Home Local': 'http://192.168.1.88:3000',
+    'Chippy Local': 'http://192.168.1.174:3000',
+    'Test VPS': 'https://test.splitleague.noodev8.com',
+    'Prod VPS': 'https://splitleague.noodev8.com',
   };
   
   // Current base URL (initialized with default)
