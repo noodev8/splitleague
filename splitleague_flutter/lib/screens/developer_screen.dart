@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import '../helpers/config.dart';
 import '../helpers/runtime_config.dart';
 import '../styles/app_styles.dart';
-import '../helpers/error_helper.dart';
+// import '../helpers/error_helper.dart';
 
 class DeveloperScreen extends StatefulWidget {
   const DeveloperScreen({super.key});
