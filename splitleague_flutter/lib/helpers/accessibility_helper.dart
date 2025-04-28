@@ -3,7 +3,7 @@ Accessibility helper for the SplitLeague app
 Provides utilities for improving accessibility
 */
 
-import 'package:flutter/material.dart';
+// import 'package:flutter/material.dart';
 
 /// Accessibility helper class
 class AccessibilityHelper {

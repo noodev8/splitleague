@@ -98,14 +98,6 @@ class _PinInputState extends State<PinInput> {
     }
   }
 
-  // Handle backspace key
-  void _handleBackspace(String value, int index) {
-    // If current field is empty and not the first field, move to previous field
-    if (value.isEmpty && index > 0) {
-      FocusScope.of(context).requestFocus(_focusNodes[index - 1]);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Row(

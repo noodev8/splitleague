@@ -93,7 +93,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await AuthHelper.logout();
 
       // Show success message
-      ErrorHelper.showSuccessToast('Logged out successfully');
+      // ErrorHelper.showSuccessToast('Logged out successfully');
 
       // Navigate to login screen
       if (mounted) {
