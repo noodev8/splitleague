@@ -15,13 +15,14 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // Function to send verification email
 async function sendVerificationEmail(email, name, verificationToken) {
   try {
-    // Use the web verification route instead of the mobile deep link
-    // Use FRONTEND_URL or BASE_URL environment variable, with fallback
-    const baseUrl = process.env.BASE_URL || process.env.FRONTEND_URL || 'https://api.noodev8.com';
+    // Use EMAIL_VERIFICATION_URL with fallback
+    const baseUrl = process.env.EMAIL_VERIFICATION_URL || 'https://splitleague.noodev8.com';
     const verificationLink = `${baseUrl}/verify_web_email?token=${verificationToken}`;
 
     const data = await resend.emails.send({
-      from: process.env.EMAIL_NAME && process.env.EMAIL_FROM ? `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_FROM}>` : 'onboarding@resend.dev',  // Use the configured email format with fallback
+      from: process.env.EMAIL_NAME && process.env.EMAIL_FROM ? 
+        `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_FROM}>` : 
+        'onboarding@resend.dev',
       to: email,
       subject: 'Verify Your SplitLeague Account',
       html: `
@@ -41,7 +42,6 @@ async function sendVerificationEmail(email, name, verificationToken) {
       `,
     });
 
-    // Email sent successfully
     return { success: true, data };
   } catch (error) {
     console.error('Detailed error sending verification email:', error);

@@ -18,7 +18,7 @@ class RuntimeConfig {
   RuntimeConfig._internal();
   
   // Default base URL (used if no custom URL is set)
-  static const String defaultBaseUrl = 'https://test.splitleague.noodev8.com'; // Default server
+  static const String defaultBaseUrl = 'https://splitleague.noodev8.com'; // Default server
   
   // Available base URLs for quick selection (development environments)
   static const Map<String, String> availableBaseUrls = {
