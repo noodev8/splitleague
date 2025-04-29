@@ -51,7 +51,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
   Future<void> _initializeLeagueProvider() async {
     // Check if current user is the creator
     final userData = await AuthHelper.getUserData();
-    
+
     // Check both creator_id and created_by fields
     final creatorId = widget.league['creator_id'] ?? widget.league['created_by'];
     final isCreator = userData != null &&
@@ -350,6 +350,7 @@ class _FixturesScreenState extends State<FixturesScreen> {
                                     PageRouteBuilder(
                                       pageBuilder: (context, animation, secondaryAnimation) => LeagueDetailsScreen(
                                         league: widget.league,
+                                        hasFixtures: true, // We know fixtures exist since we're on the Fixtures screen
                                       ),
                                       transitionDuration: Duration.zero,
                                       reverseTransitionDuration: Duration.zero,

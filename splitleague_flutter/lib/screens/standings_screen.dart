@@ -130,18 +130,22 @@ class _StandingsScreenState extends State<StandingsScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                     child: Column(
                       children: [
-                        // Navigation buttons - unified design
+                        // Note: This screen should only be accessible when fixtures exist,
+                        // but we'll keep the conditional logic for consistency and safety
                         Row(
                           children: [
-                            // Fixtures button
+                            // Fixtures/Players button (depends on whether fixtures exist)
                             Expanded(
                               child: InkWell(
                                 onTap: () {
+                                  // Navigate to Fixtures screen (we know fixtures exist since we're on the Standings screen)
                                   Navigator.of(context).pushReplacement(
-                                    MaterialPageRoute(
-                                      builder: (context) => FixturesScreen(
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation, secondaryAnimation) => FixturesScreen(
                                         league: widget.league,
                                       ),
+                                      transitionDuration: Duration.zero,
+                                      reverseTransitionDuration: Duration.zero,
                                     ),
                                   );
                                 },
@@ -155,10 +159,19 @@ class _StandingsScreenState extends State<StandingsScreen> {
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.sports_soccer, color: AppStyles.primaryColor, size: 18),
+                                      // Show different icon and text based on whether fixtures exist
+                                      Icon(
+                                        leagueProvider.fixtures.isNotEmpty
+                                          ? Icons.sports_soccer
+                                          : Icons.people,
+                                        color: AppStyles.primaryColor,
+                                        size: 18
+                                      ),
                                       const SizedBox(width: 6),
                                       Text(
-                                        'Fixtures',
+                                        leagueProvider.fixtures.isNotEmpty
+                                          ? 'Fixtures'
+                                          : 'Players',
                                         style: TextStyle(
                                           fontWeight: FontWeight.w600,
                                           color: AppStyles.primaryColor,
@@ -207,6 +220,7 @@ class _StandingsScreenState extends State<StandingsScreen> {
                                     PageRouteBuilder(
                                       pageBuilder: (context, animation, secondaryAnimation) => LeagueDetailsScreen(
                                         league: widget.league,
+                                        hasFixtures: true, // We know fixtures exist since we're on the Standings screen
                                       ),
                                       transitionDuration: Duration.zero,
                                       reverseTransitionDuration: Duration.zero,

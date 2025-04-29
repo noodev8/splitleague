@@ -13,13 +13,16 @@ import '../styles/app_styles.dart';
 import 'fixtures_screen.dart';
 import 'standings_screen.dart';
 import 'dashboard_screen.dart';
+import 'player_list_screen.dart';
 
 class LeagueDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> league;
+  final bool? hasFixtures; // Optional parameter to avoid the visual flip
 
   const LeagueDetailsScreen({
     super.key,
     required this.league,
+    this.hasFixtures, // Pass this from the previous screen if known
   });
 
   @override
@@ -33,9 +36,18 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
   // Flag to track if we're disposing
   bool _isDisposing = false;
 
+  // Flag to track if fixtures exist - initialized with the passed parameter if available
+  bool _hasFixtures = false;
+
   @override
   void initState() {
     super.initState();
+
+    // Initialize hasFixtures from widget parameter if provided
+    if (widget.hasFixtures != null) {
+      _hasFixtures = widget.hasFixtures!;
+    }
+
     // Start initialization after the first build
     Future.microtask(() {
       if (mounted) {
@@ -65,6 +77,17 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
 
     // Load league info specifically
     _leagueProvider.loadLeagueInfo();
+
+    // Load fixtures and update hasFixtures state if not already set from widget parameter
+    if (widget.hasFixtures == null) {
+      _leagueProvider.loadFixtures().then((_) {
+        if (mounted && !_isDisposing) {
+          setState(() {
+            _hasFixtures = _leagueProvider.fixtures.isNotEmpty;
+          });
+        }
+      });
+    }
   }
 
   // Handle copying text to clipboard
@@ -154,15 +177,21 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
                         // Navigation buttons - unified design
                         Row(
                           children: [
-                            // Fixtures button
+                            // Fixtures/Players button (depends on whether fixtures exist)
                             Expanded(
                               child: InkWell(
                                 onTap: () {
+                                  // Navigate to Players screen if no fixtures, otherwise to Fixtures screen
                                   Navigator.of(context).pushReplacement(
                                     PageRouteBuilder(
-                                      pageBuilder: (context, animation, secondaryAnimation) => FixturesScreen(
-                                        league: widget.league,
-                                      ),
+                                      pageBuilder: (context, animation, secondaryAnimation) =>
+                                        _hasFixtures
+                                          ? FixturesScreen(
+                                              league: widget.league,
+                                            )
+                                          : PlayerListScreen(
+                                              league: widget.league,
+                                            ),
                                       transitionDuration: Duration.zero,
                                       reverseTransitionDuration: Duration.zero,
                                     ),
@@ -178,10 +207,19 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.sports_soccer, color: AppStyles.primaryColor, size: 18),
+                                      // Show different icon and text based on whether fixtures exist
+                                      Icon(
+                                        _hasFixtures
+                                          ? Icons.sports_soccer
+                                          : Icons.people,
+                                        color: AppStyles.primaryColor,
+                                        size: 18
+                                      ),
                                       const SizedBox(width: 6),
                                       Text(
-                                        'Fixtures',
+                                        _hasFixtures
+                                          ? 'Fixtures'
+                                          : 'Players',
                                         style: TextStyle(
                                           fontWeight: FontWeight.w600,
                                           color: AppStyles.primaryColor,
@@ -193,47 +231,50 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
 
-                            // Standings button
-                            Expanded(
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.of(context).pushReplacement(
-                                    PageRouteBuilder(
-                                      pageBuilder: (context, animation, secondaryAnimation) => StandingsScreen(
-                                        league: widget.league,
-                                      ),
-                                      transitionDuration: Duration.zero,
-                                      reverseTransitionDuration: Duration.zero,
-                                    ),
-                                  );
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.leaderboard, color: AppStyles.primaryColor, size: 18),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Standings',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: AppStyles.primaryColor,
-                                          fontSize: 14,
+                            // Only show Standings button if fixtures exist
+                            if (_hasFixtures) ...[
+                              const SizedBox(width: 8),
+                              // Standings button
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () {
+                                    Navigator.of(context).pushReplacement(
+                                      PageRouteBuilder(
+                                        pageBuilder: (context, animation, secondaryAnimation) => StandingsScreen(
+                                          league: widget.league,
                                         ),
+                                        transitionDuration: Duration.zero,
+                                        reverseTransitionDuration: Duration.zero,
                                       ),
-                                    ],
+                                    );
+                                  },
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade100,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.leaderboard, color: AppStyles.primaryColor, size: 18),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Standings',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: AppStyles.primaryColor,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
+                            ],
                             const SizedBox(width: 8),
 
                             // Details label (current screen)

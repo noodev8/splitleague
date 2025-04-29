@@ -20,3 +20,7 @@ Password: 123456
 
 == Data Safety ==
 https://www.noodev8.com/split-league-data-collection-and-safety/
+
+== App Store Descriptions ==
+Your scoreboard for any game — leagues, matches, scores, standings.
+
