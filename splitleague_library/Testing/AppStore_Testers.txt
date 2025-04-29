@@ -1,0 +1,22 @@
+== Postman ==
+URL: http://localhost:3000/login_user
+{
+  "email": "test1@test.com",
+  "password": "1234"
+}
+
+== Test Users ==
+Email: allan@test.com
+Password: 123456
+
+Email: peter@test.com
+Password: 123456
+
+Email: amy@test.com
+Password: 123456
+
+Email: jane@test.com
+Password: 123456
+
+== Data Safety ==
+https://www.noodev8.com/split-league-data-collection-and-safety/

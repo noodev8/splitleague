@@ -1,5 +1,0 @@
-URL: http://localhost:3000/login_user
-{
-  "email": "test1@test.com",
-  "password": "1234"
-}
