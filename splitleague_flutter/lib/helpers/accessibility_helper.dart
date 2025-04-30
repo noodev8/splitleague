@@ -9,14 +9,14 @@ Provides utilities for improving accessibility
 class AccessibilityHelper {
   /// Returns a semantics label for a fixture card
   static String getFixtureLabel(Map<String, dynamic> fixture) {
-    final player1 = fixture['player1_nickname'] ?? fixture['player1_name'] ?? 'Player 1';
-    final player2 = fixture['player2_nickname'] ?? fixture['player2_name'] ?? 'Player 2';
+    final player1 = fixture['player_1_nickname'] ?? fixture['player_1_name'] ?? 'Player 1';
+    final player2 = fixture['player_2_nickname'] ?? fixture['player_2_name'] ?? 'Player 2';
     final date = fixture['scheduled_date'] ?? 'Unscheduled';
     final played = fixture['played'] == true;
 
     if (played) {
-      final score1 = fixture['player1_score'] ?? 0;
-      final score2 = fixture['player2_score'] ?? 0;
+      final score1 = fixture['player_1_score'] ?? 0;
+      final score2 = fixture['player_2_score'] ?? 0;
       return 'Played match. $player1 versus $player2. Score: $score1 to $score2. Date: $date';
     } else {
       return 'Upcoming match. $player1 versus $player2. Date: $date';

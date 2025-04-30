@@ -76,7 +76,7 @@ class FixtureCard extends StatelessWidget {
       // If scoreDifference is 0, it's a draw and no bonuses apply
     }
 
-    // Format date if available
+    // Format scheduled date if available
     String? scheduledDate;
     if (fixture['scheduled_date'] != null) {
       final date = DateTime.parse(fixture['scheduled_date']);

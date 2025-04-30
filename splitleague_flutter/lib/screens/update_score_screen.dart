@@ -6,6 +6,7 @@ Allows users to enter and submit scores for a fixture
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:intl/intl.dart';
 import '../api/update_fixture_score_api.dart';
 import '../api/void_fixture_api.dart';
 import '../helpers/auth_helper.dart';
@@ -59,7 +60,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
     super.initState();
     // Initialize win type from fixture data
     _winType = widget.fixture['win_type'];
-    
+
     // Initialize scores if they exist
     if (widget.fixture['played'] == true) {
       if (_winType == 'PTS') {
@@ -69,7 +70,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
         // For WIN/WDL types, set the selected result based on scores
         final p1Score = widget.fixture['player_1_score'];
         final p2Score = widget.fixture['player_2_score'];
-        
+
         if (p1Score == 1 && p2Score == 0) {
           _selectedResult = 'WIN_1';
         } else if (p1Score == 0 && p2Score == 1) {
@@ -79,7 +80,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
         }
       }
     }
-    
+
     _loadUserData();
   }
 
@@ -96,7 +97,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
 
           // User is authorized if they are the league creator or one of the players
           _isAuthorized = isCreator || userId == player1Id || userId == player2Id;
-          
+
           // Set creator flag (only league creators can void fixtures)
           _isCreator = isCreator;
         }
@@ -263,6 +264,20 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
     final player2Name = widget.fixture['player_2_nickname']?.isNotEmpty == true
         ? widget.fixture['player_2_nickname']
         : widget.fixture['player_2_name'];
+
+    // Format updated date if available
+    String? updatedDate;
+    bool hasBeenUpdated = false;
+
+    if (widget.fixture['updated_at'] != null) {
+      final date = DateTime.parse(widget.fixture['updated_at']);
+      // Format with date and time, automatically adjusting for local timezone
+      final formatter = DateFormat('dd/MM/yyyy HH:mm');
+      updatedDate = formatter.format(date.toLocal());
+
+      // Check if the fixture has been played/updated
+      hasBeenUpdated = widget.fixture['played'] == true;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -687,6 +702,29 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
                       fontSize: 12,
                       fontStyle: FontStyle.italic,
                     ),
+                  ),
+
+                  // Last updated date (subtle)
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        hasBeenUpdated ? Icons.update : Icons.schedule,
+                        size: 12,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        hasBeenUpdated
+                            ? 'Last updated: $updatedDate'
+                            : 'Not yet updated',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ),
 
                   // Void fixture button (only for league creators)
