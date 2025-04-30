@@ -26,6 +26,7 @@ Success Response:
       "player_1_score": null,           // integer - Player 1 score (null if not played)
       "player_2_score": null,           // integer - Player 2 score (null if not played)
       "created_at": "2025-04-10T12:00:00.000Z", // timestamp - Creation date
+      "updated_at": "2025-04-10T14:30:00.000Z", // timestamp - Last update date
       "win_type": "PTS",                // string - League win type ("PTS", "WIN", or "WDL")
       "is_creator": true                // boolean - Whether the current user is the league creator
     }
