@@ -211,9 +211,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
 
-      // Call the API to delete the account (currently mocked)
-      // In a real implementation, we would show a loading indicator here
+      // Show loading dialog while deleting account
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Deleting account...'),
+              ],
+            ),
+          );
+        },
+      );
+
+      // Call the API to delete the account
       final response = await DeleteAccountApi.deleteAccount(reason: reason);
+
+      // Close loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
 
       if (response['return_code'] == 'SUCCESS') {
         // Show success message

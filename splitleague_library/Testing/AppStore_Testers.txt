@@ -18,6 +18,9 @@ Password: 123456
 Email: jane@test.com
 Password: 123456
 
+Email: delete@test.com
+Password: 123456
+
 == Data Safety ==
 https://www.noodev8.com/split-league-data-collection-and-safety/
 

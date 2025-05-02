@@ -14,52 +14,62 @@ class DeleteAccountApi {
     try {
       // Get the JWT token
       String? token = await AuthHelper.getToken();
-      
+
       if (token == null) {
         return {
           'return_code': 'UNAUTHORIZED',
           'message': 'You are not authorized to perform this action'
         };
       }
-      
+
       // Prepare request body
       Map<String, dynamic> requestBody = {};
-      
+
       // Add reason if provided
       if (reason != null && reason.isNotEmpty) {
         requestBody['reason'] = reason;
       }
-      
-      // TODO: Implement the actual API call when ready
-      // For now, return a mock success response
-      return {
-        'return_code': 'SUCCESS',
-        'message': 'Account successfully deleted'
-      };
-      
-      // Uncomment this code when ready to implement the actual API call
-      /*
+
+      // Create request URL
+      final url = Uri.parse('${Config.baseUrl}/delete_account');
+
       // Make API request
       final response = await http.post(
-        Uri.parse('${Config.apiUrl}/delete_account'),
+        url,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
         body: jsonEncode(requestBody),
       );
-      
-      // Parse response
-      final responseData = jsonDecode(response.body);
-      
-      // Return response data
-      return responseData;
-      */
+
+      // Check if response is successful
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        // Parse response
+        final responseData = jsonDecode(response.body);
+
+        // Return response data
+        return responseData;
+      } else {
+        // Try to parse error message from response if possible
+        try {
+          final Map<String, dynamic> errorData = jsonDecode(response.body);
+          return {
+            'return_code': errorData['return_code'] ?? 'HTTP_ERROR',
+            'message': errorData['message'] ?? 'Server returned error code: ${response.statusCode}',
+          };
+        } catch (e) {
+          return {
+            'return_code': 'HTTP_ERROR',
+            'message': 'Server returned error code: ${response.statusCode}',
+          };
+        }
+      }
     } catch (e) {
       // Return error response
       return {
         'return_code': 'SERVER_ERROR',
-        'message': 'An error occurred while processing your request'
+        'message': 'Failed to connect to server: ${e.toString()}'
       };
     }
   }
