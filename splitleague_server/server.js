@@ -49,6 +49,9 @@ const update_profile = require('./routes/update_profile');
 // Import app version route
 const get_app_version = require('./routes/get_app_version');
 
+// Import account deletion route
+const delete_account = require('./routes/delete_account');
+
 // Use routes
 app.use('/register_user', register_user);
 app.use('/login_user', login_user);
@@ -80,6 +83,9 @@ app.use('/update_profile', update_profile);
 
 // Use app version route
 app.use('/get_app_version', get_app_version);
+
+// Use account deletion route
+app.use('/delete_account', delete_account);
 
 // Root route
 app.get('/', (req, res) => {
