@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
+import '../api/delete_account_api.dart';
 import 'login_user_screen.dart';
 import 'hidden_leagues_screen.dart';
 import 'accessibility_settings_screen.dart';
@@ -104,6 +105,138 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       ErrorHelper.showErrorToast('Failed to logout');
+    }
+  }
+
+  // Handle delete account button press
+  Future<void> _handleDeleteAccount() async {
+    try {
+      // Show first confirmation dialog
+      bool firstConfirm = await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Delete Account'),
+          content: const Text(
+            'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.',
+            style: TextStyle(height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      ) ?? false;
+
+      if (!firstConfirm) return;
+
+      // Check if widget is still mounted before showing second dialog
+      if (!mounted) return;
+
+      // Show second confirmation dialog for extra safety
+      bool secondConfirm = await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Final Confirmation'),
+          content: const Text(
+            'This will permanently delete your account and all associated data. You will not be able to recover it. Are you absolutely sure?',
+            style: TextStyle(height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('Yes, Delete My Account'),
+            ),
+          ],
+        ),
+      ) ?? false;
+
+      if (!secondConfirm) return;
+
+      // Show a dialog to optionally collect reason for deletion
+      String? reason;
+      if (mounted) {
+        reason = await showDialog<String>(
+          context: context,
+          builder: (context) {
+            final TextEditingController reasonController = TextEditingController();
+            return AlertDialog(
+              title: const Text('Reason for Leaving'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Would you like to tell us why you\'re deleting your account? (Optional)',
+                    style: TextStyle(height: 1.5),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: reasonController,
+                    decoration: const InputDecoration(
+                      hintText: 'Your reason (optional)',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(null),
+                  child: const Text('Skip'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(reasonController.text),
+                  child: const Text('Submit'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+
+      // Call the API to delete the account (currently mocked)
+      // In a real implementation, we would show a loading indicator here
+      final response = await DeleteAccountApi.deleteAccount(reason: reason);
+
+      if (response['return_code'] == 'SUCCESS') {
+        // Show success message
+        ErrorHelper.showSuccessToast('Account successfully deleted');
+
+        // Log out the user
+        await AuthHelper.logout();
+
+        // Navigate to login screen
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const LoginUserScreen()),
+            (route) => false, // Remove all previous routes
+          );
+        }
+      } else {
+        // Show error message
+        ErrorHelper.showErrorToast(
+          response['message'] ?? 'Failed to delete account'
+        );
+      }
+    } catch (e) {
+      ErrorHelper.showErrorToast('Failed to delete account');
     }
   }
 
@@ -510,7 +643,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ),
                               const Divider(),
-                              // Logout button
+                              // Delete Account button
                               ListTile(
                                 leading: Container(
                                   padding: const EdgeInsets.all(8),
@@ -519,15 +652,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(
-                                    Icons.logout,
+                                    Icons.delete_forever,
                                     color: Colors.red,
+                                    size: 24,
+                                  ),
+                                ),
+                                title: const Text(
+                                  'Delete Account',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                subtitle: const Text(
+                                  'Permanently delete your account and all data',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                trailing: const Icon(Icons.chevron_right, color: Colors.red),
+                                onTap: _handleDeleteAccount,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              // Logout button
+                              ListTile(
+                                leading: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withAlpha(30),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.logout,
+                                    color: Colors.orange,
                                     size: 24,
                                   ),
                                 ),
                                 title: const Text(
                                   'Logout',
                                   style: TextStyle(
-                                    color: Colors.red,
+                                    color: Colors.orange,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -537,7 +704,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     fontSize: 12,
                                   ),
                                 ),
-                                trailing: const Icon(Icons.chevron_right, color: Colors.red),
+                                trailing: const Icon(Icons.chevron_right, color: Colors.orange),
                                 onTap: _handleLogout,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),

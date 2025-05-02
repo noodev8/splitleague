@@ -25,6 +25,7 @@ class RuntimeConfig {
     'Default': defaultBaseUrl,
     'Home Local': 'http://192.168.1.88:3000',
     'Chippy Local': 'http://192.168.1.174:3000',
+    'Grays Aunty': 'http://192.168.1.88:3000',
     'Test VPS': 'https://test.splitleague.noodev8.com',
     'Prod VPS': 'https://splitleague.noodev8.com',
   };
