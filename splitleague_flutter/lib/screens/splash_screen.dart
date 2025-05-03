@@ -3,9 +3,13 @@ Splash screen for the SplitLeague application
 Displays the app logo and transitions to the appropriate screen
 */
 
-import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../helpers/auth_helper.dart';
+import '../helpers/config.dart';
 import '../helpers/version_helper.dart';
 // import '../styles/app_styles.dart';
 import '../widgets/app_logo.dart';
@@ -58,6 +62,96 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     super.dispose();
   }
 
+  // Launch app store based on platform
+  Future<void> _launchAppStore() async {
+    String storeUrl;
+
+    if (Platform.isIOS) {
+      // iOS App Store URL
+      storeUrl = 'https://apps.apple.com/us/app/split-league/id6745337065';
+    } else if (Platform.isAndroid) {
+      // Google Play Store URL - placeholder for now
+      storeUrl = 'https://play.google.com/store/apps/details?id=com.splitleague.app';
+    } else {
+      // Fallback for other platforms
+      return;
+    }
+
+    final Uri uri = Uri.parse(storeUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+
+    // Exit the app after launching the store
+    SystemNavigator.pop();
+  }
+
+  // Show update required dialog
+  void _showUpdateRequiredDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User must update
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Update Required',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.system_update,
+                size: 48,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'A new version of SplitLeague is required to continue.',
+                style: TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Current version: ${Config.appVersion}',
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Please update to the latest version from the app store.',
+                style: TextStyle(fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text(
+                'Update Now',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () {
+                // Close the dialog
+                Navigator.of(context).pop();
+                // Launch the appropriate app store
+                _launchAppStore();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // Check if user is already logged in
   Future<void> _checkLoginStatus() async {
     bool isLoggedIn = await AuthHelper.isLoggedIn();
@@ -68,8 +162,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         _isCheckingAuth = false;
       });
 
-      // Navigate to appropriate screen
-      if (isLoggedIn && isVersionValid) {
+      // Check if version is valid first
+      if (!isVersionValid) {
+        _showUpdateRequiredDialog();
+        return;
+      }
+
+      // Navigate to appropriate screen based on login status
+      if (isLoggedIn) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const DashboardScreen()),
         );

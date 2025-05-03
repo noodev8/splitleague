@@ -3,10 +3,12 @@ Main entry point for the SplitLeague Flutter application
 Sets up the MaterialApp and handles initial routing based on authentication status
 */
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'screens/login_user_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/splash_screen.dart';
@@ -141,6 +143,30 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
     }
   }
 
+  // Launch app store based on platform
+  Future<void> _launchAppStore() async {
+    String storeUrl;
+
+    if (Platform.isIOS) {
+      // iOS App Store URL
+      storeUrl = 'https://apps.apple.com/us/app/split-league/id6745337065';
+    } else if (Platform.isAndroid) {
+      // Google Play Store URL - placeholder for now
+      storeUrl = 'https://play.google.com/store/apps/details?id=com.splitleague.app';
+    } else {
+      // Fallback for other platforms
+      return;
+    }
+
+    final Uri uri = Uri.parse(storeUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+
+    // Exit the app after launching the store
+    SystemNavigator.pop();
+  }
+
   // Show update required dialog
   void _showUpdateRequiredDialog() {
     showDialog(
@@ -195,10 +221,10 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
                 ),
               ),
               onPressed: () {
-                // Close the app - in a real app, this would redirect to the app store
+                // Close the dialog
                 Navigator.of(context).pop();
-                // Exit the app
-                SystemNavigator.pop();
+                // Launch the appropriate app store
+                _launchAppStore();
               },
             ),
           ],
