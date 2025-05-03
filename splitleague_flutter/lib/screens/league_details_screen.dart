@@ -131,6 +131,29 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
     }
   }
 
+  // Handle copying league
+  Future<void> _handleCopyLeague() async {
+    if (mounted && !_isDisposing) {
+      final response = await _leagueProvider.copyLeague(context);
+
+      // If league was copied successfully, navigate to dashboard
+      if (response != null && response['return_code'] == 'SUCCESS' && mounted && !_isDisposing) {
+        // Pop to the dashboard
+        Navigator.of(context).popUntil((route) => route.isFirst);
+
+        // Show a success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('League copied successfully: ${response['new_league']['name']}'),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   void dispose() {
     // Mark as disposing to prevent further updates
@@ -357,6 +380,7 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
                               getPointsTypeDisplay: leagueProvider.getPointsTypeDisplay,
                               onEditLeagueName: _handleEditLeagueName,
                               onResetScores: _handleResetScores,
+                              onCopyLeague: _handleCopyLeague,
                             ),
                           ),
                     ),

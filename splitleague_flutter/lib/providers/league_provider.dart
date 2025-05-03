@@ -7,6 +7,7 @@ import '../api/generate_fixtures_api.dart';
 import '../api/remove_player_from_league_api.dart';
 import '../api/update_league_name_api.dart';
 import '../api/reset_league_scores_api.dart';
+import '../api/copy_league_api.dart';
 import '../helpers/error_handler.dart';
 
 class LeagueProvider extends ChangeNotifier {
@@ -688,6 +689,59 @@ class LeagueProvider extends ChangeNotifier {
       // Show error message for exceptions
       ErrorHandler.showErrorToast('An error occurred while resetting league scores');
       return false;
+    }
+  }
+
+  // Copy a league
+  Future<Map<String, dynamic>?> copyLeague(BuildContext context) async {
+    if (_currentLeagueId == null) return null;
+
+    // Show confirmation dialog
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Copy League'),
+          content: const Text(
+            'This will create a copy of the league with all players and settings, '
+            'but without any fixtures or scores. '
+            'Are you sure you want to continue?'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.blue),
+              child: const Text('Copy League'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // If user cancelled, do nothing
+    if (confirm != true) return null;
+
+    try {
+      // Call the API to copy the league
+      final response = await CopyLeagueApi.copyLeague(_currentLeagueId);
+
+      if (response['return_code'] == 'SUCCESS') {
+        return response;
+      } else {
+        // Show error message for failures
+        ErrorHandler.showErrorToast(
+          response['message'] ?? 'Failed to copy league',
+        );
+        return null;
+      }
+    } catch (e) {
+      // Show error message for exceptions
+      ErrorHandler.showErrorToast('An error occurred while copying the league');
+      return null;
     }
   }
 
