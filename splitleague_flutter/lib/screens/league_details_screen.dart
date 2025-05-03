@@ -103,6 +103,13 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
     }
   }
 
+  // Handle editing league name
+  void _handleEditLeagueName(String newName) {
+    if (mounted && !_isDisposing) {
+      _leagueProvider.updateLeagueName(context, newName);
+    }
+  }
+
   @override
   void dispose() {
     // Mark as disposing to prevent further updates
@@ -116,9 +123,13 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.league['name'],
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        title: Consumer<LeagueProvider>(
+          builder: (context, provider, _) => Text(
+            provider.isLoadingLeagueInfo
+                ? widget.league['name']
+                : provider.leagueInfo['name'] ?? widget.league['name'],
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -323,6 +334,7 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
                               onCopyToClipboard: _handleCopyToClipboard,
                               formatDate: leagueProvider.formatDate,
                               getPointsTypeDisplay: leagueProvider.getPointsTypeDisplay,
+                              onEditLeagueName: _handleEditLeagueName,
                             ),
                           ),
                     ),

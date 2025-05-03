@@ -5,6 +5,7 @@ import '../api/get_league_members_api.dart';
 import '../api/get_standings_api.dart';
 import '../api/generate_fixtures_api.dart';
 import '../api/remove_player_from_league_api.dart';
+import '../api/update_league_name_api.dart';
 import '../helpers/error_handler.dart';
 
 class LeagueProvider extends ChangeNotifier {
@@ -593,6 +594,42 @@ class LeagueProvider extends ChangeNotifier {
         return 'Win/Draw/Loss';
       default:
         return 'Points Based';
+    }
+  }
+
+  // Update league name
+  Future<bool> updateLeagueName(BuildContext context, String newName) async {
+    if (_currentLeagueId == null) return false;
+
+    try {
+      // Call the API to update the league name
+      final response = await UpdateLeagueNameApi.updateLeagueName(
+        _currentLeagueId,
+        newName,
+      );
+
+      if (response['return_code'] == 'SUCCESS') {
+        // Update the league info in the provider
+        if (response['league'] != null) {
+          _leagueInfo = response['league'];
+          notifyListeners();
+        } else {
+          // If the response doesn't include the updated league, reload it
+          await loadLeagueInfo();
+        }
+
+        return true;
+      } else {
+        // Still show error message for failures
+        ErrorHandler.showErrorToast(
+          response['message'] ?? 'Failed to update league name',
+        );
+        return false;
+      }
+    } catch (e) {
+      // Still show error message for exceptions
+      ErrorHandler.showErrorToast('An error occurred while updating the league name');
+      return false;
     }
   }
 

@@ -7,6 +7,7 @@ class DetailsTabContent extends StatelessWidget {
   final Function(String?) onCopyToClipboard;
   final String Function(String?) formatDate;
   final String Function(String?) getPointsTypeDisplay;
+  final Function(String)? onEditLeagueName;
 
   const DetailsTabContent({
     super.key,
@@ -15,6 +16,7 @@ class DetailsTabContent extends StatelessWidget {
     required this.onCopyToClipboard,
     required this.formatDate,
     required this.getPointsTypeDisplay,
+    this.onEditLeagueName,
   });
 
   @override
@@ -60,12 +62,27 @@ class DetailsTabContent extends StatelessWidget {
                               color: Colors.grey,
                             ),
                           ),
-                          Text(
-                            leagueInfo['name'] ?? 'Unknown',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  leagueInfo['name'] ?? 'Unknown',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              // Edit button - only visible to the creator
+                              if (leagueInfo['is_creator'] == true && onEditLeagueName != null)
+                                IconButton(
+                                  icon: const Icon(Icons.edit, size: 18, color: Colors.blue),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  tooltip: 'Edit league name',
+                                  onPressed: () => _showEditNameDialog(context),
+                                ),
+                            ],
                           ),
                         ],
                       ),
@@ -368,6 +385,55 @@ class DetailsTabContent extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  // Show dialog to edit league name
+  void _showEditNameDialog(BuildContext context) {
+    final TextEditingController nameController = TextEditingController(text: leagueInfo['name'] ?? '');
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit League Name'),
+          content: TextField(
+            controller: nameController,
+            decoration: const InputDecoration(
+              labelText: 'League Name',
+              hintText: 'Enter new league name',
+            ),
+            maxLength: 30,
+            textCapitalization: TextCapitalization.sentences,
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final newName = nameController.text.trim();
+                if (newName.isNotEmpty && newName != leagueInfo['name']) {
+                  Navigator.of(context).pop();
+                  onEditLeagueName?.call(newName);
+                } else if (newName.isEmpty) {
+                  // Show error for empty name
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('League name cannot be empty')),
+                  );
+                } else {
+                  // Name is unchanged, just close the dialog
+                  Navigator.of(context).pop();
+                }
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.blue),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

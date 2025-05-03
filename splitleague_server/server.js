@@ -35,6 +35,7 @@ const deactivate_league_membership = require('./routes/deactivate_league_members
 const get_hidden_leagues = require('./routes/get_hidden_leagues');
 const reactivate_league_membership = require('./routes/reactivate_league_membership');
 const void_fixture = require('./routes/void_fixture');
+const update_league_name = require('./routes/update_league_name');
 
 // Import email and password management routes
 const verify_email = require('./routes/verify_email');
@@ -70,6 +71,7 @@ app.use('/deactivate_league_membership', deactivate_league_membership);
 app.use('/get_hidden_leagues', get_hidden_leagues);
 app.use('/reactivate_league_membership', reactivate_league_membership);
 app.use('/void_fixture', void_fixture);
+app.use('/update_league_name', update_league_name);
 
 // Use email and password management routes
 app.use('/verify_email', verify_email);
