@@ -8,6 +8,7 @@ class DetailsTabContent extends StatelessWidget {
   final String Function(String?) formatDate;
   final String Function(String?) getPointsTypeDisplay;
   final Function(String)? onEditLeagueName;
+  final Function()? onResetScores;
 
   const DetailsTabContent({
     super.key,
@@ -17,6 +18,7 @@ class DetailsTabContent extends StatelessWidget {
     required this.formatDate,
     required this.getPointsTypeDisplay,
     this.onEditLeagueName,
+    this.onResetScores,
   });
 
   @override
@@ -261,6 +263,27 @@ class DetailsTabContent extends StatelessWidget {
         ),
 
         const SizedBox(height: 24),
+
+        // Reset Scores button - only visible to the organizer and only if fixtures exist
+        if (leagueInfo['is_creator'] == true && hasFixtures && onResetScores != null) ...[
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: onResetScores,
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              label: const Text('Reset All Scores'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
 
         // Points rules section
         Card(

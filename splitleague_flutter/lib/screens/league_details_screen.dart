@@ -110,6 +110,27 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
     }
   }
 
+  // Handle resetting all scores
+  Future<void> _handleResetScores() async {
+    if (mounted && !_isDisposing) {
+      final success = await _leagueProvider.resetLeagueScores(context);
+
+      // If scores were reset successfully, navigate to fixtures screen
+      if (success && mounted && !_isDisposing) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+              FixturesScreen(
+                league: widget.league,
+              ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     // Mark as disposing to prevent further updates
@@ -335,6 +356,7 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
                               formatDate: leagueProvider.formatDate,
                               getPointsTypeDisplay: leagueProvider.getPointsTypeDisplay,
                               onEditLeagueName: _handleEditLeagueName,
+                              onResetScores: _handleResetScores,
                             ),
                           ),
                     ),

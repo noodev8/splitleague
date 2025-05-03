@@ -6,6 +6,7 @@ import '../api/get_standings_api.dart';
 import '../api/generate_fixtures_api.dart';
 import '../api/remove_player_from_league_api.dart';
 import '../api/update_league_name_api.dart';
+import '../api/reset_league_scores_api.dart';
 import '../helpers/error_handler.dart';
 
 class LeagueProvider extends ChangeNotifier {
@@ -629,6 +630,63 @@ class LeagueProvider extends ChangeNotifier {
     } catch (e) {
       // Still show error message for exceptions
       ErrorHandler.showErrorToast('An error occurred while updating the league name');
+      return false;
+    }
+  }
+
+  // Reset all scores in a league
+  Future<bool> resetLeagueScores(BuildContext context) async {
+    if (_currentLeagueId == null) return false;
+
+    // Show confirmation dialog with warning
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Reset All Scores'),
+          content: const Text(
+            'WARNING: This will reset ALL scores in the league. '
+            'All match results will be cleared and cannot be recovered. '
+            'Are you sure you want to continue?'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Reset All Scores'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // If user cancelled, do nothing
+    if (confirm != true) return false;
+
+    try {
+      // Call the API to reset all scores
+      final response = await ResetLeagueScoresApi.resetLeagueScores(_currentLeagueId);
+
+      if (response['return_code'] == 'SUCCESS') {
+        // Reload fixtures and standings
+        await loadFixtures();
+        await loadStandings();
+
+        return true;
+      } else {
+        // Show error message for failures
+        ErrorHandler.showErrorToast(
+          response['message'] ?? 'Failed to reset league scores',
+        );
+        return false;
+      }
+    } catch (e) {
+      // Show error message for exceptions
+      ErrorHandler.showErrorToast('An error occurred while resetting league scores');
       return false;
     }
   }
