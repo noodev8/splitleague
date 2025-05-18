@@ -51,7 +51,7 @@ class CreateLeagueApi {
       if (allowCodeShare != null) {
         body['allow_code_share'] = allowCodeShare;
         // Debug print to verify the value is being included in the request
-        print('Including allow_code_share in request: $allowCodeShare');
+        // print('Including allow_code_share in request: $allowCodeShare');
       }
 
       // Send POST request to the server
@@ -68,7 +68,7 @@ class CreateLeagueApi {
       final Map<String, dynamic> responseData = jsonDecode(response.body);
 
       // Debug print the response
-      print('Server response: ${response.body}');
+      // print('Server response: ${response.body}');
 
       // Return the response data
       return responseData;
