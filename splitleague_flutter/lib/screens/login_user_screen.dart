@@ -80,10 +80,13 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
         await AuthHelper.saveToken(response['token']);
         await AuthHelper.saveUserData(response['user']);
 
-        // Navigate to dashboard
+        // Navigate to dashboard with a clean slate
         if (mounted) {
-          Navigator.of(context).pushReplacement(
+          // Use pushAndRemoveUntil to clear the navigation stack
+          // This ensures the dashboard is recreated from scratch
+          Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const dashboard.DashboardScreen()),
+            (route) => false, // Remove all previous routes
           );
         }
       } else if (response['return_code'] == 'EMAIL_NOT_VERIFIED') {

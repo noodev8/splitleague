@@ -123,9 +123,10 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close dialog
-                // Navigate to login screen
-                Navigator.of(context).pushReplacement(
+                // Navigate to login screen with a clean slate
+                Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => const LoginUserScreen()),
+                  (route) => false, // Remove all previous routes
                 );
               },
               child: const Text('Sign In'),
@@ -133,9 +134,10 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close dialog
-                // Navigate to register screen
-                Navigator.of(context).pushReplacement(
+                // Navigate to register screen with a clean slate
+                Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => const RegisterUserScreen()),
+                  (route) => false, // Remove all previous routes
                 );
               },
               child: const Text('Register'),
