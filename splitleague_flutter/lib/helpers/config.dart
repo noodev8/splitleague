@@ -10,7 +10,7 @@ class Config {
   static String get baseUrl => RuntimeConfig().baseUrl;
 
   // App version information
-  static const String appVersion = '1.05';
+  static const String appVersion = '1.06';
 
   // Build timestamp (for developer screen)
   static final String buildTimestamp = DateTime.now().toString();
