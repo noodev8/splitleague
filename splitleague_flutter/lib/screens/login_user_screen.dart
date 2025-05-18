@@ -40,7 +40,7 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
 
   // Error message
   String? _errorMessage;
-  
+
   // Variables for developer mode tap detection
   int _tapCount = 0;
   DateTime? _lastTapTime;
@@ -225,7 +225,7 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
                         opacity: 0.2,
                       ),
                     ),
-                    
+
                     // Login form
                     Container(
                       padding: const EdgeInsets.all(24),
@@ -366,6 +366,28 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
                                       ),
                               ),
                             ),
+                            const SizedBox(height: 16),
+
+                            // Take a look around button
+                            SizedBox(
+                              height: 50, // Fixed height for better tap target
+                              child: OutlinedButton(
+                                onPressed: _isLoading ? null : _handleGuestAccess,
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: AppStyles.primaryColor),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Take a look around',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: AppStyles.primaryColor,
+                                  ),
+                                ),
+                              ),
+                            ),
                             const SizedBox(height: 24),
 
                             // Terms and Privacy
@@ -462,22 +484,22 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
       ErrorHelper.showErrorToast('Could not launch $url');
     }
   }
-  
+
   // Handle title tap for developer mode
   void _handleTitleTap() {
     final now = DateTime.now();
-    
+
     // Check if this is a consecutive tap (within 2 seconds)
-    if (_lastTapTime != null && 
+    if (_lastTapTime != null &&
         now.difference(_lastTapTime!).inSeconds < 2) {
       // Increment tap count
       _tapCount++;
-      
+
       // Check if we've reached 5 taps
       if (_tapCount == 5) {
         // Reset tap count
         _tapCount = 0;
-        
+
         // Navigate to developer screen
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -489,9 +511,17 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
       // Reset tap count if too much time has passed
       _tapCount = 1;
     }
-    
+
     // Update last tap time
     _lastTapTime = now;
+  }
+
+  // Handle guest access
+  void _handleGuestAccess() {
+    // Navigate to dashboard without authentication
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const dashboard.DashboardScreen()),
+    );
   }
 
   // Show forgot password dialog

@@ -18,8 +18,10 @@ import 'create_league_screen.dart';
 //import 'developer_screen.dart';
 import 'fixtures_screen.dart';
 import 'join_league_screen.dart';
+import 'login_user_screen.dart';
 import 'player_list_screen.dart';
 import 'profile_screen.dart';
+import 'register_user_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -75,47 +77,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
       // Load user data
       final userData = await AuthHelper.getUserData();
 
-      // Load leagues
-      final response = await GetUserLeaguesApi.getUserLeagues();
+      // Check if user is logged in
+      final isLoggedIn = await AuthHelper.isLoggedIn();
 
-      if (response['return_code'] == 'SUCCESS') {
-        // Get leagues from response
-        final List<dynamic> leaguesData = response['leagues'] ?? [];
+      if (isLoggedIn) {
+        // User is logged in, load leagues
+        final response = await GetUserLeaguesApi.getUserLeagues();
 
-        // Convert to List<Map<String, dynamic>>
-        final leagues = leaguesData.map((league) => league as Map<String, dynamic>).toList();
+        if (response['return_code'] == 'SUCCESS') {
+          // Get leagues from response
+          final List<dynamic> leaguesData = response['leagues'] ?? [];
 
-        // Sort by last_accessed (most recent first)
-        leagues.sort((a, b) {
-          final DateTime? lastAccessedA = a['last_accessed'] != null
-              ? DateTime.parse(a['last_accessed'])
-              : null;
-          final DateTime? lastAccessedB = b['last_accessed'] != null
-              ? DateTime.parse(b['last_accessed'])
-              : null;
+          // Convert to List<Map<String, dynamic>>
+          final leagues = leaguesData.map((league) => league as Map<String, dynamic>).toList();
 
-          if (lastAccessedA != null && lastAccessedB != null) {
-            return lastAccessedB.compareTo(lastAccessedA);
-          } else if (lastAccessedA != null) {
-            return -1;
-          } else if (lastAccessedB != null) {
-            return 1;
-          } else {
-            return 0;
-          }
-        });
+          // Sort by last_accessed (most recent first)
+          leagues.sort((a, b) {
+            final DateTime? lastAccessedA = a['last_accessed'] != null
+                ? DateTime.parse(a['last_accessed'])
+                : null;
+            final DateTime? lastAccessedB = b['last_accessed'] != null
+                ? DateTime.parse(b['last_accessed'])
+                : null;
 
+            if (lastAccessedA != null && lastAccessedB != null) {
+              return lastAccessedB.compareTo(lastAccessedA);
+            } else if (lastAccessedA != null) {
+              return -1;
+            } else if (lastAccessedB != null) {
+              return 1;
+            } else {
+              return 0;
+            }
+          });
+
+          setState(() {
+            _userData = userData;
+            _leagues = leagues;
+            _isLoading = false;
+            _errorMessage = null;
+          });
+        } else {
+          setState(() {
+            _userData = userData;
+            _isLoading = false;
+            _errorMessage = response['message'] ?? 'Failed to load leagues';
+          });
+        }
+      } else {
+        // User is not logged in (guest mode)
         setState(() {
-          _userData = userData;
-          _leagues = leagues;
+          _userData = {'nickname': 'Guest'};
+          _leagues = [];
           _isLoading = false;
           _errorMessage = null;
-        });
-      } else {
-        setState(() {
-          _userData = userData;
-          _isLoading = false;
-          _errorMessage = response['message'] ?? 'Failed to load leagues';
         });
       }
     } catch (e) {
@@ -233,17 +248,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       );
     } else if (index == 3) {
-      // Go directly to Profile screen
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const ProfileScreen(),
-        ),
-      );
+      // Check if user is in guest mode
+      final isGuest = _userData != null && _userData!['nickname'] == 'Guest';
+
+      if (isGuest) {
+        // Show login/register dialog for guest users
+        _showGuestLoginDialog();
+      } else {
+        // Go directly to Profile screen for logged-in users
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const ProfileScreen(),
+          ),
+        );
+      }
     } else {
       setState(() {
         _selectedIndex = index;
       });
     }
+  }
+
+  // Show login/register dialog for guest users
+  void _showGuestLoginDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Sign in or Register'),
+          content: const Text('Please sign in or register to access your profile and save your leagues.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                // Navigate to login screen
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const LoginUserScreen()),
+                );
+              },
+              child: const Text('Sign In'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                // Navigate to register screen
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const RegisterUserScreen()),
+                );
+              },
+              child: const Text('Register'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // Handle title tap for developer mode
@@ -363,57 +427,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         children: [
           // Top section with user info
-          Container(
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(32.0, 8.0, 32.0, 16.0),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () {
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(32.0, 8.0, 32.0, 16.0),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      // Check if user is in guest mode
+                      final isGuest = _userData != null && _userData!['nickname'] == 'Guest';
+
+                      if (isGuest) {
+                        // Show login/register dialog for guest users
+                        _showGuestLoginDialog();
+                      } else {
+                        // Go to profile screen for logged-in users
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (context) => const ProfileScreen(),
                           ),
                         );
-                      },
-                      child: CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.white.withAlpha(50),
-                        child: Text(
-                          _getInitials(userName),
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                      }
+                    },
+                    child: CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white.withAlpha(50),
+                      child: Text(
+                        _getInitials(userName),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Your Leagues',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                  ),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Your Leagues',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
-                        Text(
-                          userName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
+                      ),
+                      Text(
+                        userName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.white,
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
@@ -485,19 +556,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             const SizedBox(height: 16),
-                            const Text(
-                              'You are not a member of any leagues yet.',
-                              style: TextStyle(
+                            Text(
+                              _userData != null && _userData!['nickname'] == 'Guest'
+                                  ? 'Welcome to Split League!'
+                                  : 'You are not a member of any leagues yet.',
+                              style: const TextStyle(
                                 fontSize: 16,
                                 color: Colors.white,
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Create or join a league to get started',
+                              _userData != null && _userData!['nickname'] == 'Guest'
+                                  ? 'Create or join a league to get started, or register an account'
+                                  : 'Create or join a league to get started',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.white.withOpacity(0.7), // Using withOpacity for backward compatibility
+                                color: Colors.white.withAlpha(178), // 0.7 opacity as alpha value
                               ),
                             ),
                           ],
