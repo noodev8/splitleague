@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../api/update_user_accessed_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/config.dart';
 import '../helpers/version_helper.dart';
@@ -156,6 +157,17 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   Future<void> _checkLoginStatus() async {
     bool isLoggedIn = await AuthHelper.isLoggedIn();
     bool isVersionValid = await VersionHelper.isAppVersionValid();
+
+    // Update user accessed timestamp if logged in
+    if (isLoggedIn) {
+      try {
+        await UpdateUserAccessedApi.updateUserAccessed();
+        // No need to handle the response, just fire and forget
+      } catch (e) {
+        // Silently handle any errors, don't block the app startup
+        // Error is ignored to avoid blocking app startup
+      }
+    }
 
     if (mounted) {
       setState(() {

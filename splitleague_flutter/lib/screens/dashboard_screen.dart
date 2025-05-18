@@ -22,6 +22,7 @@ import 'login_user_screen.dart';
 import 'player_list_screen.dart';
 import 'profile_screen.dart';
 import 'register_user_screen.dart';
+import 'sample_fixtures_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -310,6 +311,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // Navigate to sample league screen
+  void _showSampleLeague() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const SampleFixturesScreen()),
+    );
+  }
+
   // Handle title tap for developer mode
   // void _handleTitleTap() {
   //   final now = DateTime.now();
@@ -568,13 +576,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             const SizedBox(height: 8),
                             Text(
                               _userData != null && _userData!['nickname'] == 'Guest'
-                                  ? 'Create or join a league to get started, or register an account'
+                                  ? 'Take a look around and explore the app features'
                                   : 'Create or join a league to get started',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.white.withAlpha(178), // 0.7 opacity as alpha value
                               ),
                             ),
+                            if (_userData != null && _userData!['nickname'] == 'Guest')
+                              Padding(
+                                padding: const EdgeInsets.only(top: 24.0),
+                                child: ElevatedButton(
+                                  onPressed: () => _showSampleLeague(),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: AppStyles.primaryColor,
+                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text('View Sample League'),
+                                ),
+                              ),
                           ],
                         ),
                       ),

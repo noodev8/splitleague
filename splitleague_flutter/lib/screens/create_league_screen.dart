@@ -7,8 +7,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/create_league_api.dart';
 import '../api/update_last_accessed_api.dart';
+import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
+import 'login_user_screen.dart';
+import 'register_user_screen.dart';
 
 class CreateLeagueScreen extends StatefulWidget {
   const CreateLeagueScreen({super.key});
@@ -66,6 +69,16 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
       return;
     }
 
+    // Check if user is in guest mode
+    final isGuest = await AuthHelper.getUserData().then((userData) =>
+      userData == null || userData['nickname'] == 'Guest');
+
+    if (isGuest) {
+      // Show registration dialog for guest users
+      _showGuestRegistrationDialog();
+      return;
+    }
+
     // Set loading state
     setState(() {
       _isLoading = true;
@@ -84,9 +97,6 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
       int loseMarginBonus = int.tryParse(_loseMarginBonusController.text) ?? 0;
       int winMarginThreshold = int.tryParse(_winMarginThresholdController.text) ?? 0;
       int playEachOther = int.tryParse(_playEachOtherController.text) ?? 1;
-
-      // Debug print to verify the value
-      print('Creating league with allow_code_share: $_allowCodeShare');
 
       // Call create league API
       Map<String, dynamic> response = await CreateLeagueApi.createLeague(
@@ -137,6 +147,53 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
   }
 
 
+
+  // Show guest registration dialog
+  void _showGuestRegistrationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Registration Required'),
+          content: const Text(
+            'From here you can create a league to track scores. '
+            'Either win, lose, draw or a points system. '
+            'The league appears on the dashboard and is shared amongst players.\n\n'
+            'To create a league, you need to register an account or sign in. '
+            'This allows you to save your leagues and access them from any device.'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                // Navigate to login screen
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const LoginUserScreen()),
+                );
+              },
+              child: const Text('Sign In'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                // Navigate to register screen
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const RegisterUserScreen()),
+                );
+              },
+              child: const Text('Register'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   // Show league PIN dialog
   void _showLeaguePinDialog(String pin, int leagueId) {
@@ -390,7 +447,7 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          
+
                           // WIN option
                           InkWell(
                             onTap: () {
