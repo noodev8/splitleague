@@ -190,10 +190,32 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
   Future<String?> _showNotesDialog(String playerName, String currentNotes) async {
     final controller = TextEditingController(text: currentNotes);
 
+    // Get current user data to check if we're updating notes for ourselves
+    final userData = await AuthHelper.getUserData();
+    final currentUserId = userData?['id'];
+
+    // Check if any member in the list matches the current user
+    bool isCurrentUser = false;
+    if (currentUserId != null) {
+      for (final member in _members) {
+        if (member['id'] == currentUserId &&
+            (member['nickname'] == playerName || member['name'] == playerName)) {
+          isCurrentUser = true;
+          break;
+        }
+      }
+    }
+
+    // Set the dialog title based on whether we're updating notes for ourselves or another player
+    final dialogTitle = isCurrentUser ? 'Notes for you' : 'Notes for $playerName';
+
+    // Check if the widget is still mounted before showing the dialog
+    if (!mounted) return null;
+
     return showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Notes for you'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
