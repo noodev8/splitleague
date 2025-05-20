@@ -5,7 +5,7 @@
 -- Dumped from database version 11.18 (Debian 11.18-0+deb10u1)
 -- Dumped by pg_dump version 17.4
 
--- Started on 2025-05-02 14:05:05
+-- Started on 2025-05-20 08:29:54
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -32,8 +32,8 @@ ALTER SCHEMA public OWNER TO postgres;
 SET default_tablespace = '';
 
 --
--- TOC entry 197 (class 1259 OID 21774)
--- Name: app_user; Type: TABLE; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 196 (class 1259 OID 22343)
+-- Name: app_user; Type: TABLE; Schema: public; Owner: splitleague_prod_user
 --
 
 CREATE TABLE public.app_user (
@@ -46,15 +46,16 @@ CREATE TABLE public.app_user (
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     email_verified boolean DEFAULT false,
     verification_token character varying(64),
-    verification_expires timestamp without time zone
+    verification_expires timestamp without time zone,
+    accessed timestamp with time zone
 );
 
 
-ALTER TABLE public.app_user OWNER TO splitleague_dev_user;
+ALTER TABLE public.app_user OWNER TO splitleague_prod_user;
 
 --
--- TOC entry 196 (class 1259 OID 21772)
--- Name: app_user_id_seq; Type: SEQUENCE; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 197 (class 1259 OID 22351)
+-- Name: app_user_id_seq; Type: SEQUENCE; Schema: public; Owner: splitleague_prod_user
 --
 
 CREATE SEQUENCE public.app_user_id_seq
@@ -66,20 +67,20 @@ CREATE SEQUENCE public.app_user_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.app_user_id_seq OWNER TO splitleague_dev_user;
+ALTER SEQUENCE public.app_user_id_seq OWNER TO splitleague_prod_user;
 
 --
--- TOC entry 2975 (class 0 OID 0)
--- Dependencies: 196
--- Name: app_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2973 (class 0 OID 0)
+-- Dependencies: 197
+-- Name: app_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER SEQUENCE public.app_user_id_seq OWNED BY public.app_user.id;
 
 
 --
--- TOC entry 207 (class 1259 OID 22314)
--- Name: app_version_requirement; Type: TABLE; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 198 (class 1259 OID 22353)
+-- Name: app_version_requirement; Type: TABLE; Schema: public; Owner: splitleague_prod_user
 --
 
 CREATE TABLE public.app_version_requirement (
@@ -89,11 +90,11 @@ CREATE TABLE public.app_version_requirement (
 );
 
 
-ALTER TABLE public.app_version_requirement OWNER TO splitleague_dev_user;
+ALTER TABLE public.app_version_requirement OWNER TO splitleague_prod_user;
 
 --
--- TOC entry 206 (class 1259 OID 22312)
--- Name: app_version_requirement_id_seq; Type: SEQUENCE; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 199 (class 1259 OID 22359)
+-- Name: app_version_requirement_id_seq; Type: SEQUENCE; Schema: public; Owner: splitleague_prod_user
 --
 
 CREATE SEQUENCE public.app_version_requirement_id_seq
@@ -105,20 +106,20 @@ CREATE SEQUENCE public.app_version_requirement_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.app_version_requirement_id_seq OWNER TO splitleague_dev_user;
+ALTER SEQUENCE public.app_version_requirement_id_seq OWNER TO splitleague_prod_user;
 
 --
--- TOC entry 2976 (class 0 OID 0)
--- Dependencies: 206
--- Name: app_version_requirement_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2974 (class 0 OID 0)
+-- Dependencies: 199
+-- Name: app_version_requirement_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER SEQUENCE public.app_version_requirement_id_seq OWNED BY public.app_version_requirement.id;
 
 
 --
--- TOC entry 209 (class 1259 OID 22441)
--- Name: deletion_log; Type: TABLE; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 209 (class 1259 OID 22453)
+-- Name: deletion_log; Type: TABLE; Schema: public; Owner: splitleague_prod_user
 --
 
 CREATE TABLE public.deletion_log (
@@ -132,11 +133,11 @@ CREATE TABLE public.deletion_log (
 );
 
 
-ALTER TABLE public.deletion_log OWNER TO splitleague_dev_user;
+ALTER TABLE public.deletion_log OWNER TO splitleague_prod_user;
 
 --
--- TOC entry 208 (class 1259 OID 22439)
--- Name: deletion_log_id_seq; Type: SEQUENCE; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 208 (class 1259 OID 22451)
+-- Name: deletion_log_id_seq; Type: SEQUENCE; Schema: public; Owner: splitleague_prod_user
 --
 
 CREATE SEQUENCE public.deletion_log_id_seq
@@ -148,20 +149,20 @@ CREATE SEQUENCE public.deletion_log_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.deletion_log_id_seq OWNER TO splitleague_dev_user;
+ALTER SEQUENCE public.deletion_log_id_seq OWNER TO splitleague_prod_user;
 
 --
--- TOC entry 2977 (class 0 OID 0)
+-- TOC entry 2975 (class 0 OID 0)
 -- Dependencies: 208
--- Name: deletion_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: splitleague_dev_user
+-- Name: deletion_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER SEQUENCE public.deletion_log_id_seq OWNED BY public.deletion_log.id;
 
 
 --
--- TOC entry 203 (class 1259 OID 21811)
--- Name: fixture; Type: TABLE; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 200 (class 1259 OID 22361)
+-- Name: fixture; Type: TABLE; Schema: public; Owner: splitleague_prod_user
 --
 
 CREATE TABLE public.fixture (
@@ -178,11 +179,11 @@ CREATE TABLE public.fixture (
 );
 
 
-ALTER TABLE public.fixture OWNER TO splitleague_dev_user;
+ALTER TABLE public.fixture OWNER TO splitleague_prod_user;
 
 --
--- TOC entry 202 (class 1259 OID 21809)
--- Name: fixture_id_seq; Type: SEQUENCE; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 201 (class 1259 OID 22367)
+-- Name: fixture_id_seq; Type: SEQUENCE; Schema: public; Owner: splitleague_prod_user
 --
 
 CREATE SEQUENCE public.fixture_id_seq
@@ -194,20 +195,20 @@ CREATE SEQUENCE public.fixture_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.fixture_id_seq OWNER TO splitleague_dev_user;
+ALTER SEQUENCE public.fixture_id_seq OWNER TO splitleague_prod_user;
 
 --
--- TOC entry 2978 (class 0 OID 0)
--- Dependencies: 202
--- Name: fixture_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2976 (class 0 OID 0)
+-- Dependencies: 201
+-- Name: fixture_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER SEQUENCE public.fixture_id_seq OWNED BY public.fixture.id;
 
 
 --
--- TOC entry 199 (class 1259 OID 21788)
--- Name: league; Type: TABLE; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 202 (class 1259 OID 22369)
+-- Name: league; Type: TABLE; Schema: public; Owner: splitleague_prod_user
 --
 
 CREATE TABLE public.league (
@@ -223,11 +224,11 @@ CREATE TABLE public.league (
 );
 
 
-ALTER TABLE public.league OWNER TO splitleague_dev_user;
+ALTER TABLE public.league OWNER TO splitleague_prod_user;
 
 --
--- TOC entry 198 (class 1259 OID 21786)
--- Name: league_id_seq; Type: SEQUENCE; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 203 (class 1259 OID 22374)
+-- Name: league_id_seq; Type: SEQUENCE; Schema: public; Owner: splitleague_prod_user
 --
 
 CREATE SEQUENCE public.league_id_seq
@@ -239,20 +240,20 @@ CREATE SEQUENCE public.league_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.league_id_seq OWNER TO splitleague_dev_user;
+ALTER SEQUENCE public.league_id_seq OWNER TO splitleague_prod_user;
 
 --
--- TOC entry 2979 (class 0 OID 0)
--- Dependencies: 198
--- Name: league_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2977 (class 0 OID 0)
+-- Dependencies: 203
+-- Name: league_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER SEQUENCE public.league_id_seq OWNED BY public.league.id;
 
 
 --
--- TOC entry 201 (class 1259 OID 21802)
--- Name: league_members; Type: TABLE; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 204 (class 1259 OID 22376)
+-- Name: league_members; Type: TABLE; Schema: public; Owner: splitleague_prod_user
 --
 
 CREATE TABLE public.league_members (
@@ -261,15 +262,16 @@ CREATE TABLE public.league_members (
     user_id integer,
     joined_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     active boolean,
-    last_accessed timestamp with time zone
+    last_accessed timestamp with time zone,
+    organiser_notes character varying(100)
 );
 
 
-ALTER TABLE public.league_members OWNER TO splitleague_dev_user;
+ALTER TABLE public.league_members OWNER TO splitleague_prod_user;
 
 --
--- TOC entry 200 (class 1259 OID 21800)
--- Name: league_members_id_seq; Type: SEQUENCE; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 205 (class 1259 OID 22380)
+-- Name: league_members_id_seq; Type: SEQUENCE; Schema: public; Owner: splitleague_prod_user
 --
 
 CREATE SEQUENCE public.league_members_id_seq
@@ -281,20 +283,20 @@ CREATE SEQUENCE public.league_members_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.league_members_id_seq OWNER TO splitleague_dev_user;
+ALTER SEQUENCE public.league_members_id_seq OWNER TO splitleague_prod_user;
 
 --
--- TOC entry 2980 (class 0 OID 0)
--- Dependencies: 200
--- Name: league_members_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2978 (class 0 OID 0)
+-- Dependencies: 205
+-- Name: league_members_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER SEQUENCE public.league_members_id_seq OWNED BY public.league_members.id;
 
 
 --
--- TOC entry 205 (class 1259 OID 21827)
--- Name: league_points; Type: TABLE; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 206 (class 1259 OID 22382)
+-- Name: league_points; Type: TABLE; Schema: public; Owner: splitleague_prod_user
 --
 
 CREATE TABLE public.league_points (
@@ -310,11 +312,11 @@ CREATE TABLE public.league_points (
 );
 
 
-ALTER TABLE public.league_points OWNER TO splitleague_dev_user;
+ALTER TABLE public.league_points OWNER TO splitleague_prod_user;
 
 --
--- TOC entry 204 (class 1259 OID 21825)
--- Name: league_points_id_seq; Type: SEQUENCE; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 207 (class 1259 OID 22385)
+-- Name: league_points_id_seq; Type: SEQUENCE; Schema: public; Owner: splitleague_prod_user
 --
 
 CREATE SEQUENCE public.league_points_id_seq
@@ -326,85 +328,76 @@ CREATE SEQUENCE public.league_points_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.league_points_id_seq OWNER TO splitleague_dev_user;
+ALTER SEQUENCE public.league_points_id_seq OWNER TO splitleague_prod_user;
 
 --
--- TOC entry 2981 (class 0 OID 0)
--- Dependencies: 204
--- Name: league_points_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2979 (class 0 OID 0)
+-- Dependencies: 207
+-- Name: league_points_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER SEQUENCE public.league_points_id_seq OWNED BY public.league_points.id;
 
 
 --
--- TOC entry 2816 (class 2604 OID 21777)
--- Name: app_user id; Type: DEFAULT; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2816 (class 2604 OID 22387)
+-- Name: app_user id; Type: DEFAULT; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER TABLE ONLY public.app_user ALTER COLUMN id SET DEFAULT nextval('public.app_user_id_seq'::regclass);
 
 
 --
--- TOC entry 2829 (class 2604 OID 22317)
--- Name: app_version_requirement id; Type: DEFAULT; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2819 (class 2604 OID 22388)
+-- Name: app_version_requirement id; Type: DEFAULT; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER TABLE ONLY public.app_version_requirement ALTER COLUMN id SET DEFAULT nextval('public.app_version_requirement_id_seq'::regclass);
 
 
 --
--- TOC entry 2830 (class 2604 OID 22444)
--- Name: deletion_log id; Type: DEFAULT; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2830 (class 2604 OID 22456)
+-- Name: deletion_log id; Type: DEFAULT; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER TABLE ONLY public.deletion_log ALTER COLUMN id SET DEFAULT nextval('public.deletion_log_id_seq'::regclass);
 
 
 --
--- TOC entry 2824 (class 2604 OID 21814)
--- Name: fixture id; Type: DEFAULT; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2820 (class 2604 OID 22389)
+-- Name: fixture id; Type: DEFAULT; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER TABLE ONLY public.fixture ALTER COLUMN id SET DEFAULT nextval('public.fixture_id_seq'::regclass);
 
 
 --
--- TOC entry 2819 (class 2604 OID 21791)
--- Name: league id; Type: DEFAULT; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2824 (class 2604 OID 22390)
+-- Name: league id; Type: DEFAULT; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER TABLE ONLY public.league ALTER COLUMN id SET DEFAULT nextval('public.league_id_seq'::regclass);
 
 
 --
--- TOC entry 2822 (class 2604 OID 21805)
--- Name: league_members id; Type: DEFAULT; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2827 (class 2604 OID 22391)
+-- Name: league_members id; Type: DEFAULT; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER TABLE ONLY public.league_members ALTER COLUMN id SET DEFAULT nextval('public.league_members_id_seq'::regclass);
 
 
 --
--- TOC entry 2828 (class 2604 OID 21830)
--- Name: league_points id; Type: DEFAULT; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2829 (class 2604 OID 22392)
+-- Name: league_points id; Type: DEFAULT; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER TABLE ONLY public.league_points ALTER COLUMN id SET DEFAULT nextval('public.league_points_id_seq'::regclass);
 
 
 --
--- TOC entry 2833 (class 2606 OID 21785)
--- Name: app_user app_user_email_key; Type: CONSTRAINT; Schema: public; Owner: splitleague_dev_user
---
-
-ALTER TABLE ONLY public.app_user
-    ADD CONSTRAINT app_user_email_key UNIQUE (email);
-
-
---
--- TOC entry 2835 (class 2606 OID 21783)
--- Name: app_user app_user_pkey; Type: CONSTRAINT; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2833 (class 2606 OID 22396)
+-- Name: app_user app_user_pkey; Type: CONSTRAINT; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER TABLE ONLY public.app_user
@@ -412,8 +405,8 @@ ALTER TABLE ONLY public.app_user
 
 
 --
--- TOC entry 2845 (class 2606 OID 22322)
--- Name: app_version_requirement app_version_requirement_pkey; Type: CONSTRAINT; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2835 (class 2606 OID 22398)
+-- Name: app_version_requirement app_version_requirement_pkey; Type: CONSTRAINT; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER TABLE ONLY public.app_version_requirement
@@ -421,8 +414,8 @@ ALTER TABLE ONLY public.app_version_requirement
 
 
 --
--- TOC entry 2847 (class 2606 OID 22450)
--- Name: deletion_log deletion_log_pkey; Type: CONSTRAINT; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2845 (class 2606 OID 22462)
+-- Name: deletion_log deletion_log_pkey; Type: CONSTRAINT; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER TABLE ONLY public.deletion_log
@@ -430,8 +423,8 @@ ALTER TABLE ONLY public.deletion_log
 
 
 --
--- TOC entry 2841 (class 2606 OID 21818)
--- Name: fixture fixture_pkey; Type: CONSTRAINT; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2837 (class 2606 OID 22400)
+-- Name: fixture fixture_pkey; Type: CONSTRAINT; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER TABLE ONLY public.fixture
@@ -439,8 +432,8 @@ ALTER TABLE ONLY public.fixture
 
 
 --
--- TOC entry 2839 (class 2606 OID 21808)
--- Name: league_members league_members_pkey; Type: CONSTRAINT; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2841 (class 2606 OID 22402)
+-- Name: league_members league_members_pkey; Type: CONSTRAINT; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER TABLE ONLY public.league_members
@@ -448,8 +441,8 @@ ALTER TABLE ONLY public.league_members
 
 
 --
--- TOC entry 2837 (class 2606 OID 21799)
--- Name: league league_pkey; Type: CONSTRAINT; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2839 (class 2606 OID 22404)
+-- Name: league league_pkey; Type: CONSTRAINT; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER TABLE ONLY public.league
@@ -457,8 +450,8 @@ ALTER TABLE ONLY public.league
 
 
 --
--- TOC entry 2843 (class 2606 OID 21832)
--- Name: league_points league_points_pkey; Type: CONSTRAINT; Schema: public; Owner: splitleague_dev_user
+-- TOC entry 2843 (class 2606 OID 22406)
+-- Name: league_points league_points_pkey; Type: CONSTRAINT; Schema: public; Owner: splitleague_prod_user
 --
 
 ALTER TABLE ONLY public.league_points
@@ -466,17 +459,16 @@ ALTER TABLE ONLY public.league_points
 
 
 --
--- TOC entry 2974 (class 0 OID 0)
+-- TOC entry 2972 (class 0 OID 0)
 -- Dependencies: 7
 -- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
 --
 
 REVOKE USAGE ON SCHEMA public FROM PUBLIC;
 GRANT ALL ON SCHEMA public TO PUBLIC;
-GRANT ALL ON SCHEMA public TO splitleague_dev_user;
 
 
--- Completed on 2025-05-02 14:05:06
+-- Completed on 2025-05-20 08:29:55
 
 --
 -- PostgreSQL database dump complete

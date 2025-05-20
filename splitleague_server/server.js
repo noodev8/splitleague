@@ -58,6 +58,10 @@ const delete_account = require('./routes/delete_account');
 // Import user accessed update route
 const update_user_accessed = require('./routes/update_user_accessed');
 
+// Import league member notes routes
+const update_notes = require('./routes/update_notes');
+const get_notes = require('./routes/get_notes');
+
 // Use routes
 app.use('/register_user', register_user);
 app.use('/login_user', login_user);
@@ -98,6 +102,10 @@ app.use('/delete_account', delete_account);
 
 // Use user accessed update route
 app.use('/update_user_accessed', update_user_accessed);
+
+// Use league member notes routes
+app.use('/update_notes', update_notes);
+app.use('/get_notes', get_notes);
 
 // Root route
 app.get('/', (req, res) => {
