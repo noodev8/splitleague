@@ -1,0 +1,409 @@
+/*
+Screen for displaying and managing league members
+Allows organizers to view and add notes for each member
+Only accessible to league organizers
+*/
+
+import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:provider/provider.dart';
+import '../api/get_league_members_api.dart';
+import '../api/get_notes_api.dart';
+import '../api/update_notes_api.dart';
+import '../helpers/auth_helper.dart';
+import '../helpers/error_helper.dart';
+import '../styles/app_styles.dart';
+import '../providers/league_provider.dart';
+import 'dashboard_screen.dart';
+import 'league_details_screen.dart';
+
+class LeagueMembersScreen extends StatefulWidget {
+  final Map<String, dynamic> league;
+
+  const LeagueMembersScreen({
+    super.key,
+    required this.league,
+  });
+
+  @override
+  State<LeagueMembersScreen> createState() => _LeagueMembersScreenState();
+}
+
+class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
+  // List of league members
+  List<Map<String, dynamic>> _members = [];
+
+  // Loading state
+  bool _isLoading = true;
+
+  // Error message
+  String? _errorMessage;
+
+  // Flag to track if current user is the creator
+  bool _isCreator = false;
+
+  // League provider
+  late LeagueProvider _leagueProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMembers();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize the league provider
+    _leagueProvider = Provider.of<LeagueProvider>(context, listen: false);
+  }
+
+  // Load league members
+  Future<void> _loadMembers() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Check if current user is the creator
+      final userData = await AuthHelper.getUserData();
+
+      // The creator ID could be in 'creator_id', 'created_by', or the user might have 'is_creator' flag
+      final creatorId = widget.league['creator_id'] ?? widget.league['created_by'];
+      final isCreator = (userData != null &&
+                       creatorId != null &&
+                       userData['id'].toString() == creatorId.toString()) ||
+                      widget.league['is_creator'] == true;
+
+      // Set creator flag
+      setState(() {
+        _isCreator = isCreator;
+      });
+
+      // If not creator, navigate back to league details
+      if (!_isCreator) {
+        if (!mounted) return;
+        
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Only league organizers can access this screen'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        
+        // Navigate back
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => LeagueDetailsScreen(
+              league: widget.league,
+              hasFixtures: true, // Default to true to be safe
+            ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
+        return;
+      }
+
+      // Get league members
+      final response = await GetLeagueMembersApi.getLeagueMembers(widget.league['league_id']);
+
+      if (response['return_code'] == 'SUCCESS') {
+        setState(() {
+          _members = List<Map<String, dynamic>>.from(response['members'] ?? []);
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = response['message'] ?? 'Failed to load members';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An error occurred while loading members';
+        _isLoading = false;
+      });
+    }
+  }
+
+  // View/Edit notes for a player
+  Future<void> _viewEditNotes(int playerId, String playerName) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // Get current notes
+      final response = await GetNotesApi.getNotes(
+        leagueId: widget.league['league_id'],
+        userId: playerId,
+      );
+
+      // Dismiss loading dialog
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      if (response['return_code'] == 'SUCCESS') {
+        final notes = response['notes'] ?? '';
+        
+        // Show dialog to view/edit notes
+        if (!mounted) return;
+        final result = await _showNotesDialog(playerName, notes);
+        
+        // If notes were updated, save them
+        if (result != null) {
+          await _updateNotes(playerId, playerName, result);
+        }
+      } else {
+        // Show error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to load notes'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Dismiss loading dialog
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      
+      // Show error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('An error occurred: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Show dialog to view/edit notes
+  Future<String?> _showNotesDialog(String playerName, String currentNotes) async {
+    final controller = TextEditingController(text: currentNotes);
+    
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Notes for $playerName'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Add notes about this player (max 100 characters):',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              maxLength: 100,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Enter notes here...',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Update notes for a player
+  Future<void> _updateNotes(int playerId, String playerName, String notes) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // Update notes
+      final response = await UpdateNotesApi.updateNotes(
+        leagueId: widget.league['league_id'],
+        userId: playerId,
+        notes: notes,
+      );
+
+      // Dismiss loading dialog
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      if (response['return_code'] == 'SUCCESS') {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Notes updated for $playerName'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // Show error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to update notes'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Dismiss loading dialog
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      
+      // Show error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('An error occurred: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('${widget.league['name']} - Members'),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) => LeagueDetailsScreen(
+                  league: widget.league,
+                  hasFixtures: true, // Default to true to be safe
+                ),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
+          },
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF005F8A), // Top color from logo gradient
+                Color(0xFF00B3A4), // Bottom color from logo gradient
+              ],
+            ),
+          ),
+        ),
+      ),
+      body: _isLoading
+        ? const Center(
+            child: SpinKitCircle(
+              color: Colors.blue,
+              size: 50.0,
+            ),
+          )
+        : _errorMessage != null
+          ? Center(
+              child: Text(
+                _errorMessage!,
+                style: const TextStyle(color: Colors.red),
+              ),
+            )
+          : Column(
+              children: [
+                // Content area
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Header text
+                              Text(
+                                'League Members',
+                                style: AppStyles.sectionHeading,
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Player count
+                              Text(
+                                '${_members.length} players in league',
+                                style: AppStyles.subtitle,
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Players list
+                              ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: _members.length,
+                                itemBuilder: (context, index) {
+                                  final member = _members[index];
+                                  final memberId = member['id'];
+                                  final memberName = member['nickname'] ?? member['name'] ?? 'Unknown Player';
+                                  final isCreator = member['is_creator'] == true ||
+                                                  member['is_organiser'] == true ||
+                                                  member['is_organizer'] == true;
+
+                                  return Card(
+                                    margin: const EdgeInsets.only(bottom: 8.0),
+                                    child: ListTile(
+                                      leading: CircleAvatar(
+                                        child: Text(
+                                          memberName.substring(0, 1).toUpperCase(),
+                                        ),
+                                      ),
+                                      title: Text(memberName),
+                                      subtitle: isCreator
+                                        ? const Text('League Organizer',
+                                            style: TextStyle(color: Colors.blue)
+                                          )
+                                        : null,
+                                      trailing: IconButton(
+                                        icon: const Icon(Icons.note_add, color: Colors.blue),
+                                        onPressed: () => _viewEditNotes(memberId, memberName),
+                                        tooltip: 'Add/Edit Notes',
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}

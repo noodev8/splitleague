@@ -14,6 +14,7 @@ import 'fixtures_screen.dart';
 import 'standings_screen.dart';
 import 'dashboard_screen.dart';
 import 'player_list_screen.dart';
+import 'league_members_screen.dart';
 
 class LeagueDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> league;
@@ -151,6 +152,21 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
           );
         }
       }
+    }
+  }
+
+  // Handle viewing league members
+  void _handleViewMembers() {
+    if (mounted && !_isDisposing) {
+      Navigator.of(context).push(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => LeagueMembersScreen(
+            league: widget.league,
+          ),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        ),
+      );
     }
   }
 
@@ -381,6 +397,7 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
                               onEditLeagueName: _handleEditLeagueName,
                               onResetScores: _handleResetScores,
                               onCopyLeague: _handleCopyLeague,
+                              onViewMembers: _handleViewMembers,
                             ),
                           ),
                     ),

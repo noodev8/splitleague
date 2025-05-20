@@ -10,6 +10,7 @@ class DetailsTabContent extends StatelessWidget {
   final Function(String)? onEditLeagueName;
   final Function()? onResetScores;
   final Function()? onCopyLeague;
+  final Function()? onViewMembers;
 
   const DetailsTabContent({
     super.key,
@@ -21,6 +22,7 @@ class DetailsTabContent extends StatelessWidget {
     this.onEditLeagueName,
     this.onResetScores,
     this.onCopyLeague,
+    this.onViewMembers,
   });
 
   @override
@@ -295,6 +297,27 @@ class DetailsTabContent extends StatelessWidget {
               onPressed: onCopyLeague,
               icon: const Icon(Icons.copy, color: Colors.white),
               label: const Text('Copy League'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // View Members button - only visible to the organizer
+        if (leagueInfo['is_creator'] == true && onViewMembers != null) ...[
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: onViewMembers,
+              icon: const Icon(Icons.people, color: Colors.white),
+              label: const Text('Manage League Members'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
