@@ -62,6 +62,9 @@ const update_user_accessed = require('./routes/update_user_accessed');
 const update_notes = require('./routes/update_notes');
 const get_notes = require('./routes/get_notes');
 
+// Import guest player route
+const add_guest_player = require('./routes/add_guest_player');
+
 // Use routes
 app.use('/register_user', register_user);
 app.use('/login_user', login_user);
@@ -106,6 +109,9 @@ app.use('/update_user_accessed', update_user_accessed);
 // Use league member notes routes
 app.use('/update_notes', update_notes);
 app.use('/get_notes', get_notes);
+
+// Use guest player route
+app.use('/add_guest_player', add_guest_player);
 
 // Root route
 app.get('/', (req, res) => {
