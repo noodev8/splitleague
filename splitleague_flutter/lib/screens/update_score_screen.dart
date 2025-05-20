@@ -254,16 +254,28 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
     }
   }
 
+  // Helper method to remove 'guest_' prefix from player names
+  String _formatPlayerName(String name) {
+    if (name.startsWith('guest_')) {
+      return name.substring(6); // Remove 'guest_' prefix
+    }
+    return name;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Get player names
-    final player1Name = widget.fixture['player_1_nickname']?.isNotEmpty == true
+    String rawPlayer1Name = widget.fixture['player_1_nickname']?.isNotEmpty == true
         ? widget.fixture['player_1_nickname']
         : widget.fixture['player_1_name'];
 
-    final player2Name = widget.fixture['player_2_nickname']?.isNotEmpty == true
+    String rawPlayer2Name = widget.fixture['player_2_nickname']?.isNotEmpty == true
         ? widget.fixture['player_2_nickname']
         : widget.fixture['player_2_name'];
+
+    // Format player names to remove 'guest_' prefix
+    final player1Name = _formatPlayerName(rawPlayer1Name);
+    final player2Name = _formatPlayerName(rawPlayer2Name);
 
     // Format updated date if available
     String? updatedDate;

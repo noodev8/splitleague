@@ -7,10 +7,20 @@ Provides utilities for improving accessibility
 
 /// Accessibility helper class
 class AccessibilityHelper {
+  /// Helper method to remove 'guest_' prefix from player names
+  static String _formatPlayerName(String name) {
+    if (name.startsWith('guest_')) {
+      return name.substring(6); // Remove 'guest_' prefix
+    }
+    return name;
+  }
+
   /// Returns a semantics label for a fixture card
   static String getFixtureLabel(Map<String, dynamic> fixture) {
-    final player1 = fixture['player_1_nickname'] ?? fixture['player_1_name'] ?? 'Player 1';
-    final player2 = fixture['player_2_nickname'] ?? fixture['player_2_name'] ?? 'Player 2';
+    final String rawPlayer1 = fixture['player_1_nickname'] ?? fixture['player_1_name'] ?? 'Player 1';
+    final String rawPlayer2 = fixture['player_2_nickname'] ?? fixture['player_2_name'] ?? 'Player 2';
+    final player1 = _formatPlayerName(rawPlayer1);
+    final player2 = _formatPlayerName(rawPlayer2);
     final date = fixture['scheduled_date'] ?? 'Unscheduled';
     final played = fixture['played'] == true;
 
@@ -38,7 +48,8 @@ class AccessibilityHelper {
 
   /// Returns a semantics label for a standings row
   static String getStandingsRowLabel(Map<String, dynamic> player, int position, String? winType) {
-    final name = player['nickname'] ?? player['name'] ?? 'Unknown';
+    final String rawName = player['nickname'] ?? player['name'] ?? 'Unknown';
+    final name = _formatPlayerName(rawName);
     final played = player['played'] ?? 0;
     final points = player['points'] ?? 0;
     final isCurrentUser = player['is_current_user'] == true;

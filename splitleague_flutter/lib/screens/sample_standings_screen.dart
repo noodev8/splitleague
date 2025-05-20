@@ -23,6 +23,14 @@ class _SampleStandingsScreenState extends State<SampleStandingsScreen> {
   final Map<String, dynamic> _league = SampleLeague.getSampleLeague();
   final List<Map<String, dynamic>> _standings = SampleLeague.getSampleStandings();
 
+  // Helper method to remove 'guest_' prefix from player names
+  String _formatPlayerName(String name) {
+    if (name.startsWith('guest_')) {
+      return name.substring(6); // Remove 'guest_' prefix
+    }
+    return name;
+  }
+
   // Show login/register dialog for guest users
   void _showGuestLoginDialog() {
     showDialog(
@@ -432,7 +440,7 @@ class _SampleStandingsScreenState extends State<SampleStandingsScreen> {
           Expanded(
             flex: 3,
             child: Text(
-              player['nickname'] ?? 'Player',
+              _formatPlayerName(player['nickname'] ?? 'Player'),
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
               ),

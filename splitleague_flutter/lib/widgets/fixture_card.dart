@@ -17,6 +17,14 @@ class FixtureCard extends StatelessWidget {
     this.onTap,
   });
 
+  // Helper method to remove 'guest_' prefix from player names
+  String _formatPlayerName(String name) {
+    if (name.startsWith('guest_')) {
+      return name.substring(6); // Remove 'guest_' prefix
+    }
+    return name;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Get fixture data
@@ -143,7 +151,9 @@ class FixtureCard extends StatelessWidget {
                       children: [
                         // Player name
                         Text(
-                          player1Nickname.isNotEmpty ? player1Nickname : player1Name,
+                          player1Nickname.isNotEmpty
+                              ? _formatPlayerName(player1Nickname)
+                              : _formatPlayerName(player1Name),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -244,7 +254,9 @@ class FixtureCard extends StatelessWidget {
                       children: [
                         // Player name
                         Text(
-                          player2Nickname.isNotEmpty ? player2Nickname : player2Name,
+                          player2Nickname.isNotEmpty
+                              ? _formatPlayerName(player2Nickname)
+                              : _formatPlayerName(player2Name),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,

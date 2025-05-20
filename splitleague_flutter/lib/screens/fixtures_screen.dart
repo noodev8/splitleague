@@ -171,12 +171,18 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       (index) {
                         final member = _leagueProvider.leagueMembers[index];
                         final memberId = member['id'].toString();
-                        final memberName = member['nickname'] ?? member['name'] ?? 'Unknown Player';
+                        final String rawMemberName = member['nickname'] ?? member['name'] ?? 'Unknown Player';
+
+                        // Format player name to remove 'guest_' prefix
+                        final String memberName = rawMemberName.startsWith('guest_')
+                            ? rawMemberName.substring(6)
+                            : rawMemberName;
 
                         return ListTile(
                           leading: const Icon(Icons.person),
                           title: Text(memberName),
                           onTap: () {
+                            // Pass the formatted name for display but keep the original ID for filtering
                             _leagueProvider.applyFilter(memberId, memberName);
                             Navigator.of(context).pop();
                           },

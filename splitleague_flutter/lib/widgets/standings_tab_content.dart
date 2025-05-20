@@ -72,6 +72,14 @@ class StandingsTabContent extends StatefulWidget {
 }
 
 class _StandingsTabContentState extends State<StandingsTabContent> {
+  // Helper method to remove 'guest_' prefix from player names
+  String _formatPlayerName(String name) {
+    if (name.startsWith('guest_')) {
+      return name.substring(6); // Remove 'guest_' prefix
+    }
+    return name;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -287,7 +295,7 @@ class _StandingsTabContentState extends State<StandingsTabContent> {
           Expanded(
             flex: 3,
             child: Text(
-              player['nickname'] ?? player['name'] ?? 'Unknown',
+              _formatPlayerName(player['nickname'] ?? player['name'] ?? 'Unknown'),
               style: TextStyle(
                 fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.normal,
               ),
