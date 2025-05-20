@@ -264,8 +264,12 @@ class DetailsTabContent extends StatelessWidget {
                   ],
                 ),
 
-                // Organizer Notes - only show if there are notes
-                if (organizerNotes != null && organizerNotes!.isNotEmpty) ...[
+                // Organizer Notes - only show if there are notes and user is not a guest
+                // Check if current user is a guest (nickname starts with 'guest_')
+                if (organizerNotes != null &&
+                    organizerNotes!.isNotEmpty &&
+                    !(leagueInfo['user_nickname'] != null &&
+                      leagueInfo['user_nickname'].toString().startsWith('guest_'))) ...[
                   const SizedBox(height: 16),
                   Row(
                     children: [

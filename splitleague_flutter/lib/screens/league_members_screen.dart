@@ -385,25 +385,40 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
                                                   member['is_organiser'] == true ||
                                                   member['is_organizer'] == true;
 
+                                  // Check if this is a guest player (nickname starts with 'guest_')
+                                  final isGuest = memberName.startsWith('guest_');
+
+                                  // Display name - for guests, remove the 'guest_' prefix for display
+                                  final displayName = isGuest
+                                      ? memberName.substring(6) // Remove 'guest_' prefix
+                                      : memberName;
+
                                   return Card(
                                     margin: const EdgeInsets.only(bottom: 8.0),
                                     child: ListTile(
                                       leading: CircleAvatar(
+                                        backgroundColor: isGuest ? Colors.orange : null,
                                         child: Text(
-                                          memberName.substring(0, 1).toUpperCase(),
+                                          displayName.substring(0, 1).toUpperCase(),
                                         ),
                                       ),
-                                      title: Text(memberName),
+                                      title: Text(displayName),
                                       subtitle: isCreator
                                         ? const Text('League Organizer',
                                             style: TextStyle(color: Colors.blue)
                                           )
-                                        : null,
-                                      trailing: IconButton(
-                                        icon: const Icon(Icons.note_add, color: Colors.blue),
-                                        onPressed: () => _viewEditNotes(memberId, memberName),
-                                        tooltip: 'Add/Edit Notes',
-                                      ),
+                                        : isGuest
+                                          ? const Text('Guest Player',
+                                              style: TextStyle(color: Colors.orange)
+                                            )
+                                          : null,
+                                      trailing: isGuest
+                                        ? null // No notes for guest players
+                                        : IconButton(
+                                            icon: const Icon(Icons.note_add, color: Colors.blue),
+                                            onPressed: () => _viewEditNotes(memberId, displayName),
+                                            tooltip: 'Add/Edit Notes',
+                                          ),
                                     ),
                                   );
                                 },

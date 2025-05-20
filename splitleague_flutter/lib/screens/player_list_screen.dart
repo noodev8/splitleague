@@ -10,6 +10,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 import '../api/get_league_members_api.dart';
 import '../api/remove_player_from_league_api.dart';
+import '../api/add_guest_player_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
@@ -204,13 +205,114 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
     }
   }
 
+  // Add guest player to league
+  Future<void> _addGuestPlayer() async {
+    // Check if fixtures exist
+    if (_hasFixtures) {
+      ErrorHelper.showErrorToast('Cannot add guest players after fixtures are generated');
+      return;
+    }
+
+    // Show dialog to get guest nickname
+    final guestNickname = await _showAddGuestDialog();
+
+    // If user cancelled, return
+    if (guestNickname == null || guestNickname.isEmpty) {
+      return;
+    }
+
+    // Show loading indicator
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Call API to add guest player
+      final response = await AddGuestPlayerApi.addGuestPlayer(
+        leagueId: widget.league['league_id'],
+        guestNickname: guestNickname,
+      );
+
+      if (response['return_code'] == 'SUCCESS') {
+        // Show success message
+        ErrorHelper.showSuccessToast(response['message'] ?? 'Guest player added successfully');
+
+        // Reload members
+        _loadMembers();
+      } else if (response['return_code'] == 'FIXTURES_EXIST') {
+        // If fixtures exist, update our state
+        setState(() {
+          _hasFixtures = true;
+          _isLoading = false;
+          ErrorHelper.showErrorToast('Cannot add guest players after fixtures are generated');
+        });
+      } else if (response['return_code'] == 'GUEST_LIMIT_REACHED') {
+        // If guest limit reached
+        setState(() {
+          _isLoading = false;
+          ErrorHelper.showErrorToast('Maximum of 2 active guest players allowed per league');
+        });
+      } else {
+        setState(() {
+          _errorMessage = response['message'] ?? 'Failed to add guest player';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An error occurred while adding guest player';
+        _isLoading = false;
+      });
+    }
+  }
+
+  // Show dialog to get guest nickname
+  Future<String?> _showAddGuestDialog() async {
+    final controller = TextEditingController();
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Guest Player'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Add a guest player who doesn\'t have time to register. Maximum 2 guest players allowed per league.',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Guest Name',
+                hintText: 'Enter guest name',
+              ),
+              autofocus: true,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => Navigator.of(context).pop(controller.text.trim()),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Add Guest'),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Remove player from league
   Future<void> _removePlayer(int playerId, String playerName) async {
-    // Debug prints to help diagnose issues
-    print('Attempting to remove player: $playerName (ID: $playerId)');
-    print('Is creator: $_isCreator');
-    print('Has fixtures: $_hasFixtures');
-
     // Check if fixtures exist
     if (_hasFixtures) {
       ErrorHelper.showErrorToast('Cannot remove players after fixtures are generated');
@@ -445,10 +547,29 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                               ),
                               const SizedBox(height: 16),
 
-                              // Player count
-                              Text(
-                                '${_members.length} players joined',
-                                style: AppStyles.subtitle,
+                              // Player count and add guest button
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    '${_members.length} players joined',
+                                    style: AppStyles.subtitle,
+                                  ),
+                                  if (_isCreator && !_hasFixtures)
+                                    ElevatedButton.icon(
+                                      onPressed: _addGuestPlayer,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      icon: const Icon(Icons.person_add, size: 18),
+                                      label: const Text('Add Guest'),
+                                    ),
+                                ],
                               ),
                               const SizedBox(height: 16),
 
@@ -465,24 +586,37 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                                                   member['is_organiser'] == true ||
                                                   member['is_organizer'] == true;
 
+                                  // Check if this is a guest player (nickname starts with 'guest_')
+                                  final isGuest = memberName.startsWith('guest_');
+
+                                  // Display name - for guests, remove the 'guest_' prefix for display
+                                  final displayName = isGuest
+                                      ? memberName.substring(6) // Remove 'guest_' prefix
+                                      : memberName;
+
                                   return Card(
                                     margin: const EdgeInsets.only(bottom: 8.0),
                                     child: ListTile(
                                       leading: CircleAvatar(
+                                        backgroundColor: isGuest ? Colors.orange : null,
                                         child: Text(
-                                          memberName.substring(0, 1).toUpperCase(),
+                                          displayName.substring(0, 1).toUpperCase(),
                                         ),
                                       ),
-                                      title: Text(memberName),
+                                      title: Text(displayName),
                                       subtitle: isCreator
                                         ? const Text('League Organizer',
                                             style: TextStyle(color: Colors.blue)
                                           )
-                                        : null,
+                                        : isGuest
+                                          ? const Text('Guest Player',
+                                              style: TextStyle(color: Colors.orange)
+                                            )
+                                          : null,
                                       trailing: _isCreator && !isCreator && !_hasFixtures
                                         ? IconButton(
                                             icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
-                                            onPressed: () => _removePlayer(memberId, memberName),
+                                            onPressed: () => _removePlayer(memberId, displayName),
                                           )
                                         : null,
                                     ),
