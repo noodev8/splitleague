@@ -10,6 +10,7 @@ import '../providers/league_provider.dart';
 import '../widgets/details_tab_content.dart';
 import '../helpers/auth_helper.dart';
 import '../styles/app_styles.dart';
+import '../api/get_notes_api.dart';
 import 'fixtures_screen.dart';
 import 'standings_screen.dart';
 import 'dashboard_screen.dart';
@@ -40,6 +41,10 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
   // Flag to track if fixtures exist - initialized with the passed parameter if available
   bool _hasFixtures = false;
 
+  // Organizer notes for the current user
+  String? _organizerNotes;
+  bool _isLoadingNotes = false;
+
   @override
   void initState() {
     super.initState();
@@ -53,8 +58,51 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
     Future.microtask(() {
       if (mounted) {
         _initializeLeagueProvider();
+        _loadOrganizerNotes();
       }
     });
+  }
+
+  // Load organizer notes for the current user
+  Future<void> _loadOrganizerNotes() async {
+    if (_isDisposing) return;
+
+    setState(() {
+      _isLoadingNotes = true;
+    });
+
+    try {
+      // Get current user ID
+      final userData = await AuthHelper.getUserData();
+      if (userData == null || _isDisposing) return;
+
+      final userId = userData['id'];
+
+      // Get notes for the current user
+      final response = await GetNotesApi.getNotes(
+        leagueId: widget.league['league_id'],
+        userId: userId,
+      );
+
+      if (response['return_code'] == 'SUCCESS' && !_isDisposing) {
+        setState(() {
+          _organizerNotes = response['notes'];
+          _isLoadingNotes = false;
+        });
+      } else if (!_isDisposing) {
+        setState(() {
+          _organizerNotes = null;
+          _isLoadingNotes = false;
+        });
+      }
+    } catch (e) {
+      if (!_isDisposing) {
+        setState(() {
+          _organizerNotes = null;
+          _isLoadingNotes = false;
+        });
+      }
+    }
   }
 
   @override
@@ -398,6 +446,7 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
                               onResetScores: _handleResetScores,
                               onCopyLeague: _handleCopyLeague,
                               onViewMembers: _handleViewMembers,
+                              organizerNotes: _organizerNotes,
                             ),
                           ),
                     ),

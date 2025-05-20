@@ -11,6 +11,7 @@ class DetailsTabContent extends StatelessWidget {
   final Function()? onResetScores;
   final Function()? onCopyLeague;
   final Function()? onViewMembers;
+  final String? organizerNotes;
 
   const DetailsTabContent({
     super.key,
@@ -23,6 +24,7 @@ class DetailsTabContent extends StatelessWidget {
     this.onResetScores,
     this.onCopyLeague,
     this.onViewMembers,
+    this.organizerNotes,
   });
 
   @override
@@ -261,6 +263,50 @@ class DetailsTabContent extends StatelessWidget {
                     ),
                   ],
                 ),
+
+                // Organizer Notes - only show if there are notes
+                if (organizerNotes != null && organizerNotes!.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withAlpha(25),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.note,
+                          color: Colors.blue,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              leagueInfo['is_creator'] == true ? 'Your note' : 'Organiser note to you',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            Text(
+                              organizerNotes!,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

@@ -84,7 +84,7 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
       // If not creator, navigate back to league details
       if (!_isCreator) {
         if (!mounted) return;
-        
+
         // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -92,7 +92,7 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
             backgroundColor: Colors.red,
           ),
         );
-        
+
         // Navigate back
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
@@ -153,11 +153,11 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
 
       if (response['return_code'] == 'SUCCESS') {
         final notes = response['notes'] ?? '';
-        
+
         // Show dialog to view/edit notes
         if (!mounted) return;
         final result = await _showNotesDialog(playerName, notes);
-        
+
         // If notes were updated, save them
         if (result != null) {
           await _updateNotes(playerId, playerName, result);
@@ -175,7 +175,7 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
       // Dismiss loading dialog
       if (!mounted) return;
       Navigator.of(context).pop();
-      
+
       // Show error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -189,17 +189,17 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
   // Show dialog to view/edit notes
   Future<String?> _showNotesDialog(String playerName, String currentNotes) async {
     final controller = TextEditingController(text: currentNotes);
-    
+
     return showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Notes for $playerName'),
+        title: const Text('Notes for you'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Add notes about this player (max 100 characters):',
+              'Add notes for this player. Notes for any player may be visible to all league members.',
               style: TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 12),
@@ -259,6 +259,19 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
             backgroundColor: Colors.green,
           ),
         );
+
+        // Navigate back to league details to refresh notes
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => LeagueDetailsScreen(
+              league: widget.league,
+              hasFixtures: true, // Default to true to be safe
+            ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
       } else {
         // Show error
         ScaffoldMessenger.of(context).showSnackBar(
@@ -272,7 +285,7 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
       // Dismiss loading dialog
       if (!mounted) return;
       Navigator.of(context).pop();
-      
+
       // Show error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
