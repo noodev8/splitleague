@@ -457,7 +457,7 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
                                     );
                                   },
                                   child: const Text(
-                                    'Register',
+                                    'Register Free',
                                     style: TextStyle(
                                       color: AppStyles.primaryColor,
                                       fontWeight: FontWeight.bold,
