@@ -353,10 +353,11 @@ Body:
 
 Notes:
 - Deletes ALL fixtures for the specified league
+- Generates a new 4-digit public league code for security
 - Only the league creator (organizer) can reset fixtures
 - Returns the league to its initial state where players can be managed
 - This action cannot be undone
-- Response includes the number of fixtures deleted
+- Response includes the number of fixtures deleted and the new public code
 ======================================
 
 == Change Password ==============================

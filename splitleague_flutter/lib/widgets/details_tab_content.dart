@@ -350,7 +350,7 @@ class DetailsTabContent extends StatelessWidget {
               icon: const Icon(Icons.delete_forever, color: Colors.white),
               label: const Text('Reset League'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
