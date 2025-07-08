@@ -117,12 +117,6 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                          userData['id'].toString() == creatorId.toString()) ||
                         widget.league['is_creator'] == true;
 
-      // Debug prints to help diagnose issues
-      print('User data: ${userData?['id']}');
-      print('League creator ID: $creatorId');
-      print('Is creator from check: $isCreator');
-      print('Is creator from league: ${widget.league['is_creator']}');
-
       // Set creator flag
       setState(() {
         _isCreator = isCreator;
@@ -132,11 +126,6 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
       final response = await GetLeagueMembersApi.getLeagueMembers(widget.league['league_id']);
 
       if (response['return_code'] == 'SUCCESS') {
-        // Debug print to see the structure of the first member
-        if ((response['members'] ?? []).isNotEmpty) {
-          print('First member structure: ${response['members'][0]}');
-        }
-
         // Count guest players (those with nickname starting with 'guest_')
         final members = List<Map<String, dynamic>>.from(response['members'] ?? []);
         final guestCount = members.where((member) {
