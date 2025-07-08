@@ -124,21 +124,17 @@ router.post('/', verifyToken, async (req, res) => {
     // Insert the new league
     const newLeagueResult = await client.query(
       `INSERT INTO league (
-        name, 
-        created_by, 
-        start_date, 
-        end_date, 
-        created_at, 
-        public_code, 
+        name,
+        created_by,
+        created_at,
+        public_code,
         active,
         allow_code_share
-      ) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5, $6, $7)
+      ) VALUES ($1, $2, CURRENT_TIMESTAMP, $3, $4, $5)
       RETURNING *`,
       [
         newLeagueName,
         userId,
-        originalLeague.start_date,
-        originalLeague.end_date,
         publicCode,
         true, // active
         originalLeague.allow_code_share

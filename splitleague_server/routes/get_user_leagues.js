@@ -103,8 +103,7 @@ router.post('/', verifyToken, async (req, res) => {
         created_by: row.created_by,
         public_code: row.public_code,
         active: row.active,
-        start_date: row.start_date,
-        end_date: row.end_date,
+
         created_at: row.created_at,
         is_creator: row.is_creator,
         joined_at: row.joined_at,

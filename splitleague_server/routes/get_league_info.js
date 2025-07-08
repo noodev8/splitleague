@@ -19,8 +19,7 @@ Success Response:
     "created_by": 123,                // integer - User ID of creator
     "public_code": "1234",            // string - Unique 4-digit code for joining the league
     "active": true,                   // boolean - League active status
-    "start_date": "2025-05-01",       // date - Start date (may be null)
-    "end_date": "2025-08-31",         // date - End date (may be null)
+
     "created_at": "2025-04-06T12:00:00.000Z", // timestamp - Creation date
     "is_creator": true,               // boolean - Whether the user created this league
     "points_for_win": 3,              // integer - Points for win
@@ -75,8 +74,7 @@ router.post('/', verifyToken, async (req, res) => {
         l.created_by,
         l.public_code,
         l.active,
-        l.start_date,
-        l.end_date,
+
         l.created_at,
         l.allow_code_share,
         CASE WHEN l.created_by = $1 THEN true ELSE false END as is_creator,

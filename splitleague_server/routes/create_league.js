@@ -16,9 +16,7 @@ Request Payload:
   "points_for_win_margin": 1,           // integer, optional - Extra points for winning by a margin (default: 1)
   "points_for_close_loss": 1,           // integer, optional - Points for losing by a small margin (default: 1)
   "win_margin_threshold": 15,           // integer, optional - Threshold for win margin points (default: 15)
-  "play_each_other": 2,                 // integer, optional - Number of times each player plays each other (default: 2)
-  "start_date": "2025-05-01",           // date, optional - League start date (YYYY-MM-DD)
-  "end_date": "2025-08-31"              // date, optional - League end date (YYYY-MM-DD)
+  "play_each_other": 2                  // integer, optional - Number of times each player plays each other (default: 2)
 }
 
 Success Response:
@@ -114,8 +112,6 @@ router.post('/', verifyToken, async (req, res) => {
       points_for_close_loss,
       win_margin_threshold,
       play_each_other,
-      start_date,
-      end_date,
       allow_code_share
     } = req.body;
 
@@ -162,18 +158,14 @@ router.post('/', verifyToken, async (req, res) => {
         created_by,
         public_code,
         active,
-        start_date,
-        end_date,
         allow_code_share
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ) VALUES ($1, $2, $3, $4, $5)
       RETURNING *`,
       [
         name,
         userId,
         publicCode,
         true, // Set active to true
-        start_date || null,
-        end_date || null,
         allow_code_share !== undefined ? allow_code_share : true // Default to true if not provided
       ]
     );

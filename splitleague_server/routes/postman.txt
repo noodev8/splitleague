@@ -60,9 +60,7 @@ Body:
   "points_for_win_margin": 1,
   "points_for_close_loss": 1,
   "win_margin_threshold": 15,
-  "play_each_other": 2,
-  "start_date": "2025-05-01",
-  "end_date": "2025-08-31"
+  "play_each_other": 2
 }
 
 Win Type Options:

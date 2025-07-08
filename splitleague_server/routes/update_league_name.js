@@ -109,8 +109,7 @@ router.post('/', verifyToken, async (req, res) => {
         l.created_by,
         l.public_code,
         l.active,
-        l.start_date,
-        l.end_date,
+
         l.created_at,
         l.allow_code_share,
         CASE WHEN l.created_by = $1 THEN true ELSE false END as is_creator,
