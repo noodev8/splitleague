@@ -180,6 +180,27 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
     }
   }
 
+  // Handle resetting league (deleting all fixtures)
+  Future<void> _handleResetLeague() async {
+    if (mounted && !_isDisposing) {
+      final success = await _leagueProvider.resetLeague(context);
+
+      // If league was reset successfully, navigate to fixtures screen
+      if (success && mounted && !_isDisposing) {
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+              FixturesScreen(
+                league: widget.league,
+              ),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
+      }
+    }
+  }
+
   // Handle copying league
   Future<void> _handleCopyLeague() async {
     if (mounted && !_isDisposing) {
@@ -444,6 +465,7 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
                               getPointsTypeDisplay: leagueProvider.getPointsTypeDisplay,
                               onEditLeagueName: _handleEditLeagueName,
                               onResetScores: _handleResetScores,
+                              onResetLeague: _handleResetLeague,
                               onCopyLeague: _handleCopyLeague,
                               onViewMembers: _handleViewMembers,
                               organizerNotes: _organizerNotes,

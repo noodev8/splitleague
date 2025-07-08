@@ -7,6 +7,7 @@ import '../api/generate_fixtures_api.dart';
 import '../api/remove_player_from_league_api.dart';
 import '../api/update_league_name_api.dart';
 import '../api/reset_league_scores_api.dart';
+import '../api/reset_league_fixtures_api.dart';
 import '../api/copy_league_api.dart';
 import '../helpers/error_handler.dart';
 
@@ -688,6 +689,65 @@ class LeagueProvider extends ChangeNotifier {
     } catch (e) {
       // Show error message for exceptions
       ErrorHandler.showErrorToast('An error occurred while resetting league scores');
+      return false;
+    }
+  }
+
+  // Reset a league by deleting all fixtures
+  Future<bool> resetLeague(BuildContext context) async {
+    if (_currentLeagueId == null) return false;
+
+    // Show confirmation dialog with warning
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Reset League'),
+          content: const Text(
+            'WARNING: This will delete ALL fixtures in the league. '
+            'The league will return to its initial state where you can add/remove players '
+            'and generate new fixtures. This action cannot be undone. '
+            'Are you sure you want to continue?'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Reset League'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // If user cancelled, do nothing
+    if (confirm != true) return false;
+
+    try {
+      // Call the API to reset the league
+      final response = await ResetLeagueFixturesApi.resetLeagueFixtures(_currentLeagueId);
+
+      if (response['return_code'] == 'SUCCESS') {
+        // Reload all data since fixtures are now gone
+        await loadLeagueInfo();
+        await loadFixtures();
+        await loadStandings();
+
+        return true;
+      } else {
+        // Show error message for failures
+        ErrorHandler.showErrorToast(
+          response['message'] ?? 'Failed to reset league',
+        );
+        return false;
+      }
+    } catch (e) {
+      // Show error message for exceptions
+      ErrorHandler.showErrorToast('An error occurred while resetting the league');
       return false;
     }
   }

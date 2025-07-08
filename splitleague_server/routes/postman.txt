@@ -340,6 +340,25 @@ Resets a user's password using the verification token sent to their email
 Response includes SUCCESS if password reset successfully
 ======================================
 
+== Reset League Fixtures ==============================
+URL: http://localhost:3000/reset_league_fixtures
+Method: POST
+Headers:
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+Body:
+{
+  "league_id": 1
+}
+
+Notes:
+- Deletes ALL fixtures for the specified league
+- Only the league creator (organizer) can reset fixtures
+- Returns the league to its initial state where players can be managed
+- This action cannot be undone
+- Response includes the number of fixtures deleted
+======================================
+
 == Change Password ==============================
 URL: http://localhost:3000/change_password
 Method: POST

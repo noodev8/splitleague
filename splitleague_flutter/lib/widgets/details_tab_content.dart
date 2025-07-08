@@ -9,6 +9,7 @@ class DetailsTabContent extends StatelessWidget {
   final String Function(String?) getPointsTypeDisplay;
   final Function(String)? onEditLeagueName;
   final Function()? onResetScores;
+  final Function()? onResetLeague;
   final Function()? onCopyLeague;
   final Function()? onViewMembers;
   final String? organizerNotes;
@@ -22,6 +23,7 @@ class DetailsTabContent extends StatelessWidget {
     required this.getPointsTypeDisplay,
     this.onEditLeagueName,
     this.onResetScores,
+    this.onResetLeague,
     this.onCopyLeague,
     this.onViewMembers,
     this.organizerNotes,
@@ -328,6 +330,27 @@ class DetailsTabContent extends StatelessWidget {
               label: const Text('Reset All Scores'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // Reset League button - only visible to the organizer and only if fixtures exist
+        if (leagueInfo['is_creator'] == true && hasFixtures && onResetLeague != null) ...[
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: onResetLeague,
+              icon: const Icon(Icons.delete_forever, color: Colors.white),
+              label: const Text('Reset League'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(

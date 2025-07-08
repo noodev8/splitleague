@@ -37,6 +37,7 @@ const reactivate_league_membership = require('./routes/reactivate_league_members
 const void_fixture = require('./routes/void_fixture');
 const update_league_name = require('./routes/update_league_name');
 const reset_league_scores = require('./routes/reset_league_scores');
+const reset_league_fixtures = require('./routes/reset_league_fixtures');
 const copy_league = require('./routes/copy_league');
 
 // Import email and password management routes
@@ -85,6 +86,7 @@ app.use('/reactivate_league_membership', reactivate_league_membership);
 app.use('/void_fixture', void_fixture);
 app.use('/update_league_name', update_league_name);
 app.use('/reset_league_scores', reset_league_scores);
+app.use('/reset_league_fixtures', reset_league_fixtures);
 app.use('/copy_league', copy_league);
 
 // Use email and password management routes
