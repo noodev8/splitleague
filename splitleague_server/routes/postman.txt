@@ -360,6 +360,28 @@ Notes:
 - Response includes the number of fixtures deleted and the new public code
 ======================================
 
+== Convert Guest to User ==============================
+URL: http://localhost:3000/convert_guest_to_user
+Method: POST
+Headers:
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN
+Body:
+{
+  "guest_user_id": 24,
+  "registered_user_id": 3,
+  "league_id": 1
+}
+
+Notes:
+- Converts a guest player to a registered user
+- Updates all database references (league_members, fixtures)
+- Only league organizers can perform this conversion
+- Removes guest indicators from the registered user's nickname
+- Deletes the guest user account after conversion
+- Response includes the number of records updated
+======================================
+
 == Change Password ==============================
 URL: http://localhost:3000/change_password
 Method: POST

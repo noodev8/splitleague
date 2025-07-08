@@ -1,0 +1,85 @@
+/*
+API service for converting a guest player to a registered user
+Allows league organizers to convert guest players to registered users
+*/
+
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../helpers/config.dart';
+import '../helpers/auth_helper.dart';
+
+class ConvertGuestToUserApi {
+  // Convert a guest player to a registered user
+  static Future<Map<String, dynamic>> convertGuestToUser({
+    required int guestUserId,
+    required int registeredUserId,
+    required int leagueId,
+  }) async {
+    // Create the request URL
+    final url = Uri.parse('${Config.baseUrl}/convert_guest_to_user');
+
+    try {
+      // Get the JWT token
+      final token = await AuthHelper.getToken();
+
+      if (token == null) {
+        return {
+          'return_code': 'UNAUTHORIZED',
+          'message': 'Authentication token not found',
+        };
+      }
+
+      // Send POST request to the server
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'guest_user_id': guestUserId,
+          'registered_user_id': registeredUserId,
+          'league_id': leagueId,
+        }),
+      );
+
+      // Check if response is successful
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        try {
+          // Parse the response
+          final Map<String, dynamic> responseData = jsonDecode(response.body);
+          
+          // Return the response data
+          return responseData;
+        } catch (e) {
+          // Error parsing response
+          return {
+            'return_code': 'PARSE_ERROR',
+            'message': 'Failed to parse server response: ${e.toString()}',
+          };
+        }
+      } else {
+        // Try to parse error message from response if possible
+        try {
+          final Map<String, dynamic> errorData = jsonDecode(response.body);
+          return {
+            'return_code': errorData['return_code'] ?? 'HTTP_ERROR',
+            'message': errorData['message'] ?? 'Server returned error code: ${response.statusCode}',
+          };
+        } catch (e) {
+          // HTTP error
+          return {
+            'return_code': 'HTTP_ERROR',
+            'message': 'Server returned error code: ${response.statusCode}',
+          };
+        }
+      }
+    } catch (e) {
+      // Network or other error
+      return {
+        'return_code': 'SERVER_ERROR',
+        'message': 'Failed to connect to server: ${e.toString()}',
+      };
+    }
+  }
+}

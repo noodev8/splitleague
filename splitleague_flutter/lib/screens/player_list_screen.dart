@@ -290,6 +290,18 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
               style: const TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.withAlpha(25),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.withAlpha(50)),
+              ),
+              child: const Text(
+                'Note: Guest players will be automatically deleted after 3 months, but can be converted to registered users at any time during this period.',
+                style: TextStyle(fontSize: 12, color: Colors.blue),
+              ),
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: controller,

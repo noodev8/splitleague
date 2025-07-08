@@ -126,8 +126,8 @@ router.post('/', verifyToken, async (req, res) => {
     // Set default guest nickname if not provided
     const baseNickname = guest_nickname || 'Guest Player';
 
-    // Add 'guest_' prefix to the nickname for display
-    const displayNickname = `guest_${baseNickname}`;
+    // Add 'guest_' prefix and (g) suffix to the nickname for display
+    const displayNickname = `guest_${baseNickname} (g)`;
 
     // Hash the password (using 'guest' as the password)
     const saltRounds = 10;

@@ -63,8 +63,9 @@ const update_user_accessed = require('./routes/update_user_accessed');
 const update_notes = require('./routes/update_notes');
 const get_notes = require('./routes/get_notes');
 
-// Import guest player route
+// Import guest player routes
 const add_guest_player = require('./routes/add_guest_player');
+const convert_guest_to_user = require('./routes/convert_guest_to_user');
 
 // Use routes
 app.use('/register_user', register_user);
@@ -112,8 +113,9 @@ app.use('/update_user_accessed', update_user_accessed);
 app.use('/update_notes', update_notes);
 app.use('/get_notes', get_notes);
 
-// Use guest player route
+// Use guest player routes
 app.use('/add_guest_player', add_guest_player);
+app.use('/convert_guest_to_user', convert_guest_to_user);
 
 // Root route
 app.get('/', (req, res) => {

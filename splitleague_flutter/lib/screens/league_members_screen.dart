@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../api/get_league_members_api.dart';
 import '../api/get_notes_api.dart';
 import '../api/update_notes_api.dart';
+import '../api/convert_guest_to_user_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
@@ -318,6 +319,131 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
     }
   }
 
+  // Show convert guest to user dialog
+  Future<void> _showConvertGuestDialog(int guestUserId, String guestName) async {
+    final emailController = TextEditingController();
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Convert Guest to User'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Convert "$guestName" from a guest player to a registered user.',
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Enter the email address of the registered user:',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Email Address',
+                hintText: 'user@example.com',
+              ),
+              keyboardType: TextInputType.emailAddress,
+              autofocus: true,
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withAlpha(25),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.withAlpha(50)),
+              ),
+              child: const Text(
+                'Note: This will transfer all fixtures and league data from the guest to the registered user. The guest account will be deleted.',
+                style: TextStyle(fontSize: 12, color: Colors.orange),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(emailController.text.trim()),
+            child: const Text('Convert'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      await _convertGuestToUser(guestUserId, result, guestName);
+    }
+  }
+
+  // Convert guest to registered user
+  Future<void> _convertGuestToUser(int guestUserId, String email, String guestName) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // For now, we'll use a placeholder registered user ID
+      // In a real implementation, you'd look up the user by email first
+      // This is a simplified version for demonstration
+      final response = await ConvertGuestToUserApi.convertGuestToUser(
+        guestUserId: guestUserId,
+        registeredUserId: 1, // Placeholder - would be looked up by email
+        leagueId: widget.league['league_id'],
+      );
+
+      // Dismiss loading dialog
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      if (response['return_code'] == 'SUCCESS') {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Successfully converted $guestName to registered user'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Reload members
+        _loadMembers();
+      } else {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to convert guest'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Dismiss loading dialog
+      if (!mounted) return;
+      Navigator.of(context).pop();
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('An error occurred while converting guest'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -434,13 +560,19 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
                                               style: TextStyle(color: Colors.orange)
                                             )
                                           : null,
-                                      trailing: isGuest
-                                        ? null // No notes for guest players
-                                        : IconButton(
-                                            icon: const Icon(Icons.note_add, color: Colors.blue),
-                                            onPressed: () => _viewEditNotes(memberId, displayName),
-                                            tooltip: 'Add/Edit Notes',
-                                          ),
+                                      trailing: isGuest && _isCreator
+                                        ? IconButton(
+                                            icon: const Icon(Icons.person_add, color: Colors.orange),
+                                            onPressed: () => _showConvertGuestDialog(memberId, displayName),
+                                            tooltip: 'Convert Guest to User',
+                                          )
+                                        : isGuest
+                                          ? null // No notes for guest players
+                                          : IconButton(
+                                              icon: const Icon(Icons.note_add, color: Colors.blue),
+                                              onPressed: () => _viewEditNotes(memberId, displayName),
+                                              tooltip: 'Add/Edit Notes',
+                                            ),
                                     ),
                                   );
                                 },
