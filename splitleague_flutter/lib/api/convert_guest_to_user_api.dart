@@ -12,7 +12,7 @@ class ConvertGuestToUserApi {
   // Convert a guest player to a registered user
   static Future<Map<String, dynamic>> convertGuestToUser({
     required int guestUserId,
-    required int registeredUserId,
+    required String registeredUserEmail,
     required int leagueId,
   }) async {
     // Create the request URL
@@ -38,7 +38,7 @@ class ConvertGuestToUserApi {
         },
         body: jsonEncode({
           'guest_user_id': guestUserId,
-          'registered_user_id': registeredUserId,
+          'registered_user_email': registeredUserEmail,
           'league_id': leagueId,
         }),
       );

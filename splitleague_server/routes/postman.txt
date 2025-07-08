@@ -369,12 +369,13 @@ Authorization: Bearer YOUR_JWT_TOKEN
 Body:
 {
   "guest_user_id": 24,
-  "registered_user_id": 3,
+  "registered_user_email": "user@example.com",
   "league_id": 1
 }
 
 Notes:
-- Converts a guest player to a registered user
+- Converts a guest player to a registered user by email lookup
+- Checks that the registered user is not already in the league
 - Updates all database references (league_members, fixtures)
 - Only league organizers can perform this conversion
 - Removes guest indicators from the registered user's nickname

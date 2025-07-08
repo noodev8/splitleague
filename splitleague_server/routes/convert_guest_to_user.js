@@ -9,7 +9,7 @@ Purpose: Converts a guest player to a registered user by updating database refer
 Request Payload:
 {
   "guest_user_id": 24,               // integer, required - ID of the guest user to convert
-  "registered_user_id": 3,           // integer, required - ID of the registered user to convert to
+  "registered_user_email": "user@example.com", // string, required - Email of the registered user to convert to
   "league_id": 1                     // integer, required - ID of the league for authorization
 }
 
@@ -26,7 +26,7 @@ Success Response:
 Error Responses:
 {
   "return_code": "MISSING_FIELDS",
-  "message": "Guest user ID, registered user ID, and league ID are required"
+  "message": "Guest user ID, registered user email, and league ID are required"
 }
 {
   "return_code": "LEAGUE_NOT_FOUND",
@@ -44,6 +44,10 @@ Error Responses:
   "return_code": "USER_NOT_FOUND",
   "message": "Registered user not found"
 }
+{
+  "return_code": "USER_ALREADY_IN_LEAGUE",
+  "message": "User is already a member of this league"
+}
 =======================================================================================================================================
 */
 
@@ -59,13 +63,13 @@ router.post('/', verifyToken, async (req, res) => {
 
   try {
     // Extract data from request body
-    const { guest_user_id, registered_user_id, league_id } = req.body;
+    const { guest_user_id, registered_user_email, league_id } = req.body;
 
     // Check if required fields are provided
-    if (!guest_user_id || !registered_user_id || !league_id) {
+    if (!guest_user_id || !registered_user_email || !league_id) {
       return res.status(400).json({
         return_code: 'MISSING_FIELDS',
-        message: 'Guest user ID, registered user ID, and league ID are required'
+        message: 'Guest user ID, registered user email, and league ID are required'
       });
     }
 
@@ -116,8 +120,8 @@ router.post('/', verifyToken, async (req, res) => {
 
     // Check if the registered user exists and is not a guest
     const userResult = await client.query(
-      'SELECT * FROM app_user WHERE id = $1 AND email != $2',
-      [registered_user_id, 'guest']
+      'SELECT * FROM app_user WHERE email = $1 AND email != $2',
+      [registered_user_email, 'guest']
     );
 
     if (userResult.rows.length === 0) {
@@ -125,6 +129,29 @@ router.post('/', verifyToken, async (req, res) => {
       return res.status(404).json({
         return_code: 'USER_NOT_FOUND',
         message: 'Registered user not found'
+      });
+    }
+
+    const registeredUser = userResult.rows[0];
+    const registered_user_id = registeredUser.id;
+
+    // Check if the registered user is already a member of this league
+    const existingMemberResult = await client.query(
+      `SELECT COUNT(*) FROM league_members
+       WHERE league_id = $1 AND user_id = $2 AND active = true
+       UNION ALL
+       SELECT COUNT(*) FROM league
+       WHERE id = $1 AND created_by = $2`,
+      [league_id, registered_user_id]
+    );
+
+    // Check if user is already in the league (either as member or creator)
+    const memberCount = existingMemberResult.rows.reduce((sum, row) => sum + parseInt(row.count), 0);
+    if (memberCount > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        return_code: 'USER_ALREADY_IN_LEAGUE',
+        message: 'User is already a member of this league'
       });
     }
 
@@ -147,7 +174,6 @@ router.post('/', verifyToken, async (req, res) => {
     );
 
     // Remove guest indicator from the registered user's nickname if it exists
-    const registeredUser = userResult.rows[0];
     let updatedNickname = registeredUser.nickname;
     
     // Remove (g) suffix if it exists

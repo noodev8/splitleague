@@ -327,10 +327,11 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Convert Guest to User'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Text(
               'Convert "$guestName" from a guest player to a registered user.',
               style: const TextStyle(fontSize: 14),
@@ -365,6 +366,7 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
               ),
             ),
           ],
+          ),
         ),
         actions: [
           TextButton(
@@ -396,12 +398,10 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
     );
 
     try {
-      // For now, we'll use a placeholder registered user ID
-      // In a real implementation, you'd look up the user by email first
-      // This is a simplified version for demonstration
+      // Convert guest to registered user using the provided email
       final response = await ConvertGuestToUserApi.convertGuestToUser(
         guestUserId: guestUserId,
-        registeredUserId: 1, // Placeholder - would be looked up by email
+        registeredUserEmail: email,
         leagueId: widget.league['league_id'],
       );
 
