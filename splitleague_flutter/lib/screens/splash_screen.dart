@@ -71,8 +71,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       // iOS App Store URL
       storeUrl = 'https://apps.apple.com/us/app/split-league/id6745337065';
     } else if (Platform.isAndroid) {
-      // Google Play Store URL - placeholder for now
-      storeUrl = 'https://play.google.com/store/apps/details?id=com.splitleague.app';
+      // Google Play Store URL
+      storeUrl = 'https://play.google.com/store/apps/details?id=com.noodev8.splitleague';
     } else {
       // Fallback for other platforms
       return;
