@@ -53,8 +53,8 @@ async function sendVerificationEmail(email, name, verificationToken) {
 async function sendPasswordResetEmail(email, name, resetToken) {
   try {
     // Use the web reset password route instead of the mobile deep link
-    // Hardcoded base URL to ensure it works correctly
-    const baseUrl = process.env.BASE_URL || 'https://api.noodev8.com';
+    // Use EMAIL_VERIFICATION_URL for consistency with web-based flows
+    const baseUrl = process.env.EMAIL_VERIFICATION_URL || 'https://splitleague.noodev8.com';
     const resetLink = `${baseUrl}/reset_password_web?token=${resetToken}`;
 
     // Send the email
