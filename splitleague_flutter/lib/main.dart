@@ -60,7 +60,7 @@ class SplitLeagueApp extends StatelessWidget {
               foregroundColor: Colors.white,
               elevation: 4,
             ),
-            cardTheme: CardTheme(
+            cardTheme: CardThemeData(
               elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),

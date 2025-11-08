@@ -35,26 +35,17 @@ class GetUserLeaguesApi {
         body: jsonEncode({}), // Empty body as no parameters are needed
       );
 
-      // Check if response is successful
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        try {
-          // Parse the response
-          final Map<String, dynamic> responseData = jsonDecode(response.body);
+      // Parse the response body (works for both success and error responses)
+      try {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
 
-          // Return the response data
-          return responseData;
-        } catch (e) {
-          // Error is handled in the return statement below
-          return {
-            'return_code': 'PARSE_ERROR',
-            'message': 'Failed to parse server response: ${e.toString()}',
-          };
-        }
-      } else {
-        // Error is handled in the return statement below
+        // Return the parsed response (contains return_code from server)
+        return responseData;
+      } catch (e) {
+        // If we can't parse the JSON, return a generic error
         return {
-          'return_code': 'HTTP_ERROR',
-          'message': 'Server returned error code: ${response.statusCode}',
+          'return_code': 'PARSE_ERROR',
+          'message': 'Failed to parse server response: ${e.toString()}',
         };
       }
     } catch (e) {

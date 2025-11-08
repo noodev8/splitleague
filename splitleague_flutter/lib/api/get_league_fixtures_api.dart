@@ -37,44 +37,18 @@ class GetLeagueFixturesApi {
         }),
       );
 
-      // Check if response is successful
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        try {
-          // Parse the response
-          final Map<String, dynamic> responseData = jsonDecode(response.body);
+      // Parse the response body (works for both success and error responses)
+      try {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
 
-          // Return the response data
-          return responseData;
-        } catch (e) {
-          // Error is handled in the return statement below
-          return {
-            'return_code': 'PARSE_ERROR',
-            'message': 'Failed to parse server response: ${e.toString()}',
-          };
-        }
-      } else {
-        // Try to parse response from server
-        try {
-          final Map<String, dynamic> errorData = jsonDecode(response.body);
-
-          // Handle NO_FIXTURES_FOUND as a normal case, not an error
-          if (errorData['return_code'] == 'NO_FIXTURES_FOUND') {
-            return errorData;
-          }
-
-          // Error is handled in the return statement below
-
-          return {
-            'return_code': errorData['return_code'] ?? 'HTTP_ERROR',
-            'message': errorData['message'] ?? 'Server returned error code: ${response.statusCode}',
-          };
-        } catch (e) {
-          // Error is handled in the return statement below
-          return {
-            'return_code': 'HTTP_ERROR',
-            'message': 'Server returned error code: ${response.statusCode}',
-          };
-        }
+        // Return the parsed response (contains return_code from server)
+        return responseData;
+      } catch (e) {
+        // If we can't parse the JSON, return a generic error
+        return {
+          'return_code': 'PARSE_ERROR',
+          'message': 'Failed to parse server response: ${e.toString()}',
+        };
       }
     } catch (e) {
       // Return error response if request fails

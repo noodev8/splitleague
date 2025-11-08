@@ -62,4 +62,19 @@ class AuthHelper {
     await deleteToken();
     await deleteUserData();
   }
+
+  // Check if response indicates unauthorized access
+  static bool isUnauthorizedResponse(Map<String, dynamic> response) {
+    final returnCode = response['return_code'];
+    return returnCode == 'UNAUTHORIZED' || returnCode == 'INVALID_TOKEN';
+  }
+
+  // Handle unauthorized response - clears auth data and returns true if unauthorized
+  static Future<bool> handleUnauthorizedResponse(Map<String, dynamic> response) async {
+    if (isUnauthorizedResponse(response)) {
+      await logout();
+      return true;
+    }
+    return false;
+  }
 }

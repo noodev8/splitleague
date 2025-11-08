@@ -85,6 +85,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // User is logged in, load leagues
         final response = await GetUserLeaguesApi.getUserLeagues();
 
+        // Check if response is unauthorized (expired/invalid token)
+        final wasUnauthorized = await AuthHelper.handleUnauthorizedResponse(response);
+        if (wasUnauthorized) {
+          // Token was invalid/expired, logout and redirect to login
+          if (mounted) {
+            ErrorHelper.showErrorToast('Your session has expired. Please log in again.');
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const LoginUserScreen()),
+              (route) => false,
+            );
+          }
+          return;
+        }
+
         if (response['return_code'] == 'SUCCESS') {
           // Get leagues from response
           final List<dynamic> leaguesData = response['leagues'] ?? [];

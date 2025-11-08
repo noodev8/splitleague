@@ -37,35 +37,18 @@ class GetLeagueInfoApi {
         }),
       );
       
-      // Check if response is successful
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        try {
-          // Parse the response
-          final Map<String, dynamic> responseData = jsonDecode(response.body);
-          
-          // Return the response data
-          return responseData;
-        } catch (e) {
-          // Handle JSON parsing error
-          return {
-            'return_code': 'PARSE_ERROR',
-            'message': 'Failed to parse server response: ${e.toString()}',
-          };
-        }
-      } else {
-        // Try to parse error message from response if possible
-        try {
-          final Map<String, dynamic> errorData = jsonDecode(response.body);
-          return {
-            'return_code': errorData['return_code'] ?? 'HTTP_ERROR',
-            'message': errorData['message'] ?? 'Server returned error code: ${response.statusCode}',
-          };
-        } catch (e) {
-          return {
-            'return_code': 'HTTP_ERROR',
-            'message': 'Server returned error code: ${response.statusCode}',
-          };
-        }
+      // Parse the response body (works for both success and error responses)
+      try {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+        // Return the parsed response (contains return_code from server)
+        return responseData;
+      } catch (e) {
+        // If we can't parse the JSON, return a generic error
+        return {
+          'return_code': 'PARSE_ERROR',
+          'message': 'Failed to parse server response: ${e.toString()}',
+        };
       }
     } catch (e) {
       // Return error response if request fails

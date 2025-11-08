@@ -161,8 +161,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     // Update user accessed timestamp if logged in
     if (isLoggedIn) {
       try {
-        await UpdateUserAccessedApi.updateUserAccessed();
-        // No need to handle the response, just fire and forget
+        final response = await UpdateUserAccessedApi.updateUserAccessed();
+
+        // Check if token is invalid/expired
+        final wasUnauthorized = await AuthHelper.handleUnauthorizedResponse(response);
+        if (wasUnauthorized) {
+          // Token was invalid, treat as not logged in
+          isLoggedIn = false;
+        }
       } catch (e) {
         // Silently handle any errors, don't block the app startup
         // Error is ignored to avoid blocking app startup
