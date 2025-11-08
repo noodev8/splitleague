@@ -21,8 +21,8 @@ Password: 123456
 Email: delete@test.com
 Password: 123456
 
-== Data Safety ==
-https://www.noodev8.com/split-league-data-collection-and-safety/
+== Data Safety / Privacy Policy / Account Deletion ==
+https://www.noodev8.com/privacy-policy/
 
 == App Store Descriptions ==
 Your scoreboard for any game — leagues, matches, scores, standings.
