@@ -10,6 +10,9 @@ Thumbs.db
 # VS Code
 .vscode/
 
+# Claude Code
+.claude/
+
 # =========================================
 # Node.js & Next.js (splitdine_server + Next frontend)
 node_modules/
