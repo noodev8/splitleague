@@ -2,6 +2,25 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ Read this first: current work
+
+**`docs/rebuild-plan.md` is the active working document.** Read it before doing anything
+substantial. It holds the assessment of the codebase, the production usage analysis, the
+decisions already made, the defect register, and the phased plan we are working through.
+
+Decisions already settled (do not re-litigate):
+- **Fix in place — not a rewrite, and not a "SplitLeague 2" store listing.**
+- Email verification is being mimicked away: mark verified on signup, send no email,
+  keep the pipeline and the `verification_token` columns (password reset shares them).
+- Phase 1 is a **public read-only league page** at `/l/<code>` plus lifting the 2-guest cap
+  — not universal join links. Then stop and test with real people before deciding more.
+- The guest data model is deliberately still open; decide it after Phase 1 ships.
+
+**Querying production:** there is no schema file to trust. Connect directly using
+`DATABASE_URL` from `splitleague-server/.env`. A throwaway node script placed in
+`splitleague-server/` (so it resolves `pg` and `dotenv`) is the quickest way to run
+read-only queries. `fixture.updated_at` is the most reliable real-usage signal in the DB.
+
 ## Project Overview
 
 SplitLeague is a sports league management application consisting of:
@@ -11,7 +30,7 @@ SplitLeague is a sports league management application consisting of:
 
 ## Essential Commands
 
-### Flutter App Development (run from `splitleague_flutter/`)
+### Flutter App Development (run from `splitleague-flutter/`)
 ```bash
 # Install dependencies
 flutter pub get
@@ -37,7 +56,7 @@ flutter pub run flutter_launcher_icons
 flutter analyze
 ```
 
-### Backend Server Development (run from `splitleague_server/`)
+### Backend Server Development (run from `splitleague-server/`)
 ```bash
 # Install dependencies
 npm install
@@ -49,7 +68,7 @@ npm run dev
 npm start
 ```
 
-**Required Environment Variables** (in `splitleague_server/.env`):
+**Required Environment Variables** (in `splitleague-server/.env`):
 - `DATABASE_URL` - PostgreSQL connection string
 - `PORT` - Server port (default: 3000)
 - `JWT_SECRET` - Secret for signing JWTs
@@ -156,7 +175,9 @@ npm start
 
 ## Database Schema
 
-**Schema Location**: `splitleague_library/Database/DB_schema.sql`
+**Source of truth**: the live PostgreSQL database. We connect directly with the credentials in
+`splitleague-server/.env` (`DATABASE_URL`) rather than keeping a schema file in the repo.
+There is a stale `pg_dump` at `docs/archive/db-schema.sql` from July 2025 — do not trust it.
 
 **Key Tables**:
 - `app_user` - User accounts with email verification status
@@ -197,7 +218,7 @@ npm start
 
 ### File Headers
 
-**Backend Routes** (`splitleague_server/routes/`):
+**Backend Routes** (`splitleague-server/routes/`):
 ```javascript
 /*
 =======================================================================================================================================
@@ -232,7 +253,7 @@ Return Codes:
 */
 ```
 
-**Flutter Screens** (`splitleague_flutter/lib/screens/`):
+**Flutter Screens** (`splitleague-flutter/lib/screens/`):
 ```dart
 /*
 Show the login screen allowing users to log into the application
@@ -245,7 +266,7 @@ Once logged in, it goes straight to the dashboard
 
 When creating/modifying endpoints, always update both sides:
 
-1. **Backend** (`splitleague_server/routes/function_name.js`):
+1. **Backend** (`splitleague-server/routes/function_name.js`):
    ```javascript
    const express = require('express');
    const router = express.Router();
@@ -263,7 +284,7 @@ When creating/modifying endpoints, always update both sides:
    app.use('/function_name', function_name);
    ```
 
-3. **Frontend API** (`splitleague_flutter/lib/api/function_name_api.dart`):
+3. **Frontend API** (`splitleague-flutter/lib/api/function_name_api.dart`):
    ```dart
    class FunctionNameApi {
      static Future<Map<String, dynamic>> functionName(params) async {
@@ -278,7 +299,7 @@ When creating/modifying endpoints, always update both sides:
 
 1. **API Changes**: When modifying endpoints, update both the route handler AND the corresponding Flutter API function
 2. **State Management**: Use providers for any data that needs to persist across screens
-3. **Database Changes**: Update schema in `splitleague_library/Database/DB_schema.sql` when modifying tables
+3. **Database Changes**: Apply directly to PostgreSQL. There is no schema file to keep in sync.
 4. **Testing**: Add widget tests for new UI components in `test/`
 5. **Accessibility**: Ensure all UI components work with accessibility provider settings (text scaling, high contrast)
 6. **Authentication**: Protected routes must use `auth_middleware.js` and check `req.userId`
@@ -289,18 +310,17 @@ When creating/modifying endpoints, always update both sides:
 Complete workflow from database to UI:
 
 1. **Database** (if needed):
-   - Add table/columns to PostgreSQL
-   - Update `splitleague_library/Database/DB_schema.sql`
+   - Add table/columns directly to PostgreSQL
 
 2. **Backend Route**:
-   - Create `splitleague_server/routes/function_name.js` with detailed header
+   - Create `splitleague-server/routes/function_name.js` with detailed header
    - Add auth middleware if needed: `const verifyToken = require('../middleware/auth_middleware');`
    - Use parameterized queries for database access
    - Return JSON with `return_code` field
    - Register route in `server.js`
 
 3. **Frontend API**:
-   - Create `splitleague_flutter/lib/api/function_name_api.dart`
+   - Create `splitleague-flutter/lib/api/function_name_api.dart`
    - Match naming exactly with backend route
    - Handle JWT token attachment if authenticated endpoint
 
