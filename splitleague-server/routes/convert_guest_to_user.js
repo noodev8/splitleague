@@ -173,19 +173,12 @@ router.post('/', verifyToken, async (req, res) => {
       [registered_user_id, guest_user_id]
     );
 
-    // Remove guest indicator from the registered user's nickname if it exists
-    let updatedNickname = registeredUser.nickname;
-    
-    // Remove (g) suffix if it exists
-    if (updatedNickname.endsWith(' (g)')) {
-      updatedNickname = updatedNickname.slice(0, -4);
-      
-      // Update the user's nickname
-      await client.query(
-        'UPDATE app_user SET nickname = $1 WHERE id = $2',
-        [updatedNickname, registered_user_id]
-      );
-    }
+    // Nothing to clean up on the registered user's nickname
+    //
+    // Guests used to carry a ' (g)' suffix, so this is where it was stripped off the
+    // real account when a guest was converted. The suffix is gone - new guests never
+    // get one and the old rows were backfilled - so the registered user's nickname is
+    // left exactly as they typed it.
 
     // Delete the guest user record
     await client.query(

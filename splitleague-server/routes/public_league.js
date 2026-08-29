@@ -57,8 +57,8 @@ const escapeHtml = (value) => {
 
 // Turn a stored nickname into something fit to show
 //
-// Guests are stored as 'guest_Dave (g)'. The app strips the prefix and keeps the (g)
-// marker, so the web page does exactly the same - a player should see the same name
+// Guests are stored as 'guest_Dave'. The app strips the 'guest_' prefix before showing
+// the name, so the web page does exactly the same - a player should see the same name
 // in both places.
 const displayName = (nickname, name) => {
   const raw = nickname || name || 'Unknown player';

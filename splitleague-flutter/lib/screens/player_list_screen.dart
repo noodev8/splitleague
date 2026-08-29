@@ -267,6 +267,19 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
     }
   }
 
+  // Capitalise the name the organiser typed
+  //
+  // The keyboard's own textCapitalization only shifts soft keyboards, so on desktop
+  // and web a name typed as "dave smith" would go in lowercase. This does the job for
+  // real: every word starts with a capital and the rest is left alone, so names people
+  // deliberately write oddly - "McBride", "O'Neill" - survive untouched.
+  String _capitaliseName(String value) {
+    return value
+        .split(' ')
+        .map((word) => word.isEmpty ? word : word[0].toUpperCase() + word.substring(1))
+        .join(' ');
+  }
+
   // Show dialog to get guest nickname
   Future<String?> _showAddGuestDialog() async {
     final controller = TextEditingController();
@@ -293,7 +306,21 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
               ),
               autofocus: true,
               textInputAction: TextInputAction.done,
-              onSubmitted: (_) => Navigator.of(context).pop(controller.text.trim()),
+
+              // No underline under the name as it is typed
+              //
+              // The line is the keyboard's composing region - the IME marks the word it
+              // is still autocorrecting. Turning autocorrect and suggestions off removes
+              // it, which is right anyway: these are people's names, not dictionary words.
+              autocorrect: false,
+              enableSuggestions: false,
+
+              // Start each word of the name with a capital letter
+              //
+              // Guest names are people's names, so the keyboard shifts itself for the
+              // first letter rather than leaving the organiser to type "dave".
+              textCapitalization: TextCapitalization.words,
+              onSubmitted: (_) => Navigator.of(context).pop(_capitaliseName(controller.text.trim())),
             ),
           ],
         ),
@@ -303,7 +330,7 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            onPressed: () => Navigator.of(context).pop(_capitaliseName(controller.text.trim())),
             child: const Text('Add Guest'),
           ),
         ],
@@ -360,8 +387,8 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
       );
 
       if (response['return_code'] == 'SUCCESS') {
-        // Show success message
-        ErrorHelper.showSuccessToast(response['message'] ?? 'Player removed successfully');
+        // No success toast - the player vanishing from the list below says it already,
+        // and the organiser has just confirmed the removal in a dialog. Errors still toast.
 
         // If this was a guest player, decrement the count temporarily for better UX
         if (playerName.startsWith('guest_')) {
