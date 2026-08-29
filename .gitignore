@@ -37,7 +37,6 @@ build/
 .flutter-plugins-dependencies
 .packages
 .pub-cache/
-pubspec.lock
 
 # iOS
 ios/Pods/
@@ -56,6 +55,11 @@ android/key.properties
 # Misc
 *.iml
 *.lock
+# ...but pubspec.lock is committed. This is an application, not a package, so the
+# exact resolved versions are part of the build. It matters more than usual here:
+# flutter_secure_storage must stay on v10, because v11 cannot read the JWT that v9
+# wrote and would silently log every existing user out.
+!pubspec.lock
 .idea/
 
 # =========================================
