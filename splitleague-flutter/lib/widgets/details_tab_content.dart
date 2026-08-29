@@ -154,23 +154,11 @@ class DetailsTabContent extends StatelessWidget {
                           ),
                         ),
                       ],
-                    ] else ...[
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withAlpha(25),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'Started',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ),
                     ],
+                    // Nothing takes the join code's place once the league has started.
+                    // There used to be a green "Started" badge here, but the stage banner
+                    // at the top of the screen already says "In play" - two badges saying
+                    // the same thing in different words was the confusion, not the fix.
                   ],
                 ),
 

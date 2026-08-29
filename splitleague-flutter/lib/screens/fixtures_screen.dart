@@ -8,7 +8,9 @@ import 'package:provider/provider.dart';
 import '../providers/league_provider.dart';
 import '../widgets/fixtures_tab_content.dart';
 import '../helpers/auth_helper.dart';
+import '../helpers/league_stage.dart';
 import '../styles/app_styles.dart';
+import '../widgets/league_stage_banner.dart';
 import 'update_score_screen.dart';
 import 'standings_screen.dart';
 import 'league_details_screen.dart';
@@ -393,6 +395,11 @@ class _FixturesScreenState extends State<FixturesScreen> {
                       ],
                     ),
                   ),
+
+                  // Which stage this league is in. Always in play here - you only reach
+                  // the fixtures screen once fixtures exist - but it is stated in the same
+                  // place and the same words as on every other league screen.
+                  const LeagueStageBanner(stage: LeagueStage.inPlay),
 
                   // Fixtures content - takes remaining space
                   Expanded(

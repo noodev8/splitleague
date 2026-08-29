@@ -8,7 +8,9 @@ import 'package:provider/provider.dart';
 import '../providers/league_provider.dart';
 import '../widgets/standings_tab_content.dart';
 import '../helpers/auth_helper.dart';
+import '../helpers/league_stage.dart';
 import '../styles/app_styles.dart';
+import '../widgets/league_stage_banner.dart';
 import 'fixtures_screen.dart';
 import 'league_details_screen.dart';
 import 'dashboard_screen.dart';
@@ -257,6 +259,9 @@ class _StandingsScreenState extends State<StandingsScreen> {
                       ],
                     ),
                   ),
+
+                  // Which stage this league is in. Standings only exist in play.
+                  const LeagueStageBanner(stage: LeagueStage.inPlay),
 
                   // Standings content - takes remaining space
                   Expanded(

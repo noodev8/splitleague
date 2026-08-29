@@ -9,7 +9,9 @@ import 'package:provider/provider.dart';
 import '../providers/league_provider.dart';
 import '../widgets/details_tab_content.dart';
 import '../helpers/auth_helper.dart';
+import '../helpers/league_stage.dart';
 import '../styles/app_styles.dart';
+import '../widgets/league_stage_banner.dart';
 import '../api/get_notes_api.dart';
 import 'fixtures_screen.dart';
 import 'standings_screen.dart';
@@ -156,13 +158,17 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
     if (mounted && !_isDisposing) {
       final success = await _leagueProvider.resetLeagueScores(context);
 
-      // If scores were reset successfully, navigate to fixtures screen
+      // Scores are gone but the fixtures are not, so the league is still in play and the
+      // fixtures screen is still the right place to land.
       if (success && mounted && !_isDisposing) {
+        final leagueInPlay = Map<String, dynamic>.from(widget.league);
+        leagueInPlay['has_fixtures'] = true;
+
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
               FixturesScreen(
-                league: widget.league,
+                league: leagueInPlay,
               ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
@@ -177,13 +183,22 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
     if (mounted && !_isDisposing) {
       final success = await _leagueProvider.resetLeague(context);
 
-      // If league was reset successfully, navigate to fixtures screen
+      // Resetting the league deletes every fixture, which puts it back into setup - it is
+      // the one-way door swinging back. So land on the player list, not on a fixtures
+      // screen that now has nothing to show. This used to go to fixtures either way.
       if (success && mounted && !_isDisposing) {
+        setState(() {
+          _hasFixtures = false;
+        });
+
+        final leagueInSetup = Map<String, dynamic>.from(widget.league);
+        leagueInSetup['has_fixtures'] = false;
+
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
-              FixturesScreen(
-                league: widget.league,
+              PlayerListScreen(
+                league: leagueInSetup,
               ),
             transitionDuration: Duration.zero,
             reverseTransitionDuration: Duration.zero,
@@ -217,9 +232,13 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
   }
 
   // Handle viewing league members
-  void _handleViewMembers() {
+  //
+  // A real push, so Back pops straight back here. If the members screen saved notes it
+  // pops `true`, and we reload so the change shows without a round trip through a
+  // rebuilt screen.
+  void _handleViewMembers() async {
     if (mounted && !_isDisposing) {
-      Navigator.of(context).push(
+      final result = await Navigator.of(context).push(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) => LeagueMembersScreen(
             league: widget.league,
@@ -228,6 +247,10 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
           reverseTransitionDuration: Duration.zero,
         ),
       );
+
+      if (result == true && mounted && !_isDisposing) {
+        _loadOrganizerNotes();
+      }
     }
   }
 
@@ -313,16 +336,22 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
                             Expanded(
                               child: InkWell(
                                 onTap: () {
-                                  // Navigate to Players screen if no fixtures, otherwise to Fixtures screen
+                                  // Sideways to the other view of this league. The stage
+                                  // travels with the league map so the screen we open
+                                  // agrees with the banner the user is looking at.
+                                  final leagueWithStage =
+                                      Map<String, dynamic>.from(widget.league);
+                                  leagueWithStage['has_fixtures'] = _hasFixtures;
+
                                   Navigator.of(context).pushReplacement(
                                     PageRouteBuilder(
                                       pageBuilder: (context, animation, secondaryAnimation) =>
                                         _hasFixtures
                                           ? FixturesScreen(
-                                              league: widget.league,
+                                              league: leagueWithStage,
                                             )
                                           : PlayerListScreen(
-                                              league: widget.league,
+                                              league: leagueWithStage,
                                             ),
                                       transitionDuration: Duration.zero,
                                       reverseTransitionDuration: Duration.zero,
@@ -439,6 +468,10 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
                       ],
                     ),
                   ),
+
+                  // Which stage this league is in. Details is the one league screen that
+                  // exists in both stages, so this is the one that actually varies.
+                  LeagueStageBanner(stage: LeagueStageInfo.fromHasFixtures(_hasFixtures)),
 
                   // Details content - takes remaining space
                   Expanded(

@@ -13,8 +13,10 @@ import '../api/remove_player_from_league_api.dart';
 import '../api/add_guest_player_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
+import '../helpers/league_stage.dart';
 import '../helpers/share_helper.dart';
 import '../styles/app_styles.dart';
+import '../widgets/league_stage_banner.dart';
 import '../providers/league_provider.dart';
 import 'fixtures_screen.dart';
 import 'dashboard_screen.dart';
@@ -154,8 +156,63 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
     }
   }
 
-  // Generate fixtures
+  // Start the league.
+  //
+  // Generating fixtures is the one-way door between the two stages, and the only step in
+  // the app that shuts things off: the join code stops working, nobody else can be added,
+  // and players can no longer be removed. So it asks first, and says what changes rather
+  // than a bare "are you sure?".
+  //
+  // The asking happens here rather than in the provider so that the button below only
+  // reads "Generating..." once something actually is.
   Future<void> _generateFixtures() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Start the league?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'This generates the fixtures for all ${_members.length} players and '
+                'moves the league into play.',
+              ),
+              const SizedBox(height: 12),
+              const Text('From then on:', style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 6),
+              const Text('•  No one else can join'),
+              const Text('•  Players cannot be removed'),
+              const Text('•  You enter scores instead of adding people'),
+              const SizedBox(height: 12),
+              Text(
+                'You can undo this from Details → Reset League, which deletes every '
+                'fixture and every score.',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Not yet'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: LeagueStageInfo.colour(LeagueStage.inPlay),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Generate fixtures'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
     setState(() {
       _isGeneratingFixtures = true;
       _generateErrorMessage = null;
@@ -170,7 +227,7 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
       }
 
       // Call the generate fixtures method from the provider
-      final result = await _leagueProvider.generateFixtures(context);
+      final result = await _leagueProvider.generateFixtures();
 
       if (result) {
         // Update success state
@@ -181,12 +238,20 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
           _hasFixtures = true; // Update fixtures exist flag
         });
 
-        // Navigate to fixtures screen
+        // Through the door. Replace rather than push, because there is no going back to
+        // a setup screen for a league that has started - Back should now leave the league
+        // entirely and return to the dashboard sitting underneath.
+        //
+        // The league map is copied with has_fixtures flipped on, so the fixtures screen
+        // and everything it navigates to know the stage without asking the server again.
         if (!mounted) return;
+        final leagueNowInPlay = Map<String, dynamic>.from(widget.league);
+        leagueNowInPlay['has_fixtures'] = true;
+
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) => FixturesScreen(
-              league: widget.league,
+              league: leagueNowInPlay,
             ),
             transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
             transitionDuration: Duration.zero,
@@ -542,6 +607,9 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                                       league: widget.league,
                                       hasFixtures: _hasFixtures, // Pass the fixtures status to avoid visual flip
                                     ),
+                                    // Sideways move between two views of the same league,
+                                    // so it replaces rather than stacks. The dashboard
+                                    // underneath stays put and Back still leaves the league.
                                     transitionDuration: Duration.zero,
                                     reverseTransitionDuration: Duration.zero,
                                   ),
@@ -576,6 +644,9 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                     ],
                   ),
                 ),
+
+                // Which stage this league is in, in the same place on every league screen.
+                LeagueStageBanner(stage: LeagueStageInfo.fromHasFixtures(_hasFixtures)),
 
                 // Content area
                 Expanded(
@@ -626,7 +697,9 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    '${_members.length} players joined',
+                                    _members.length == 1
+                                      ? '1 player joined'
+                                      : '${_members.length} players joined',
                                     style: AppStyles.subtitle,
                                   ),
                                   if (_isCreator && !_hasFixtures) ...[
@@ -716,7 +789,7 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       const Text(
-                                        'Generate Fixtures',
+                                        'Start the league',
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -725,7 +798,9 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                                       ),
                                       const SizedBox(height: 12),
                                       const Text(
-                                        'Ready to start the league? Generate fixtures for all members based on the "Play Each Other" setting.',
+                                        'Generating fixtures pairs everyone up using the "Play Each Other" setting '
+                                        'and moves this league into play. Once it has started, no one else can '
+                                        'join and players cannot be removed.',
                                         style: TextStyle(fontSize: 14),
                                         textAlign: TextAlign.center,
                                       ),

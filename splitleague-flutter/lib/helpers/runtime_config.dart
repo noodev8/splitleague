@@ -19,11 +19,16 @@ class RuntimeConfig {
   
   // Default base URL (used if no custom URL is set)
   static const String defaultBaseUrl = 'https://splitleague.noodev8.com'; // Default server
+  // static const String defaultBaseUrl = 'http://127.0.0.1:3000'; // ADB Reverse - see below
   // static const String defaultBaseUrl = 'http://192.168.1.136:3000'; // Default server
    
   // Available base URLs for quick selection (development environments)
   static const Map<String, String> availableBaseUrls = {
     'Default': defaultBaseUrl,
+    // Reaches the dev machine's own localhost through `adb reverse tcp:3000 tcp:3000`,
+    // so it works over USB with no network configuration and no IP address to keep
+    // up to date. Debug builds only - release builds cannot use plain HTTP.
+    'ADB Reverse': 'http://127.0.0.1:3000',
     'Home Local': 'http://192.168.1.88:3000',
     'Chippy Local': 'http://192.168.1.174:3000',
     'Grays Aunty': 'http://192.168.1.88:3000',

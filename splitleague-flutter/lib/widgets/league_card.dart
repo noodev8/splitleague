@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../helpers/accessibility_helper.dart';
+import '../helpers/league_stage.dart';
 import '../styles/app_styles.dart';
+import 'league_stage_chip.dart';
 
 class LeagueCard extends StatelessWidget {
   final Map<String, dynamic> league;
@@ -19,6 +21,13 @@ class LeagueCard extends StatelessWidget {
     final String name = league['name'] ?? 'Unnamed League';
     final int playerCount = league['player_count'] ?? 0;
     final String semanticLabel = AccessibilityHelper.getLeagueLabel(league);
+
+    // Which stage this league is in. Shown on the card so the dashboard answers
+    // "which of these has actually started?" without opening each one.
+    //
+    // Null when the server did not tell us, in which case the card says nothing rather
+    // than making something up.
+    final LeagueStage? stage = LeagueStageInfo.knownFromLeague(league);
 
     return Semantics(
       label: semanticLabel,
@@ -82,6 +91,12 @@ class LeagueCard extends StatelessWidget {
                                 color: AppStyles.iceDarkBlue.withValues(alpha: 0.7),
                               ),
                             ),
+                            if (stage != null) ...[
+                              const SizedBox(width: 10),
+                              // Flexible so that at large text scales the chip gives way
+                              // rather than overflowing the card.
+                              Flexible(child: LeagueStageChip(stage: stage)),
+                            ],
                           ],
                         ),
                       ],

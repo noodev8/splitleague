@@ -12,7 +12,6 @@ import '../api/update_notes_api.dart';
 import '../api/convert_guest_to_user_api.dart';
 import '../helpers/auth_helper.dart';
 import '../styles/app_styles.dart';
-import 'league_details_screen.dart';
 
 class LeagueMembersScreen extends StatefulWidget {
   final Map<String, dynamic> league;
@@ -82,17 +81,10 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
           ),
         );
 
-        // Navigate back
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => LeagueDetailsScreen(
-              league: widget.league,
-              hasFixtures: true, // Default to true to be safe
-            ),
-            transitionDuration: Duration.zero,
-            reverseTransitionDuration: Duration.zero,
-          ),
-        );
+        // Back where we came from. This screen is always pushed on top of Details, so
+        // popping returns to the real Details screen with its own state - rebuilding a
+        // fresh one, as this used to, also had to guess at the league's stage.
+        Navigator.of(context).pop();
         return;
       }
 
@@ -271,18 +263,9 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
           ),
         );
 
-        // Navigate back to league details to refresh notes
+        // Back to league details, which reloads the notes when it sees `true` come back.
         if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => LeagueDetailsScreen(
-              league: widget.league,
-              hasFixtures: true, // Default to true to be safe
-            ),
-            transitionDuration: Duration.zero,
-            reverseTransitionDuration: Duration.zero,
-          ),
-        );
+        Navigator.of(context).pop(true);
       } else {
         // Show error
         ScaffoldMessenger.of(context).showSnackBar(
@@ -441,16 +424,7 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.of(context).pushReplacement(
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) => LeagueDetailsScreen(
-                  league: widget.league,
-                  hasFixtures: true, // Default to true to be safe
-                ),
-                transitionDuration: Duration.zero,
-                reverseTransitionDuration: Duration.zero,
-              ),
-            );
+            Navigator.of(context).pop();
           },
         ),
         flexibleSpace: Container(

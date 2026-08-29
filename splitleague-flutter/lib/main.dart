@@ -15,6 +15,7 @@ import 'screens/splash_screen.dart';
 import 'helpers/auth_helper.dart';
 import 'helpers/config.dart';
 import 'helpers/deep_link_helper.dart';
+import 'helpers/route_observer.dart';
 // import 'helpers/runtime_config.dart';
 import 'helpers/version_helper.dart';
 import 'styles/app_styles.dart';
@@ -97,6 +98,8 @@ class SplitLeagueApp extends StatelessWidget {
             child: MaterialApp(
               // Lets a deep link drive navigation from outside the widget tree
               navigatorKey: DeepLinkHelper.navigatorKey,
+              // Lets a screen know when it comes back into view - see route_observer.dart
+              navigatorObservers: [routeObserver],
               builder: (context, child) {
                 return MediaQuery(
                   // Apply text scaling

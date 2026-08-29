@@ -337,37 +337,11 @@ class LeagueProvider extends ChangeNotifier {
   }
 
   // Generate fixtures
-  Future<bool> generateFixtures(BuildContext context) async {
+  // Generate the fixtures. This is the one-way door from "setting up" to "in play", so
+  // the caller must have confirmed with the user before getting here - the confirmation
+  // lives on the screen, next to the button whose state it governs.
+  Future<bool> generateFixtures() async {
     if (_currentLeagueId == null || _disposed) return false;
-
-    // Show confirmation dialog
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Generate Fixtures'),
-          content: const Text(
-            'Are you sure you want to generate fixtures? '
-            'This will create matches for all current members. '
-            'No more members can be added after fixtures are generated.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(foregroundColor: Colors.blue),
-              child: const Text('Generate'),
-            ),
-          ],
-        );
-      },
-    );
-
-    // If user cancelled, do nothing
-    if (confirm != true) return false;
 
     _isGeneratingFixtures = true;
     _generateErrorMessage = null;

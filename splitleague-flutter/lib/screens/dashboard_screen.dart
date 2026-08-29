@@ -13,6 +13,7 @@ import '../api/get_fixtures_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/deep_link_helper.dart';
 import '../helpers/error_helper.dart';
+import '../helpers/route_observer.dart';
 import '../styles/app_styles.dart';
 import '../widgets/league_card.dart';
 import 'create_league_screen.dart';
@@ -31,7 +32,7 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
   // Selected tab index
   int _selectedIndex = 0;
 
@@ -73,7 +74,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Listen for the league screens above us being popped, so we can refresh - see
+    // _openLeague for why awaiting the push is not enough.
+    final ModalRoute<dynamic>? route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  // Called when a screen pushed on top of the dashboard is popped and the dashboard is
+  // visible again. Anything could have changed while the user was inside a league - most
+  // obviously its stage - so reload rather than show a stale card.
+  @override
+  void didPopNext() {
+    _loadData();
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
+
     // Logging out tears the dashboard down, and a link must not push onto a stack that is
     // being replaced by the login screen.
     DeepLinkHelper.setDashboardReady(false);
@@ -173,56 +196,61 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  // Check if league has fixtures and navigate to appropriate screen
-  Future<void> _checkFixturesAndNavigate(Map<String, dynamic> league) async {
-    final leagueId = league['league_id'];
+  // Open a league.
+  //
+  // Which screen you land on is the league's stage: a league still being set up opens on
+  // the player list, a league in play opens on the fixtures.
+  //
+  // Two things matter about how this navigates.
+  //
+  // First, `push` - not `pushReplacement`. The dashboard has to stay underneath, because
+  // every screen inside a league swaps sideways with pushReplacement (players <-> fixtures
+  // <-> standings <-> details). With the dashboard destroyed there was nothing left to go
+  // back to, so Back could only rebuild a fresh dashboard from scratch - and `popUntil
+  // (route.isFirst)`, which several screens use to get home, had no first route to find.
+  // Keeping the dashboard at the bottom of the stack makes Back mean "leave this league"
+  // from anywhere inside it.
+  //
+  // Second, the stage now comes from the league list itself - get_user_leagues sends
+  // has_fixtures - so opening a league is instant. The API call is only a fallback for a
+  // league map that predates that field.
+  Future<void> _openLeague(Map<String, dynamic> league) async {
+    bool hasFixtures;
 
-    try {
-      // Check if league has fixtures
-      final fixturesResponse = await GetFixturesApi.getFixtures(leagueId);
-      final hasFixtures = fixturesResponse['return_code'] == 'SUCCESS' &&
-                        (fixturesResponse['fixtures'] as List?)?.isNotEmpty == true;
-
-      if (!mounted) return;
-
-      if (hasFixtures) {
-        // Navigate to fixtures screen if fixtures exist
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => FixturesScreen(
-              league: league,
-            ),
-            transitionDuration: Duration.zero,
-            reverseTransitionDuration: Duration.zero,
-          ),
-        );
-      } else {
-        // Navigate to player list screen if no fixtures
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => PlayerListScreen(
-              league: league,
-            ),
-            transitionDuration: Duration.zero,
-            reverseTransitionDuration: Duration.zero,
-          ),
-        );
+    if (league.containsKey('has_fixtures') && league['has_fixtures'] != null) {
+      hasFixtures = league['has_fixtures'] == true;
+    } else {
+      try {
+        final fixturesResponse = await GetFixturesApi.getFixtures(league['league_id']);
+        hasFixtures = fixturesResponse['return_code'] == 'SUCCESS' &&
+                      (fixturesResponse['fixtures'] as List?)?.isNotEmpty == true;
+      } catch (e) {
+        if (!mounted) return;
+        ErrorHelper.showErrorToast('Error checking league status');
+        return;
       }
-    } catch (e) {
-      if (!mounted) return;
-
-      // If there's an error, default to fixtures screen
-      ErrorHelper.showErrorToast('Error checking league status');
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => FixturesScreen(
-            league: league,
-          ),
-          transitionDuration: Duration.zero,
-          reverseTransitionDuration: Duration.zero,
-        ),
-      );
     }
+
+    if (!mounted) return;
+
+    // Hand the stage down with the league, so the screen we open does not have to
+    // re-derive it and cannot disagree with what the dashboard just showed.
+    final leagueWithStage = Map<String, dynamic>.from(league);
+    leagueWithStage['has_fixtures'] = hasFixtures;
+
+    // Not awaited to trigger a refresh. `pushReplacement` - which is how the screens
+    // inside a league move between each other - completes this future the moment the user
+    // taps a tab in there, long before they come back out. The refresh happens in
+    // didPopNext instead, which fires when the league is actually left.
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => hasFixtures
+            ? FixturesScreen(league: leagueWithStage)
+            : PlayerListScreen(league: leagueWithStage),
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+      ),
+    );
   }
 
   // Handle removing a league
@@ -622,7 +650,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             final leagueId = _leagues[index]['league_id'];
                             UpdateLastAccessedApi.updateLastAccessed(leagueId);
                             final league = _leagues[index];
-                            _checkFixturesAndNavigate(league);
+                            _openLeague(league);
                           },
                           onRemove: _handleRemoveLeague,
                         ),
