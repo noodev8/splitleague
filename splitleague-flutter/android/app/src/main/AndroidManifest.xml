@@ -1,5 +1,4 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    package="com.noodev8.splitleague_flutter">
 
     <uses-permission android:name="android.permission.INTERNET"/>
 
@@ -7,7 +6,6 @@
         android:label="Split League"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
-	android:usesCleartextTraffic="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -28,6 +26,22 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+
+            <!-- App Links: open splitleague.noodev8.com/l/<code> in the app, not a browser
+                 android:autoVerify tells Android to fetch /.well-known/assetlinks.json from the
+                 domain and check our signing certificate against it. Verification is all-or-nothing
+                 and silent - if the file is unreachable, redirected, or served as the wrong content
+                 type, the link simply opens in a browser with no error reported anywhere.
+                 The path prefix is /l/ so this covers both the 4-digit code and the longer share
+                 slug that replaces it, without needing a second filter later. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https"
+                      android:host="splitleague.noodev8.com"
+                      android:pathPrefix="/l/"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

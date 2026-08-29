@@ -11,6 +11,7 @@ import '../api/update_last_accessed_api.dart';
 import '../api/deactivate_league_membership_api.dart';
 import '../api/get_fixtures_api.dart';
 import '../helpers/auth_helper.dart';
+import '../helpers/deep_link_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
 import '../widgets/league_card.dart';
@@ -57,6 +58,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _loadData();
+
+    // Pick up a league link that arrived before there was anyone logged in to use it.
+    // Both ways into the app land here - a cold start via the splash screen, and a fresh
+    // login - so this is the one place that has to ask.
+    DeepLinkHelper.handlePendingLink(context);
   }
 
   @override

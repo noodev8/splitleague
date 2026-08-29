@@ -16,9 +16,15 @@ import 'register_user_screen.dart';
 class JoinLeagueScreen extends StatefulWidget {
   final Function? onLeagueJoined;
 
+  // Code carried in from a shared league link, pre-filled into the boxes
+  //
+  // Null when the person opened this screen themselves and is typing a code they were told.
+  final String? initialCode;
+
   const JoinLeagueScreen({
     super.key,
     this.onLeagueJoined,
+    this.initialCode,
   });
 
   @override
@@ -149,20 +155,22 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
   }
 
   // Handle PIN code completion
+  //
+  // This only records the code and closes the keyboard. It deliberately does NOT join.
+  //
+  // It used to fire the join itself the moment a 4th digit arrived, which tied the act of
+  // joining to the code being exactly 4 characters long. The code is going to become a longer
+  // share slug, and an invite link now opens this screen with the code already filled in - so
+  // joining has to be a deliberate press, not a side effect of finishing typing.
   void _onPinCompleted(String pin) {
     setState(() {
       _pinCode = pin;
       _errorMessage = null;
     });
 
-    // Automatically trigger join when PIN is complete
+    // Close the keyboard so the Join button is visible
     if (pin.length == 4) {
-      // Unfocus to hide keyboard
       FocusScope.of(context).unfocus();
-      // Short delay to allow keyboard to hide
-      Future.delayed(const Duration(milliseconds: 300), () {
-        _handleJoinLeague();
-      });
     }
   }
 
@@ -263,9 +271,42 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
                             PinInput(
                               onCompleted: _onPinCompleted,
                               pinLength: 4,
-                              autoFocus: true,
+
+                              // Do not steal focus when the code is already filled in from a
+                              // link - popping the keyboard up over a completed form is noise.
+                              autoFocus: widget.initialCode == null,
+                              initialValue: widget.initialCode,
                             ),
-                            const SizedBox(height: 40),
+                            const SizedBox(height: 32),
+
+                            // Join button
+                            //
+                            // Disabled until there is a complete code, and while a join is in
+                            // flight, so it cannot be pressed twice.
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: (_pinCode.length == 4 && !_isLoading)
+                                    ? _handleJoinLeague
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF005F8A),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Join League',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
 
                             // Error message
                             if (_errorMessage != null)

@@ -601,6 +601,8 @@ Each phase stands alone and can go to the stores independently.
 - [x] **Lift the 2-guest cap** (§4.2) — done 2026-08-29. Removed the count check in `add_guest_player.js`, dropped `GUEST_LIMIT_REACHED` from the route header and return codes, and left a comment recording *why* the cap went so nobody reinstates it. The Flutter branch handling that code in `player_list_screen.dart:256` is now dead but harmless, and is left in place so older installs still talking to this server behave sanely. **Not yet device-tested**
 - [x] **Public read-only league page** at `splitleague.noodev8.com/l/<code>` — standings and fixtures, no login, shareable by any means (WhatsApp, text, pinned in the pub). Decided in §4.2. Built 2026-08-29, **server side only — not yet deployed, and the in-app share button is still to do**
 
+  **⚠️ SUPERSEDED 2026-08-29 — see Phase 1.5.** A separate share slug was adopted after all. The reasoning below still holds for *joining*; it does not hold for *links*, which is the distinction it missed.
+
   **✅ DECIDED — the 4-digit code is the URL key.** Considered a separate unguessable share slug and an opt-in `allow_code_share` gate, and rejected both: the code is the thing people already say out loud, and a second identifier or a dark-by-default rollout undercuts the point. The trade accepted knowingly: 4 digits is a 9,000 value space, so the pages are enumerable and every league is publicly readable by anyone who walks it. Content is a pub league table of nicknames and scores. Mitigated with `noindex` + `X-Robots-Tag`, and a strict 4-digit check so a scraper never reaches a query on rubbish. **Nothing sensitive goes on this page** — no emails, no real names beyond the chosen nickname.
 
   **Prerequisite done first:** unique index `league_public_code_key` on `league.public_code` (from §5.2, pulled forward — the URL is ambiguous without it). Pre-checked for collisions: none of the 189 codes were duplicated. `create_league.js` now checks codes against *every* league rather than only active ones, and catches Postgres `23505` on insert so the create-race returns `CODE_GENERATION_FAILED` instead of a 500. That race silently produced duplicate codes before.
@@ -614,7 +616,9 @@ Each phase stands alone and can go to the stores independently.
 
   Verified on a real device: share sheet opens with `Ver 2 Test - live table and results: https://splitleague.noodev8.com/l/5374`, with WhatsApp, Gmail and Copy offered.
 
-- [x] Guest players no longer get a ` (g)` suffix baked into the stored nickname (`add_guest_player.js`). The `guest_` prefix stays — it is how guests are identified — but it was already stripped for display, whereas ` (g)` was not, so every guest read as "Dave (g)". **147 of 149 existing guests still carry the old suffix**, so leagues will show a mix until those rows are updated. Safe to strip: nothing parses it.
+- [x] Guest players no longer get a ` (g)` suffix baked into the stored nickname (`add_guest_player.js`). The `guest_` prefix stays — it is how guests are identified — but it was already stripped for display, whereas ` (g)` was not, so every guest read as "Dave (g)". Safe to strip: nothing parses it.
+
+  **Existing rows backfilled 2026-08-29** — all 147 updated in place (`UPDATE app_user ... WHERE email = 'guest' AND nickname LIKE '% (g)'`), leaving 0 rows carrying the suffix. Also removed the now-dead ` (g)`-stripping branch in `convert_guest_to_user.js` and a stale comment in `public_league.js` claiming the web page kept the marker deliberately.
 - [x] Removed the success toast after adding a guest — the player appearing in the list is the confirmation.
 - [x] **Delete "Take a look around"** and the 1,238 lines behind it (§5.7) — the real league page replaces the fake demo. Done 2026-08-29: **1,299 lines removed, 4 added**
 
@@ -624,6 +628,53 @@ Each phase stands alone and can go to the stores independently.
 
   Verified: `flutter analyze` 0 errors, 0 new warnings (the 4 that remain are the pre-existing §5.7 ones in other files), debug APK builds, installed on a real device and the app launches to the dashboard with the session intact and no update dialog. The login screen change is verified by compile and grep rather than visually — confirming it on screen means logging the account out.
 - [ ] Keep the 4-digit code as the manual join fallback — it works, it is just not the front door
+
+### Phase 1.5 — Deep links, and a share slug after all
+
+**Two earlier decisions were reversed here. Both deliberately, and both recorded rather than quietly overwritten.**
+
+**1. Reversed: one identifier for both jobs.** §4.2 rejected a separate share slug because "the code is the thing people already say out loud". True — but that is an argument about *joining*, not about *links*. Nobody reads a URL aloud. The 4-digit code is doing two jobs with different requirements and different lifetimes, which is what keeps producing contradictions:
+
+  | | Joining | Viewing `/l/<code>` |
+  |---|---|---|
+  | Before fixtures | works | works |
+  | After fixtures | **dead** — `join_league.js` returns `FIXTURES_EXIST` | works for the life of the league |
+
+  And the guessability is real, not theoretical: **189 leagues in a 9,000 space is a 1-in-48 hit rate on a random guess**, with the whole space walkable in minutes. §4.2 accepted that knowingly for a page of nicknames and scores, and that judgement stands — but it means "private league" is not a promise that can be made.
+
+  **✅ DECIDED — split the identifier.** Keep the 4 digits as the say-it-out-loud join code; lengthening it damages the one thing it is good at. Add `league.share_slug` (~10 chars Crockford base32, generated once, never rotated, never reused) as the key for the public page. `/l/<4-digit>` keeps working as a redirect so links already in the wild survive. **Not built yet.**
+
+**2. Reversed: "whether we ever need app links at all" is a post-Phase-1 decision.** Brought forward, because §4.3 already answered it: **there are no deep links anywhere in the app** — `AndroidManifest.xml` had only the `LAUNCHER` intent-filter, and iOS had no associated domains. A shared link *cannot* open the app. Every invite therefore degrades to "install this, then type these digits", which is the mechanical explanation for the 74 single-member leagues. Waiting for evidence to decide this would have meant measuring a funnel with a wall at the end of it.
+
+#### Done 2026-08-29 — server side
+
+- [x] `routes/well_known.js` serving both association files, registered at `/.well-known`:
+  - `assetlinks.json` — Android, with **both** SHA-256 fingerprints: the Play app signing key (production) and the local debug keystore (so App Links work on `flutter run` builds while this is being built)
+  - `apple-app-site-association` — iOS, `appID` `43A5Y7KJMA.com.noodev8.splitleague`, paths scoped to `/l/*` so the app never hijacks the API endpoints on the same host
+  - Verified locally: HTTP 200, `application/json`, valid JSON on both
+
+  **The Play fingerprint was read off a real device, not the Play Console.** The console has moved app signing (it is not under "App integrity" any more, and not under "Automatic protection → Manage" either). Faster and more reliable: install the Play build, `adb pull` the APK, and `apksigner verify --print-certs` it. The certificate DN comes back as `CN=Android, O=Google Inc.`, which confirms it is Google's app signing key rather than the upload key. Using the upload key by mistake is the classic silent failure — links just open in a browser forever, with no error anywhere.
+
+#### Done 2026-08-29 — Android
+
+- [x] `autoVerify` intent-filter for `https://splitleague.noodev8.com/l/*`. Deliberately a `pathPrefix` of `/l/` rather than a 4-digit pattern, so the share slug needs no second filter later.
+- [x] **Fixed a latent `AndroidManifest.xml` defect found on the way.** Both the `<manifest>` and `<application>` tags were closed *before* their trailing lines, so `package="com.noodev8.splitleague_flutter"` and `android:usesCleartextTraffic="false"` were being parsed as **character data, not attributes**. Valid XML by accident, which is why it always built. `package` is redundant (`namespace` in `build.gradle.kts` supplies it), so it was dropped. `usesCleartextTraffic` was **left out rather than made real** — turning it into an actual attribute changes network behaviour, and the local `http://192.168.1.x` dev URLs in `runtime_config.dart` depend on what the current (default) behaviour is. **Worth a separate look:** for `targetSdk >= 28` the default is already `false`, so those dev URLs may have been broken for some time without anyone noticing.
+
+#### Done 2026-08-29 — Flutter
+
+- [x] `app_links` added; `helpers/deep_link_helper.dart` handles both cases — cold start via `getInitialLink()` (arrives once; miss it and it is gone) and warm resume via `uriLinkStream`. Host is hardcoded to `splitleague.noodev8.com` and deliberately **not** built from `Config.baseUrl`, so pointing the developer screen at a test VPS cannot make arbitrary links openable.
+- [x] A code arriving before login is parked in `_pendingCode` and collected by the dashboard — the one place both routes into the app converge (cold start via splash, and fresh login).
+- [x] `PinInput` gained `initialValue`; `JoinLeagueScreen` gained `initialCode`.
+- [x] **The join screen now has a Join button.** It previously had none: `_onPinCompleted` fired the join automatically as soon as a 4th digit arrived. That tied *joining* to the code being exactly 4 characters — which breaks the moment the slug lands — and it meant opening an invite link would join the league outright, with no confirm. Now the code only fills in and waits for a deliberate press. This also removed a `Future.delayed(300ms)` that called `setState` without checking `mounted`.
+
+#### Outstanding
+
+- [ ] **Deploy.** None of the server side works until `well_known.js` is on the VPS (`docs/deploy.txt`).
+- [ ] **iOS Universal Links.** There is no `ios/Runner/Runner.entitlements` file at all. Adding the Associated Domains capability (`applinks:splitleague.noodev8.com`) needs Xcode on a Mac. The server side is ready for it.
+- [ ] **Build the share slug** (decision above) — `league.share_slug` column, generation, `/l/<slug>`, redirect from `/l/<4-digit>`, and widen the strict 4-digit guard in `public_league.js` to accept both shapes without loosening it.
+- [ ] **Turn `/l/<slug>` into a real landing page.** It is currently name + code + standings + results, which tells a stranger nothing. Needs three states driven by fixture count: *not started* (lead with the invite — "<organiser> has invited you to <league>", player count, Join button), *under way* (lead with the table, plus "12 of 30 matches played"), *finished* (final table, winner). Organiser nickname is available via `league.created_by`; nickname only, never the real name or email.
+- [ ] **`FIXTURES_EXIST` stays** (§5.8) — confirmed 2026-08-29 that a player genuinely cannot be added to a league that has started. So the under-way landing page must **not** show a Join button; it says "ask the organiser" instead. A Join button there would walk someone through install → register → code → refusal.
+- [ ] **Code reuse defect.** `reset_league_fixtures.js:161` rotates `public_code` and returns the old value to the pool, where `create_league.js` can later hand it to a *different* league — so a link shared last month can quietly resolve to a stranger's league. Its own uniqueness check also filters `active = true` (line 59) while `create_league.js` deliberately does not, so with the unique index in place that path can throw an uncaught `23505`. The share slug fixes the link half of this (never rotated, never reused); the join-code half still needs a decision.
 
 **Then stop and feel it.** Get it in front of real people before deciding anything else. The guest model (§4.2) and whether we ever need app links at all are both decisions to make on evidence after this ships.
 

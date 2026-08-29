@@ -67,6 +67,7 @@ const get_notes = require('./routes/get_notes');
 const add_guest_player = require('./routes/add_guest_player');
 const convert_guest_to_user = require('./routes/convert_guest_to_user');
 const public_league = require('./routes/public_league');
+const well_known = require('./routes/well_known');
 
 // Use routes
 app.use('/register_user', register_user);
@@ -121,6 +122,10 @@ app.use('/convert_guest_to_user', convert_guest_to_user);
 // Public read-only league page - GET /l/<code>, no login
 // This is the one route that serves HTML to a browser rather than JSON to the app
 app.use('/l', public_league);
+
+// Deep link association files - GET /.well-known/..., fetched by Android and iOS themselves
+// These are what let a shared /l/<code> link open the app instead of a browser
+app.use('/.well-known', well_known);
 
 // Root route
 app.get('/', (req, res) => {

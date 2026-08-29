@@ -14,6 +14,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/splash_screen.dart';
 import 'helpers/auth_helper.dart';
 import 'helpers/config.dart';
+import 'helpers/deep_link_helper.dart';
 // import 'helpers/runtime_config.dart';
 import 'helpers/version_helper.dart';
 import 'styles/app_styles.dart';
@@ -31,6 +32,10 @@ void main() async {
   // The forced update check on the splash screen compares this against the
   // minimum version held in the app_version_requirement table on the server.
   await Config.loadAppVersion();
+
+  // Start listening for shared league links (https://splitleague.noodev8.com/l/<code>)
+  // Done before runApp so a link that launched the app is not missed.
+  await DeepLinkHelper.initialise();
 
   // Run the app
   runApp(const SplitLeagueApp());
@@ -90,6 +95,8 @@ class SplitLeagueApp extends StatelessWidget {
             enableScrollWhenRefreshCompleted: true,
             enableBallisticRefresh: false,
             child: MaterialApp(
+              // Lets a deep link drive navigation from outside the widget tree
+              navigatorKey: DeepLinkHelper.navigatorKey,
               builder: (context, child) {
                 return MediaQuery(
                   // Apply text scaling
