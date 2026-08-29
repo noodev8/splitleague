@@ -69,9 +69,16 @@ Two things about the data that are not obvious and will bite:
 - **Guests are rows in `app_user`** with the literal email `'guest'` and a nickname of the
   form `guest_Dave (g)`. They are placeholders for people in a league, not accounts, and
   **must never be able to log in** — the auth routes exclude them explicitly.
-- **`app_version_requirement.minimum_version` is `numeric(4,2)`, not text.** It holds
-  `major.minor` only, capped at `99.99`. Write `2.00`, never `2.0.0` — the column rejects
-  it. Raising this row is the lever that forces existing installs to update.
+- **`app_version_requirement.minimum_version` is `text`, one row per platform.** Write a real
+  version — `2.0.0`. A CHECK constraint enforces `major.minor[.patch]`. Raising a row is the
+  lever that forces existing installs to update, and the two rows are separate so Android and
+  iOS can be raised independently as each store goes live.
+
+  It used to be `numeric(4,2)`, which stored a *decimal* while the Flutter client reads
+  *dot-separated integers* — so `1.1` was stored as `1.10` and read as major 1 **minor 10**,
+  locking out every `1.1.x` install. Changed to text on 2026-08-29. Never raise a row before
+  the build is live and at 100% rollout on that store, or users hit a non-dismissible update
+  wall with nothing to update to.
 
 Schema changes are applied directly to PostgreSQL. There is no migration file to keep in sync.
 
