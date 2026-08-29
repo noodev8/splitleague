@@ -99,11 +99,75 @@ const formatResult = (fixture, winType) => {
 };
 
 
+// Where somebody without the app should go
+//
+// These are the same two URLs the app itself uses for its forced-update prompt, kept in step
+// with main.dart. The Apple link needs the numeric ID; the Play link needs the package name.
+const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.noodev8.splitleague';
+const APP_STORE_URL = 'https://apps.apple.com/app/id6745337065';
+
+
+// The block that tells a stranger what this page is and what to do about it
+//
+// This is the whole point of the page for somebody who has just been sent a link. Before
+// today it said nothing: a league name, a bare code, and a table. Somebody who had never
+// heard of SplitLeague had no idea they were being invited, or that an app existed.
+//
+// The wording depends on whether the league has started, because the honest answer changes:
+//
+//   Not started - they can join. Lead with the invitation.
+//   Under way   - they CANNOT join. join_league.js returns FIXTURES_EXIST once fixtures
+//                 exist, so a Join prompt here would send somebody off to install the app,
+//                 register, type the code and be refused at the end of it. Say so instead,
+//                 and point them at the organiser.
+const renderCallToAction = (league, standings, played, upcoming, hasStarted) => {
+
+  const organiser = league.organiser ? escapeHtml(displayName(league.organiser, null)) : null;
+
+  const stores = `
+      <div class="stores">
+        <a class="store" href="${PLAY_STORE_URL}">Get it on Google Play</a>
+        <a class="store" href="${APP_STORE_URL}">Download on the App Store</a>
+      </div>`;
+
+  // The league has started - no joining, but the table is worth following
+  if (hasStarted) {
+    const total = played.length + upcoming.length;
+
+    return `
+    <section class="cta">
+      <h2>This league is under way</h2>
+      <p class="cta-sub">${played.length} of ${total} ${total === 1 ? 'match' : 'matches'} played${organiser ? ` &middot; organised by ${organiser}` : ''}</p>
+      <p class="cta-note">New players cannot join once a league has started${organiser ? ` - ask ${organiser} to add you next time` : ''}.</p>
+      ${stores}
+      <p class="cta-note">Get the app to follow the table and enter your own results.</p>
+    </section>`;
+  }
+
+  // The league has not started - this is an invitation
+  const playerCount = standings.length;
+
+  return `
+    <section class="cta">
+      <h2>You have been invited to join</h2>
+      <p class="cta-sub">${organiser ? `Organised by ${organiser}` : 'A SplitLeague league'}${playerCount ? ` &middot; ${playerCount} ${playerCount === 1 ? 'player' : 'players'} so far` : ''}</p>
+      ${stores}
+      <p class="cta-note">Already have the app? Open it and join with code <strong class="code-inline">${escapeHtml(league.public_code)}</strong>, or tap this link again on your phone.</p>
+    </section>`;
+};
+
+
 // The page itself
 const renderPage = (league, standings, played, upcoming) => {
 
   const winType = league.win_type;
   const isPts = winType === 'PTS';
+
+  // A league has started once it has fixtures at all, played or not - the same test
+  // join_league.js uses to decide whether anybody new is allowed in.
+  const hasStarted = (played.length + upcoming.length) > 0;
+
+  const callToAction = renderCallToAction(league, standings, played, upcoming, hasStarted);
 
   // WIN leagues have no concept of a draw, so that column is dropped
   const showDrawn = winType !== 'WIN';
@@ -264,6 +328,56 @@ const renderPage = (league, standings, played, upcoming) => {
 
     .empty { color: var(--muted); margin: 0; }
 
+    .cta {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .cta h2 { margin: 0 0 6px; }
+
+    .cta-sub {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .cta-note {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .code-inline {
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 1px;
+      color: var(--ink);
+    }
+
+    .stores {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    a.store {
+      display: inline-block;
+      padding: 12px 18px;
+      border-radius: 8px;
+      background: var(--brand-top);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    a.store:hover { opacity: 0.9; }
+
     footer {
       text-align: center;
       padding: 4px 20px 32px;
@@ -290,11 +404,12 @@ const renderPage = (league, standings, played, upcoming) => {
   <header>
     <div class="wrap">
       <h1>${escapeHtml(league.name)}</h1>
-      <div class="code">League code ${escapeHtml(league.public_code)}</div>
+      <div class="code">${hasStarted ? 'Under way' : `Join code ${escapeHtml(league.public_code)}`}</div>
     </div>
   </header>
 
   <main class="wrap">
+    ${hasStarted ? '' : callToAction}
     <section>
       <h2>Standings</h2>
       ${standings.length ? `
@@ -330,11 +445,12 @@ const renderPage = (league, standings, played, upcoming) => {
       <ul>${upcomingRows}
       </ul>
     </section>` : ''}
+
+    ${hasStarted ? callToAction : ''}
   </main>
 
   <footer class="wrap">
-    Scores are kept in the SplitLeague app.<br>
-    Join this league with code <strong>${escapeHtml(league.public_code)}</strong>.
+    Scores are kept in the SplitLeague app.
   </footer>
 </body>
 </html>`;
@@ -398,6 +514,7 @@ router.get('/:code', async (req, res) => {
     // Find the league and its scoring rules
     const leagueResult = await pool.query(
       `SELECT l.id, l.name, l.public_code,
+              (SELECT u.nickname FROM app_user u WHERE u.id = l.created_by) AS organiser,
               lp.win_type, lp.points_for_win, lp.points_for_draw,
               lp.points_for_win_margin, lp.points_for_close_loss, lp.win_margin_threshold
        FROM league l

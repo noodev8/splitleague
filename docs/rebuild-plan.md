@@ -672,7 +672,14 @@ Each phase stands alone and can go to the stores independently.
 - [ ] **Deploy.** None of the server side works until `well_known.js` is on the VPS (`docs/deploy.txt`).
 - [ ] **iOS Universal Links.** There is no `ios/Runner/Runner.entitlements` file at all. Adding the Associated Domains capability (`applinks:splitleague.noodev8.com`) needs Xcode on a Mac. The server side is ready for it.
 - [ ] **Build the share slug** (decision above) — `league.share_slug` column, generation, `/l/<slug>`, redirect from `/l/<4-digit>`, and widen the strict 4-digit guard in `public_league.js` to accept both shapes without loosening it.
-- [ ] **Turn `/l/<slug>` into a real landing page.** It is currently name + code + standings + results, which tells a stranger nothing. Needs three states driven by fixture count: *not started* (lead with the invite — "<organiser> has invited you to <league>", player count, Join button), *under way* (lead with the table, plus "12 of 30 matches played"), *finished* (final table, winner). Organiser nickname is available via `league.created_by`; nickname only, never the real name or email.
+- [x] **Turn `/l/<code>` into a real landing page** — done 2026-08-29. **Two** of the three planned states, driven by fixture count, with store buttons for Play and the App Store.
+
+  *Not started* — the call to action leads, above the (empty) table: "You have been invited to join", organiser, player count, and the join code for anyone who already has the app.
+
+  *Under way* — the table leads and the block sits below it: match count, organiser, and an honest "new players cannot join once a league has started - ask <organiser>" rather than a Join prompt that FIXTURES_EXIST would refuse.
+
+  The header chip reads "Join code 1231" or "Under way" accordingly, and the footer no longer repeats a join instruction that may be untrue. Verified by rendering both states against production data (1231 not started, 9911 with 100 fixtures).
+- [ ] **The third landing-page state: *finished*.** Not built. A league with every fixture played still renders as "under way" with "100 of 100 matches played", when it should name the winner and present the table as final.
 - [ ] **`FIXTURES_EXIST` stays** (§5.8) — confirmed 2026-08-29 that a player genuinely cannot be added to a league that has started. So the under-way landing page must **not** show a Join button; it says "ask the organiser" instead. A Join button there would walk someone through install → register → code → refusal.
 - [ ] **Code reuse defect.** `reset_league_fixtures.js:161` rotates `public_code` and returns the old value to the pool, where `create_league.js` can later hand it to a *different* league — so a link shared last month can quietly resolve to a stranger's league. Its own uniqueness check also filters `active = true` (line 59) while `create_league.js` deliberately does not, so with the unique index in place that path can throw an uncaught `23505`. The share slug fixes the link half of this (never rotated, never reused); the join-code half still needs a decision.
 
