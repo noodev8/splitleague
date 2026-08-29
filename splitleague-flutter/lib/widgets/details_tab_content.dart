@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
+import '../helpers/config.dart';
 // import '../widgets/error_display.dart';
 
 class DetailsTabContent extends StatelessWidget {
@@ -28,6 +30,32 @@ class DetailsTabContent extends StatelessWidget {
     this.onViewMembers,
     this.organizerNotes,
   });
+
+  // Share the league's public page
+  //
+  // The link is the read-only web page at /l/<code> - standings and fixtures, no login
+  // and no app install needed. Anyone can open it. That is the point: most people in a
+  // league only ever want to look at the table, and making them sign up to do that is
+  // what was killing the funnel.
+  //
+  // Built from Config.baseUrl so a debug build pointed at the test VPS shares a test link.
+  Future<void> _shareLeague(BuildContext context) async {
+    final String code = leagueInfo['public_code']?.toString() ?? '';
+    final String name = leagueInfo['name']?.toString() ?? 'our league';
+
+    if (code.isEmpty) {
+      return;
+    }
+
+    final String url = '${Config.baseUrl}/l/$code';
+
+    await SharePlus.instance.share(
+      ShareParams(
+        text: '$name - live table and results:\n$url',
+        subject: name,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,6 +176,31 @@ class DetailsTabContent extends StatelessWidget {
                     ],
                   ],
                 ),
+
+                const SizedBox(height: 16),
+
+                // Share the public league page
+                //
+                // Deliberately OUTSIDE the !hasFixtures block above. The join code is
+                // hidden once a league starts, but that is exactly when people want the
+                // table - so sharing has to keep working for the life of the league.
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _shareLeague(context),
+                    icon: const Icon(Icons.ios_share, size: 18),
+                    label: const Text('Share league'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.blue,
+                      side: const BorderSide(color: Colors.blue),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 16),
 
                 // Organizer

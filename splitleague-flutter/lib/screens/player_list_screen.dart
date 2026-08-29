@@ -237,8 +237,7 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
       );
 
       if (response['return_code'] == 'SUCCESS') {
-        // Show success message
-        ErrorHelper.showSuccessToast(response['message'] ?? 'Guest player added successfully');
+        // No success toast - the new player appearing in the list below says it already
 
         // Increment guest count temporarily for better UX
         setState(() {

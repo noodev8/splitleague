@@ -608,7 +608,14 @@ Each phase stands alone and can go to the stores independently.
   **Scoring lives in one place now.** Extracted the ~180-line standings algorithm out of `get_league_table.js` into `utils/standings_utils.js`, which both the app route and the public page call — so the table on a shared link can never drift from the table in the app. **Verified byte-identical:** ran the old inline algorithm and the extracted util against all 189 production leagues (41 with played fixtures, covering all three scoring types — 75 PTS, 75 WDL, 39 WIN). Zero mismatches.
 
   **Verified locally against production data:** all three scoring types render (PTS/WDL/WIN); `0000`, `abcd`, `12345`, `<script>` and an SQL-injection-shaped code all 404; `X-Robots-Tag` present; guest names show as `Nadir (g)` exactly as the app displays them, with the `guest_` prefix stripped and not leaking anywhere into the HTML. Every user-supplied value is HTML-escaped on the way out — league names and nicknames are untrusted input.
-- [ ] Share button in the app that copies/sends that link
+- [x] Share button in the app that copies/sends that link — done 2026-08-29. `share_plus` 12.0.2 (v13 needs a newer Dart than our constraints allow), opening the native share sheet with "<league name> - live table and results:" and the URL. Built from `Config.baseUrl`, so a debug build pointed at the test VPS shares a test link rather than a production one.
+
+  **Placed deliberately outside the `!hasFixtures` block** in `details_tab_content.dart`. The join code is hidden once a league starts — but that is exactly when people want the table, so sharing has to keep working for the life of the league. Getting this wrong would have made the feature useless for every league that is actually running.
+
+  Verified on a real device: share sheet opens with `Ver 2 Test - live table and results: https://splitleague.noodev8.com/l/5374`, with WhatsApp, Gmail and Copy offered.
+
+- [x] Guest players no longer get a ` (g)` suffix baked into the stored nickname (`add_guest_player.js`). The `guest_` prefix stays — it is how guests are identified — but it was already stripped for display, whereas ` (g)` was not, so every guest read as "Dave (g)". **147 of 149 existing guests still carry the old suffix**, so leagues will show a mix until those rows are updated. Safe to strip: nothing parses it.
+- [x] Removed the success toast after adding a guest — the player appearing in the list is the confirmation.
 - [x] **Delete "Take a look around"** and the 1,238 lines behind it (§5.7) — the real league page replaces the fake demo. Done 2026-08-29: **1,299 lines removed, 4 added**
 
   Gone: `models/sample_league.dart` (239), `screens/sample_fixtures_screen.dart` (491), `screens/sample_standings_screen.dart` (508), the "Take a look around" button and `_handleGuestAccess` on the login screen, and the "View Sample League" button, `_showSampleLeague` and the Guest-branch ternaries in the dashboard empty state.

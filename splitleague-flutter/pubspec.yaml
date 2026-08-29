@@ -71,6 +71,7 @@ dependencies:
   # Reads the real app version/build number from the platform package
   # Used by the forced update check so the version is never hardcoded
   package_info_plus: ^9.0.1
+  share_plus: ^12.0.2
 
 flutter_launcher_icons:
   android: true

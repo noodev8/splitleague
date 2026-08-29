@@ -118,8 +118,13 @@ router.post('/', verifyToken, async (req, res) => {
     // Set default guest nickname if not provided
     const baseNickname = guest_nickname || 'Guest Player';
 
-    // Add 'guest_' prefix and (g) suffix to the nickname for display
-    const displayNickname = `guest_${baseNickname} (g)`;
+    // Add the 'guest_' prefix only
+    //
+    // The prefix is load-bearing: it is how a guest is identified throughout the app
+    // (nickname LIKE 'guest_%'), and the display code strips it before showing the name.
+    // There used to be a ' (g)' suffix on the end as well, which was NOT stripped, so
+    // every guest read as "Dave (g)" everywhere. Dropped - a guest is just a player.
+    const displayNickname = `guest_${baseNickname}`;
 
     // Give the guest row a password nobody can ever use
     //
