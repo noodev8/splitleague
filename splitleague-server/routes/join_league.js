@@ -3,10 +3,25 @@
 API Route: join_league
 =======================================================================================================================================
 Method: POST
-Purpose: Allows a user to join a league using a 4-digit public code. If the user is already a member, returns success without adding them again.
+Purpose: Allows a user to join a league. If the user is already a member, returns success without adding them again.
          Will fail if fixtures have already been generated.
+
+         The league can be identified two ways, and the caller does not have to say which it is holding:
+
+           share_slug   ten characters, e.g. "7jwpbsz5ym" - somebody who followed an invite link.
+                        They never saw a code and are never shown one; the link is the whole journey.
+           public_code  four digits, e.g. "1234" - somebody typing in a code they were told.
+
+         Nothing here assumes the identifier is four characters long. That assumption is what made the
+         join screen a row of four boxes and tied joining to finishing typing.
 =======================================================================================================================================
 Request Payload:
+{
+  "league_key": "7jwpbsz5ym"           // string, required - Share slug or 4-digit public code
+}
+
+  or, from older installs that predate the share slug:
+
 {
   "public_code": "1234"                // string, required - The 4-digit public code of the league to join
 }
@@ -26,7 +41,7 @@ Already Member Response:
 Return Codes:
 "SUCCESS"
 "MISSING_FIELDS"
-"INVALID_CODE"
+"INVALID_CODE"           // No league has that slug or code, or it is neither shape
 "LEAGUE_INACTIVE"
 "FIXTURES_EXIST"
 "UNAUTHORIZED"
@@ -38,28 +53,47 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const verifyToken = require('../middleware/auth_middleware');
+const { resolveLeagueKey } = require('../utils/share_slug_utils');
 
 // POST /join_league
 router.post('/', verifyToken, async (req, res) => {
   try {
-    // Extract public code from request body
-    const { public_code } = req.body;
+    // Extract the league identifier from the request body
+    //
+    // league_key is what the app sends now. public_code is still read as a fallback so that
+    // installs already on people's phones - which know nothing about slugs - keep working
+    // after this deploys. The server updates before the app does, and always will.
+    const leagueKey = req.body.league_key || req.body.public_code;
 
-    // Check if public code is provided
-    if (!public_code) {
+    // Check an identifier was provided
+    if (!leagueKey) {
       return res.status(400).json({
         return_code: 'MISSING_FIELDS',
-        message: 'Public code is required'
+        message: 'A league code or link is required'
       });
     }
 
     // Get the user ID from the authenticated token
     const userId = req.userId;
 
-    // Find the league by public code
+    // Work out whether this is a share slug or a 4-digit code
+    //
+    // Something that is neither shape cannot match a league, so it gets the same answer as a
+    // code that matched nothing - there is no reason to tell a caller which of the two it
+    // failed to look like.
+    const resolved = resolveLeagueKey(leagueKey);
+
+    if (resolved === null) {
+      return res.status(404).json({
+        return_code: 'INVALID_CODE',
+        message: 'League not found with the provided code'
+      });
+    }
+
+    // Find the league. The column comes from resolveLeagueKey, never from the request.
     const leagueResult = await pool.query(
-      'SELECT * FROM league WHERE public_code = $1',
-      [public_code]
+      `SELECT * FROM league WHERE ${resolved.column} = $1`,
+      [resolved.value]
     );
 
     // Check if league exists

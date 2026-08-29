@@ -18,6 +18,7 @@ Success Response:
     "name": "Premier League 2025",    // string - League name
     "created_by": 123,                // integer - User ID of creator
     "public_code": "1234",            // string - Unique 4-digit code for joining the league
+    "share_slug": "7jwpbsz5ym",       // string - Permanent identifier for the shared link /l/<slug>
     "active": true,                   // boolean - League active status
 
     "created_at": "2025-04-06T12:00:00.000Z", // timestamp - Creation date
@@ -73,6 +74,7 @@ router.post('/', verifyToken, async (req, res) => {
         l.name,
         l.created_by,
         l.public_code,
+        l.share_slug,
         l.active,
 
         l.created_at,
@@ -157,6 +159,10 @@ router.post('/', verifyToken, async (req, res) => {
       created_by: leagueData.created_by,
       created_by_nickname: leagueData.created_by_nickname,
       public_code: leagueData.public_code,
+
+      // The permanent identifier for this league's shared link, /l/<slug>. The share sheet on
+      // the details screen builds its URL from this, so it has to be here.
+      share_slug: leagueData.share_slug,
       active: leagueData.active,
       start_date: leagueData.start_date,
       end_date: leagueData.end_date,

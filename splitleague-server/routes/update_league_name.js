@@ -108,6 +108,7 @@ router.post('/', verifyToken, async (req, res) => {
         l.name,
         l.created_by,
         l.public_code,
+        l.share_slug,
         l.active,
 
         l.created_at,

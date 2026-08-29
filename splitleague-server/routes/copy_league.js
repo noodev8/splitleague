@@ -6,6 +6,8 @@ Method: POST
 Purpose: Creates a copy of an existing league with its details, points system, and players.
          Only the league creator (organizer) can copy a league.
          The new league will have the same name with "- copy" appended, and no fixtures.
+         It gets its own 4-digit public code and its own share_slug - a copy is a new league, and
+         a link already shared for the original must keep pointing at the original.
 =======================================================================================================================================
 Request Payload:
 {
@@ -43,6 +45,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const verifyToken = require('../middleware/auth_middleware');
+const { generateUniqueShareSlug } = require('../utils/share_slug_utils');
 
 // POST /copy_league
 router.post('/', verifyToken, async (req, res) => {
@@ -121,6 +124,13 @@ router.post('/', verifyToken, async (req, res) => {
       codeExists = parseInt(codeCheckResult.rows[0].count) > 0;
     }
 
+    // Give the copy its own share slug
+    //
+    // A copy is a brand new league, so it needs a brand new slug. It must NOT inherit the
+    // original's: a link already shared for the original has to keep pointing at the original,
+    // and league.share_slug is unique anyway, so copying it would simply fail to insert.
+    const shareSlug = await generateUniqueShareSlug(client);
+
     // Insert the new league
     const newLeagueResult = await client.query(
       `INSERT INTO league (
@@ -128,14 +138,16 @@ router.post('/', verifyToken, async (req, res) => {
         created_by,
         created_at,
         public_code,
+        share_slug,
         active,
         allow_code_share
-      ) VALUES ($1, $2, CURRENT_TIMESTAMP, $3, $4, $5)
+      ) VALUES ($1, $2, CURRENT_TIMESTAMP, $3, $4, $5, $6)
       RETURNING *`,
       [
         newLeagueName,
         userId,
         publicCode,
+        shareSlug,
         true, // active
         originalLeague.allow_code_share
       ]

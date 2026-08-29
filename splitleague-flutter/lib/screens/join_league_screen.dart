@@ -1,7 +1,22 @@
 /*
-Show the join league screen allowing users to join an existing league
-This screen allows users to enter a 4-digit code to join a league
-Once joined, it returns to the dashboard screen
+Show the join league screen
+
+There are two completely different ways to arrive here, and the screen is two different things
+depending on which one it was:
+
+  TYPED    Somebody was told a code - "join with 1231" - and tapped Join League on the dashboard.
+           They get the four boxes, type the code, and press Join. This is the original screen.
+
+  BY LINK  Somebody was sent a link and tapped it. The app opened here with the league already
+           identified by its share slug. They never typed anything, they have no code, and there
+           is nothing for them to check - so there are NO code boxes at all. They get the league
+           name, who is running it, how many players are in, and one button.
+
+That second case is the whole point of the share slug. A slug is ten characters and nobody is
+going to type it, so a screen that asks for input would be a wall rather than an invitation. It
+also means nothing on this screen may assume the identifier is four characters long.
+
+Once joined, it returns to the dashboard screen.
 */
 
 import 'package:flutter/material.dart';
@@ -16,15 +31,19 @@ import 'register_user_screen.dart';
 class JoinLeagueScreen extends StatefulWidget {
   final Function? onLeagueJoined;
 
-  // Code carried in from a shared league link, pre-filled into the boxes
+  // The league this screen was opened FOR, when it was opened by a link
   //
-  // Null when the person opened this screen themselves and is typing a code they were told.
-  final String? initialCode;
+  // Holds whatever sat after /l/ in the link: a share slug normally, or a 4-digit code if the
+  // link was shared before slugs existed. Either is passed straight to the server, which works
+  // out which it is - see join_league.js.
+  //
+  // Null when the person opened this screen themselves and is going to type a code.
+  final String? leagueKey;
 
   const JoinLeagueScreen({
     super.key,
     this.onLeagueJoined,
-    this.initialCode,
+    this.leagueKey,
   });
 
   @override
@@ -32,46 +51,65 @@ class JoinLeagueScreen extends StatefulWidget {
 }
 
 class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
-  // Loading state
+  // Loading state, while a join is in flight
   bool _isLoading = false;
 
   // Error message
   String? _errorMessage;
 
-  // PIN code
-  String _pinCode = '';
+  // The code typed into the boxes, on the typed route only
+  String _typedCode = '';
 
   // Details of the league being joined, when we arrived from an invite link
   //
   // Somebody who typed a code they were told already knows what they are joining. Somebody who
   // followed a link does not - they never typed anything - so the screen has to say what the
-  // league is and who is running it, or it is just a number they did not choose.
+  // league is and who is running it, or there is nothing on screen to say yes to.
   String? _inviteLeagueName;
   String? _inviteOrganiser;
   int? _invitePlayerCount;
+
+  // Whether the league has already started, and whether we are already in it
+  //
+  // A league that has fixtures cannot be joined - join_league.js returns FIXTURES_EXIST - so
+  // offering a Join button would walk somebody all the way to a refusal. The honest thing is to
+  // say so and name the organiser, which is exactly what the public web page does.
+  bool _inviteHasFixtures = false;
+  bool _inviteIsMember = false;
+
   bool _loadingPreview = false;
+
+  // Did this screen open because somebody tapped a link?
+  bool get _arrivedFromLink => widget.leagueKey != null;
+
+  // Can this league be joined right now?
+  //
+  // Only false in the one case we actually know about: an under-way league we are not already
+  // in. If the preview could not be fetched we do not know, and we let the person press the
+  // button and get a real answer from the server rather than guessing at them.
+  bool get _canJoin => !(_inviteHasFixtures && !_inviteIsMember);
 
   @override
   void initState() {
     super.initState();
 
-    // Only look anything up when a code came in from a link
-    if (widget.initialCode != null) {
-      _loadPreview(widget.initialCode!);
+    // Only look anything up when a league came in from a link
+    if (widget.leagueKey != null) {
+      _loadPreview(widget.leagueKey!);
     }
   }
 
   // Fetch the league's name and organiser so the invite can be shown properly
   //
-  // Failure here is deliberately quiet. The preview is a courtesy - if it cannot be fetched the
-  // screen still works exactly as it did before, with the code filled in and Join ready.
-  Future<void> _loadPreview(String code) async {
+  // A failure here does not block anything. The Join button still works, because the league key
+  // came from the link and not from the preview - the person just gets a plainer screen.
+  Future<void> _loadPreview(String leagueKey) async {
     setState(() {
       _loadingPreview = true;
     });
 
     try {
-      final response = await GetLeaguePreviewApi.getLeaguePreview(code);
+      final response = await GetLeaguePreviewApi.getLeaguePreview(leagueKey);
 
       if (!mounted) {
         return;
@@ -84,6 +122,8 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
           _invitePlayerCount = response['player_count'] is int
               ? response['player_count']
               : int.tryParse(response['player_count']?.toString() ?? '');
+          _inviteHasFixtures = response['has_fixtures'] == true;
+          _inviteIsMember = response['is_member'] == true;
           _loadingPreview = false;
         });
       } else {
@@ -102,8 +142,14 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
 
   // Handle join league button press
   Future<void> _handleJoinLeague() async {
-    // Validate PIN code
-    if (_pinCode.length != 4) {
+    // Which identifier are we joining with?
+    //
+    // The link's key if there was one, otherwise whatever was typed. Nothing below cares which
+    // it is or how long it is.
+    final String leagueKey = widget.leagueKey ?? _typedCode;
+
+    // Only the typed route can produce an incomplete identifier
+    if (!_arrivedFromLink && _typedCode.length != 4) {
       setState(() {
         _errorMessage = 'Please enter a valid 4-digit code';
       });
@@ -128,7 +174,7 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
 
     try {
       // Call join league API
-      Map<String, dynamic> response = await JoinLeagueApi.joinLeague(_pinCode);
+      Map<String, dynamic> response = await JoinLeagueApi.joinLeague(leagueKey);
 
       // Check response
       if (response['return_code'] == 'SUCCESS') {
@@ -213,17 +259,13 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
     );
   }
 
-  // Handle PIN code completion
+  // Handle PIN code completion, on the typed route only
   //
-  // This only records the code and closes the keyboard. It deliberately does NOT join.
-  //
-  // It used to fire the join itself the moment a 4th digit arrived, which tied the act of
-  // joining to the code being exactly 4 characters long. The code is going to become a longer
-  // share slug, and an invite link now opens this screen with the code already filled in - so
-  // joining has to be a deliberate press, not a side effect of finishing typing.
+  // This only records the code and closes the keyboard. It deliberately does NOT join - joining
+  // is a deliberate press of the button, never a side effect of finishing typing.
   void _onPinCompleted(String pin) {
     setState(() {
-      _pinCode = pin;
+      _typedCode = pin;
       _errorMessage = null;
     });
 
@@ -233,10 +275,103 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
     }
   }
 
+  // What the screen says at the top
+  //
+  // An invitation when we know what league it is and it can be joined; instructions when the
+  // person has to type. A league that has already started is NOT an invitation - saying "You've
+  // been invited" above a message explaining that they cannot join would be a small lie, and
+  // this is the first thing the person reads.
+  String get _title {
+    if (!_canJoin) {
+      return 'Already under way';
+    }
+
+    // Following your own league's link is a normal thing to do - it is the same link you sent
+    // everybody else. Do not greet somebody who is already in with an invitation.
+    if (_inviteIsMember) {
+      return "You're already in";
+    }
+
+    if (_inviteLeagueName != null) {
+      return "You've been invited";
+    }
+
+    if (_arrivedFromLink) {
+      return 'Join this league';
+    }
+
+    return 'Join a League';
+  }
+
+  // The line under the title
+  Widget _buildSubtitle() {
+    // We know the league - say what it is and who runs it
+    if (_inviteLeagueName != null) {
+      return Column(
+        children: [
+          Text(
+            _inviteLeagueName!,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF005F8A),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            [
+              if (_inviteOrganiser != null) 'Organised by $_inviteOrganiser',
+              if (_invitePlayerCount != null)
+                '$_invitePlayerCount ${_invitePlayerCount == 1 ? 'player' : 'players'} so far',
+            ].join('\n'),
+            style: const TextStyle(
+              fontSize: 15,
+              color: Colors.grey,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      );
+    }
+
+    // Still looking it up - say nothing rather than flash a message and replace it
+    if (_loadingPreview) {
+      return const SizedBox(
+        height: 24,
+        child: SpinKitThreeBounce(color: Colors.blue, size: 18),
+      );
+    }
+
+    // Arrived by link but the lookup failed. The Join button still works - the league key came
+    // from the link, not from the lookup - so say what we can and let them press it.
+    if (_arrivedFromLink) {
+      return const Text(
+        'Tap Join League to join the league you were invited to.',
+        style: TextStyle(fontSize: 16, color: Colors.grey),
+        textAlign: TextAlign.center,
+      );
+    }
+
+    // The typed route
+    return const Text(
+      'Enter the 4-digit code provided by the league creator to join.',
+      style: TextStyle(fontSize: 16, color: Colors.grey),
+      textAlign: TextAlign.center,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Get the bottom inset (keyboard height)
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    // The Join button is live when there is something to join with, and no join is already
+    // running. On the typed route that means four digits; on the link route the identifier was
+    // there before the screen was, so the only question is whether the league can be joined.
+    final bool canPressJoin = !_isLoading &&
+        _canJoin &&
+        (_arrivedFromLink ? !_loadingPreview : _typedCode.length == 4);
 
     return Scaffold(
       // This ensures the body resizes when the keyboard appears
@@ -305,14 +440,8 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
                             const SizedBox(height: 24),
 
                             // Title
-                            //
-                            // Two different arrivals, two different things to say. Somebody who
-                            // typed a code needs instructions; somebody who followed an invite
-                            // link needs to know what they have been invited to.
                             Text(
-                              _inviteLeagueName != null
-                                  ? "You've been invited"
-                                  : 'Join a League',
+                              _title,
                               style: const TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
@@ -321,88 +450,72 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
                             ),
                             const SizedBox(height: 16),
 
-                            if (_inviteLeagueName != null) ...[
-                              // The league being joined
-                              Text(
-                                _inviteLeagueName!,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF005F8A),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 8),
+                            _buildSubtitle(),
 
-                              // Who is running it, and how big it is so far
-                              Text(
-                                [
-                                  if (_inviteOrganiser != null) 'Organised by $_inviteOrganiser',
-                                  if (_invitePlayerCount != null)
-                                    '$_invitePlayerCount ${_invitePlayerCount == 1 ? 'player' : 'players'} so far',
-                                ].join('\n'),
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.grey,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ] else if (_loadingPreview) ...[
-                              // Looking the league up - say nothing rather than flash the
-                              // generic instructions and then replace them
-                              const SizedBox(height: 4),
-                            ] else ...[
-                              // Description
-                              const Text(
-                                'Enter the 4-digit code provided by the league creator to join.',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
                             const SizedBox(height: 40),
 
-                            // PIN input
-                            PinInput(
-                              onCompleted: _onPinCompleted,
-                              pinLength: 4,
+                            // The code boxes, on the typed route ONLY
+                            //
+                            // Somebody who followed a link has no code and never needs one, so
+                            // there is nothing here for them to look at or get wrong. This is
+                            // the difference the share slug was built to make.
+                            if (!_arrivedFromLink) ...[
+                              PinInput(
+                                onCompleted: _onPinCompleted,
+                                pinLength: 4,
+                                autoFocus: true,
+                              ),
+                              const SizedBox(height: 32),
+                            ],
 
-                              // Do not steal focus when the code is already filled in from a
-                              // link - popping the keyboard up over a completed form is noise.
-                              autoFocus: widget.initialCode == null,
-                              initialValue: widget.initialCode,
-                            ),
-                            const SizedBox(height: 32),
+                            // A league that has already started cannot be joined
+                            //
+                            // Say so plainly instead of offering a button that the server will
+                            // refuse. This is the same wording as the public web page.
+                            if (!_canJoin) ...[
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withAlpha(25),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  _inviteOrganiser != null
+                                      ? 'This league has already started, so new players cannot join. Ask $_inviteOrganiser.'
+                                      : 'This league has already started, so new players cannot join. Ask the organiser.',
+                                  style: const TextStyle(color: Colors.black87),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                            ],
 
                             // Join button
                             //
-                            // Disabled until there is a complete code, and while a join is in
-                            // flight, so it cannot be pressed twice.
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: (_pinCode.length == 4 && !_isLoading)
-                                    ? _handleJoinLeague
-                                    : null,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF005F8A),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                            // Disabled until there is something to join with, and while a join
+                            // is in flight, so it cannot be pressed twice.
+                            if (_canJoin)
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: canPressJoin ? _handleJoinLeague : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF005F8A),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
                                   ),
-                                ),
-                                child: const Text(
-                                  'Join League',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                                  child: Text(
+                                    _inviteIsMember ? 'Open League' : 'Join League',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
                             const SizedBox(height: 24),
 
                             // Error message
@@ -453,5 +566,3 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
     );
   }
 }
-
-

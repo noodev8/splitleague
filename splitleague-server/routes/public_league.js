@@ -3,7 +3,7 @@
 API Route: public_league
 =======================================================================================================================================
 Method: GET  <-- deliberate exception to the POST-only rule
-Purpose: Serves a public, read-only web page showing a league's standings and fixtures, at /l/<code>.
+Purpose: Serves a public, read-only web page showing a league's standings and fixtures, at /l/<slug>.
          No login, no account, no app install. The organiser shares the link however they like -
          WhatsApp, text, pinned behind the bar - and everyone else can just look.
 
@@ -11,21 +11,28 @@ This is the one route in the codebase that is a GET returning HTML rather than a
 JSON. That is on purpose: the whole point is that a person can paste it into a browser. Every
 other endpoint follows the normal convention.
 
-The 4-digit public_code is the key. There is a unique index on league.public_code so the URL can
-never be ambiguous, and create_league checks against every league rather than only active ones.
+league.share_slug is the key - ten characters of Crockford base32, generated once when the league
+is created and never rotated or reused. See utils/share_slug_utils.js for why it exists.
 
-Note on privacy: a 4-digit code is a 9,000 value space, so these pages are enumerable by anyone
-who cares to walk it. That was a deliberate, considered trade - the content is a pub league table
-of nicknames and scores, and the sharing has to be frictionless to be worth anything. The page is
-marked noindex so it stays out of search engines. Do not put anything sensitive on this page:
-no email addresses, no real names beyond the nickname the player chose, no member counts of other
-leagues, nothing about the organiser's account.
+The 4-digit public_code USED to be the key, and links built on it are already out in the wild -
+in group chats, in messages, pinned behind the bar. So /l/<4-digit> still works: it looks the
+league up by code and redirects to its slug. Those old links must never stop resolving.
+
+Note on privacy: a 4-digit code is a 9,000 value space, so while it was the key these pages were
+enumerable by anyone who cared to walk it - 189 leagues in 9,000 values is a 1-in-48 hit rate on
+a random guess. The slug is a 50-bit space, which is not walkable. That is the point of the split.
+The page is still marked noindex so it stays out of search engines, and the old rule still stands
+regardless: do not put anything sensitive on this page - no email addresses, no real names beyond
+the nickname the player chose, no member counts of other leagues, nothing about the organiser's
+account.
 =======================================================================================================================================
-URL: /l/1234
+URL: /l/7jwpbsz5ym          the league page
+     /l/1234                redirects to /l/<slug> for the same league
 
 Responses: HTML, not JSON.
   200  the league page
-  404  no league with that code, or the code is not 4 digits
+  302  an old 4-digit link, redirected to the league's slug
+  404  nothing has that slug or that code, or the identifier is neither shape
   500  something went wrong
 =======================================================================================================================================
 */
@@ -34,6 +41,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const { calculateStandings } = require('../utils/standings_utils');
+const { normaliseShareSlug } = require('../utils/share_slug_utils');
 
 
 // Escape anything that came from a user before putting it in the page
@@ -457,7 +465,7 @@ const renderPage = (league, standings, played, upcoming) => {
 };
 
 
-// The page shown when the code does not match a league
+// The page shown when the slug or code does not match a league
 const renderNotFound = () => `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -491,37 +499,85 @@ const renderNotFound = () => `<!DOCTYPE html>
 <body>
   <div>
     <h1>League not found</h1>
-    <p>Check the 4-digit code and try again.</p>
+    <p>Check the link and try again.</p>
   </div>
 </body>
 </html>`;
 
 
-// GET /l/:code
-router.get('/:code', async (req, res) => {
+// GET /l/:key
+//
+// :key is either the league's share slug - the normal case, and what every link built from
+// today onwards contains - or a 4-digit public code, which is what links shared before the slug
+// existed contain. A code is answered with a redirect rather than a page, so there is exactly
+// one URL that renders a league.
+router.get('/:key', async (req, res) => {
   try {
-    const { code } = req.params;
+    const { key } = req.params;
 
     // Keep search engines out of these pages regardless of the meta tag
     res.set('X-Robots-Tag', 'noindex, nofollow');
 
-    // The code is always exactly 4 digits. Rejecting anything else here means we never
-    // run a query on rubbish, and a scraper walking the URL space gets nowhere.
-    if (!/^\d{4}$/.test(code)) {
+    // Two exact shapes, checked before we go anywhere near the database
+    //
+    // Deliberately two strict patterns rather than one permissive one. The point of the check is
+    // that a scraper walking the URL space never causes a query to run, and that only survives
+    // if each pattern stays as tight as it was: exactly ten slug characters, or exactly four
+    // digits. Anything else is a 404 without touching Postgres.
+    //
+    // normaliseShareSlug does the Crockford repairs on the way in - case is ignored, and the
+    // characters the alphabet leaves out are read back as the ones they look like: I and L as 1,
+    // O as 0. It still returns null for anything that is not ten slug characters after that, so
+    // this is no looser than a plain match; it just forgives somebody retyping a link.
+    const slug = normaliseShareSlug(key);
+    const byCode = /^\d{4}$/.test(key);
+
+    if (slug === null && !byCode) {
       return res.status(404).type('html').send(renderNotFound());
+    }
+
+    // A slug that had to be repaired is not the canonical URL for this page. Send the reader to
+    // the real one so there is a single address for a league, whatever they arrived holding.
+    if (slug !== null && slug !== key) {
+      return res.redirect(302, `/l/${slug}`);
+    }
+
+    // An old 4-digit link: find the league it belongs to and send the reader to its slug
+    //
+    // A 302 rather than a 301, on purpose. reset_league_fixtures rotates a league's public_code
+    // and frees the old value for another league to be given, so which league a code points at
+    // is not permanent - and a 301 would be cached in the reader's browser forever. 302 makes
+    // the server resolve it every time, which is the only way it can stay correct.
+    if (byCode) {
+      // share_slug IS NOT NULL is belt and braces. The column is meant to be NOT NULL, but the
+      // constraint is relaxed while a deploy is pending, and a league created in that window
+      // would have no slug. Without this check the redirect would send the reader to the
+      // literal URL /l/null, which is a 404 dressed up as a working link. A plain 404 here is
+      // at least honest, and the backfill puts such a league right.
+      const redirectResult = await pool.query(
+        `SELECT share_slug FROM league
+         WHERE public_code = $1 AND active = true AND share_slug IS NOT NULL`,
+        [key]
+      );
+
+      if (redirectResult.rows.length === 0) {
+        return res.status(404).type('html').send(renderNotFound());
+      }
+
+      return res.redirect(302, `/l/${redirectResult.rows[0].share_slug}`);
     }
 
     // Find the league and its scoring rules
     const leagueResult = await pool.query(
-      `SELECT l.id, l.name, l.public_code,
+      `SELECT l.id, l.name, l.public_code, l.share_slug,
               (SELECT u.nickname FROM app_user u WHERE u.id = l.created_by) AS organiser,
               lp.win_type, lp.points_for_win, lp.points_for_draw,
               lp.points_for_win_margin, lp.points_for_close_loss, lp.win_margin_threshold
        FROM league l
        JOIN league_points lp ON l.id = lp.league_id
-       WHERE l.public_code = $1
+       WHERE l.share_slug = $1
          AND l.active = true`,
-      [code]
+      [slug]
     );
 
     if (leagueResult.rows.length === 0) {

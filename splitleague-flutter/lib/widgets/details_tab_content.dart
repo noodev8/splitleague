@@ -36,7 +36,7 @@ class DetailsTabContent extends StatelessWidget {
   // screen always send exactly the same thing.
   Future<void> _shareLeague(BuildContext context) async {
     await ShareHelper.shareLeague(
-      code: leagueInfo['public_code']?.toString(),
+      shareSlug: leagueInfo['share_slug']?.toString(),
       name: leagueInfo['name']?.toString(),
       hasFixtures: hasFixtures,
     );

@@ -1,7 +1,12 @@
 /*
 API service for previewing a league before joining it
-Looks up a league's name, organiser and player count from its public code, without joining
-Used by the join screen when somebody arrives from an invite link
+
+Looks up a league's name, organiser and player count without joining it, from either shape of
+identifier - a ten character share slug from an invite link, or a 4-digit public code somebody
+typed. The server works out which it has been given.
+
+Used by the join screen, so somebody who followed a link is told what they are being invited to
+rather than being shown an identifier they never chose.
 */
 
 import 'dart:convert';
@@ -10,8 +15,8 @@ import '../helpers/config.dart';
 import '../helpers/auth_helper.dart';
 
 class GetLeaguePreviewApi {
-  // Look up the friendly details of a league from its public code
-  static Future<Map<String, dynamic>> getLeaguePreview(String publicCode) async {
+  // Look up the friendly details of a league from its share slug or public code
+  static Future<Map<String, dynamic>> getLeaguePreview(String leagueKey) async {
     // Create the request URL
     final url = Uri.parse('${Config.baseUrl}/get_league_preview');
 
@@ -34,7 +39,7 @@ class GetLeaguePreviewApi {
           'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
-          'public_code': publicCode,
+          'league_key': leagueKey,
         }),
       );
 

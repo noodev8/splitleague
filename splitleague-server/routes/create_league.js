@@ -5,6 +5,8 @@ API Route: create_league
 Method: POST
 Purpose: Creates a new league with the provided details. The authenticated user becomes the creator of the league.
          Generates a unique 4-digit public code for the league and marks it as active.
+         Also generates the league's permanent share_slug - the identifier used in shared links,
+         https://.../l/<slug>. See utils/share_slug_utils.js for why the two are separate.
          Creates entries in both league and league_points tables.
 =======================================================================================================================================
 Request Payload:
@@ -27,6 +29,7 @@ Success Response:
     "name": "Premier League 2025",      // string - League name
     "created_by": 123,                  // integer - User ID of creator
     "public_code": "1234",              // string - Unique 4-digit code for joining the league
+    "share_slug": "7jwpbsz5ym",         // string - Permanent identifier for the shared link /l/<slug>
     "active": true,                     // boolean - League active status
     "start_date": "2025-05-01",         // date - Start date
     "end_date": "2025-08-31",           // date - End date
@@ -51,7 +54,7 @@ Return Codes:
 "INVALID_NAME"           // When league name exceeds 30 characters
 "UNAUTHORIZED"
 "SERVER_ERROR"
-"CODE_GENERATION_FAILED"
+"CODE_GENERATION_FAILED"       // Could not find a free public code, or a free share slug
 "TRANSACTION_FAILED"
 =======================================================================================================================================
 */
@@ -60,6 +63,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const verifyToken = require('../middleware/auth_middleware');
+const { generateUniqueShareSlug } = require('../utils/share_slug_utils');
 
 // Function to generate a random 4-digit code
 const generateRandomCode = () => {
@@ -164,20 +168,40 @@ router.post('/', verifyToken, async (req, res) => {
     // Begin transaction
     await client.query('BEGIN');
 
+    // Generate the league's permanent share slug
+    //
+    // This is the identifier that goes in a shared link - /l/<slug> - and it is written once,
+    // here, and never touched again for the life of the league. It is generated inside the
+    // transaction so that a league can never exist without one; the column is NOT NULL, so a
+    // failure here rolls the whole create back rather than producing a league with a dead link.
+    let shareSlug;
+    try {
+      shareSlug = await generateUniqueShareSlug(client);
+    } catch (error) {
+      await client.query('ROLLBACK');
+
+      return res.status(500).json({
+        return_code: 'CODE_GENERATION_FAILED',
+        message: 'Failed to generate a unique share link for the league'
+      });
+    }
+
     // Insert the new league into the league table
     const leagueInsertResult = await client.query(
       `INSERT INTO league (
         name,
         created_by,
         public_code,
+        share_slug,
         active,
         allow_code_share
-      ) VALUES ($1, $2, $3, $4, $5)
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *`,
       [
         name,
         userId,
         publicCode,
+        shareSlug,
         true, // Set active to true
         allow_code_share !== undefined ? allow_code_share : true // Default to true if not provided
       ]
@@ -241,10 +265,12 @@ router.post('/', verifyToken, async (req, res) => {
     // Rollback the transaction in case of error
     await client.query('ROLLBACK');
 
-    // Postgres error 23505 is a unique violation. The only unique constraint that
-    // can realistically fire here is league.public_code - two people creating a
-    // league at the same instant and being handed the same free code. Tell the app
-    // it was a code problem so the user can simply try again, rather than a 500.
+    // Postgres error 23505 is a unique violation. Two unique columns can fire it:
+    // league.public_code - two people creating a league at the same instant and being
+    // handed the same free 4-digit code, which is genuinely likely in a 9,000 space -
+    // and league.share_slug, which in a 50-bit space effectively never will. Either way
+    // the honest answer is the same: an identifier could not be allocated, so tell the
+    // app it was a code problem and let the user try again rather than return a 500.
     if (error.code === '23505') {
       console.error('Public code collision while creating league:', error.detail);
 

@@ -157,6 +157,13 @@ router.post('/', verifyToken, async (req, res) => {
     const fixturesDeleted = deleteResult.rows.length;
 
     // Update the league with the new public code
+    //
+    // NOTE: share_slug is deliberately NOT touched here, and must never be. The slug is the
+    // identifier in every link that has ever been shared for this league - in group chats, in
+    // messages - and those links have to keep working for the life of the league. The 4-digit
+    // public_code is rotated because it is a join code and resetting a league means starting
+    // the joining again; the slug is a permanent address for the same league, which is exactly
+    // why the two were split apart. See utils/share_slug_utils.js.
     await pool.query(
       'UPDATE league SET public_code = $1 WHERE id = $2',
       [newPublicCode, league_id]

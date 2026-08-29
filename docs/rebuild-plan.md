@@ -752,7 +752,19 @@ Each phase stands alone and can go to the stores independently.
 
 - [ ] **Deploy.** None of the server side works until `well_known.js` is on the VPS (`docs/deploy.txt`).
 - [ ] **iOS Universal Links.** There is no `ios/Runner/Runner.entitlements` file at all. Adding the Associated Domains capability (`applinks:splitleague.noodev8.com`) needs Xcode on a Mac. The server side is ready for it.
-- [ ] **Build the share slug** (decision above) — `league.share_slug` column, generation, `/l/<slug>`, redirect from `/l/<4-digit>`, and widen the strict 4-digit guard in `public_league.js` to accept both shapes without loosening it.
+- [x] **Build the share slug** — done 2026-08-29. `league.share_slug`, ten characters of Crockford base32, generated once and never rotated. Full handover in `docs/next-share-slug.md`.
+
+  `utils/share_slug_utils.js` holds generation, the Crockford repairs (case ignored, `i`/`l` → `1`, `o` → `0`) and `resolveLeagueKey`, which works out whether an identifier is a slug or a code so no route has to care. `create_league` generates inside the transaction; `copy_league` gives a copy its own, never the original's.
+
+  **`/l/<4-digit>` 302-redirects to `/l/<slug>`**, so every link already in the wild keeps working — verified against **all 192** active leagues, each redirecting to the right slug. A 302 and not a 301 on purpose: `reset_league_fixtures` rotates codes, so a permanent redirect cached in a browser would eventually resolve to a stranger's league.
+
+  The strict guard was **widened to two exact patterns, not loosened to one**: exactly ten slug characters or exactly four digits, checked before any query. `0000`, `abcd`, `12345`, nine and eleven character slugs, `<script>` and an SQL-injection-shaped code all 404 without touching Postgres.
+
+  **Option B on the app side, as chosen.** `join_league` and `get_league_preview` accept a `league_key` of either shape (still reading `public_code` as a fallback, because installs already on phones know nothing else and the server updates first), and the join screen reached from a link shows **no code boxes at all** — league name, organiser, player count, one button. `deep_link_helper` now treats the path segment as opaque, and `PinInput.initialValue` was removed: a link no longer carries a code to pre-fill.
+
+  **Verified on a real Android device**, debug build pointed at a local server over `adb reverse`: cold start from a slug link on a fresh install parked the key through the login screen, the dashboard collected it, and the invite appeared with no code boxes; joining worked; an under-way league's link showed "Already under way" and no Join button; the legacy 4-digit link showed "You're already in".
+
+  **Outstanding: the NOT NULL.** The column was backfilled and made NOT NULL, then deliberately relaxed again — the production `create_league` does not write a slug yet, so NOT NULL would stop anyone creating a league in the gap before the deploy. Put it back after `pm2 restart`, backfilling anything created in the meantime. See `docs/next-share-slug.md`.
 - [x] **Turn `/l/<code>` into a real landing page** — done 2026-08-29. **Two** of the three planned states, driven by fixture count, with store buttons for Play and the App Store.
 
   *Not started* — the call to action leads, above the (empty) table: "You have been invited to join", organiser, player count, and the join code for anyone who already has the app.
@@ -762,7 +774,7 @@ Each phase stands alone and can go to the stores independently.
   The header chip reads "Join code 1231" or "Under way" accordingly, and the footer no longer repeats a join instruction that may be untrue. Verified by rendering both states against production data (1231 not started, 9911 with 100 fixtures).
 - [ ] **The third landing-page state: *finished*.** Not built. A league with every fixture played still renders as "under way" with "100 of 100 matches played", when it should name the winner and present the table as final.
 - [ ] **`FIXTURES_EXIST` stays** (§5.8) — confirmed 2026-08-29 that a player genuinely cannot be added to a league that has started. So the under-way landing page must **not** show a Join button; it says "ask the organiser" instead. A Join button there would walk someone through install → register → code → refusal.
-- [ ] **Code reuse defect.** `reset_league_fixtures.js:161` rotates `public_code` and returns the old value to the pool, where `create_league.js` can later hand it to a *different* league — so a link shared last month can quietly resolve to a stranger's league. Its own uniqueness check also filters `active = true` (line 59) while `create_league.js` deliberately does not, so with the unique index in place that path can throw an uncaught `23505`. The share slug fixes the link half of this (never rotated, never reused); the join-code half still needs a decision.
+- [ ] **Code reuse defect.** `reset_league_fixtures.js:161` rotates `public_code` and returns the old value to the pool, where `create_league.js` can later hand it to a *different* league. Its own uniqueness check also filters `active = true` (line 59) while `create_league.js` deliberately does not, so with the unique index in place that path can throw an uncaught `23505`. **The link half is now fixed** — the share slug is never rotated and never reused, so a link shared last month cannot resolve to a stranger's league. The join-code half still needs a decision.
 
 **Then stop and feel it.** Get it in front of real people before deciding anything else. The guest model (§4.2) and whether we ever need app links at all are both decisions to make on evidence after this ships.
 

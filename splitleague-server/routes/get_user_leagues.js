@@ -20,6 +20,7 @@ Success Response:
       "name": "Premier League 2025",      // string - League name
       "created_by": 123,                  // integer - User ID of creator
       "public_code": "1234",              // string - Unique 4-digit code for joining the league
+      "share_slug": "7jwpbsz5ym",         // string - Permanent identifier for the shared link /l/<slug>
       "active": true,                     // boolean - League active status
       "start_date": "2025-05-01",         // date - Start date (may be null)
       "end_date": "2025-08-31",           // date - End date (may be null)
@@ -115,6 +116,9 @@ router.post('/', verifyToken, async (req, res) => {
         name: row.name,
         created_by: row.created_by,
         public_code: row.public_code,
+        // The permanent identifier for this league's shared link, /l/<slug>. The app builds
+        // every share message from this, so it has to travel with the league everywhere.
+        share_slug: row.share_slug,
         active: row.active,
 
         created_at: row.created_at,

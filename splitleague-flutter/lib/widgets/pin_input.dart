@@ -1,6 +1,11 @@
 /*
 Custom PIN input widget for entering a 4-digit code
-Used for joining leagues with a public code
+Used for joining leagues with a public code somebody was told out loud
+
+This widget is structurally four boxes, so it is ONLY for the typed route. Somebody who arrives
+from a shared link is identified by a ten character share slug and is never shown code boxes at
+all - see join_league_screen.dart. It briefly gained an initialValue for pre-filling a code out
+of a link; that has gone, because a link no longer carries a code to pre-fill.
 */
 
 import 'package:flutter/material.dart';
@@ -12,15 +17,11 @@ class PinInput extends StatefulWidget {
   final int pinLength;
   final bool autoFocus;
 
-  // Pre-filled code, used when the screen was opened from a shared league link
-  final String? initialValue;
-
   const PinInput({
     super.key,
     required this.onCompleted,
     this.pinLength = 4,
     this.autoFocus = true,
-    this.initialValue,
   });
 
   @override
@@ -41,27 +42,6 @@ class _PinInputState extends State<PinInput> {
     _focusNodes = List.generate(widget.pinLength, (index) => FocusNode());
     _pin = List.generate(widget.pinLength, (index) => '');
 
-    // Fill the boxes in if a code came from a shared link
-    //
-    // The value is only used when it is exactly the right length and all digits - a link with
-    // rubbish in it leaves the boxes empty rather than half-filling them.
-    final initial = widget.initialValue;
-
-    if (initial != null &&
-        initial.length == widget.pinLength &&
-        RegExp(r'^\d+$').hasMatch(initial)) {
-      for (var i = 0; i < widget.pinLength; i++) {
-        _controllers[i].text = initial[i];
-        _pin[i] = initial[i];
-      }
-
-      // Hand the completed code to the screen exactly as if it had been typed, so whatever
-      // is waiting on it - an enabled Join button, say - is ready straight away.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        widget.onCompleted(initial);
-      });
-    }
-    
     // Auto-focus the first field if enabled
     if (widget.autoFocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

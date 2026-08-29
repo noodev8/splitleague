@@ -1,6 +1,14 @@
 /*
 API service for joining a league
-Allows a user to join a league using a 4-digit public code
+
+The league is identified by its "league key", which is one of two things and the app does not
+have to know which it is holding:
+
+  a share slug   ten characters from an invite link, e.g. "7jwpbsz5ym"
+  a public code  the 4 digits somebody was told out loud
+
+The server works out which shape it has been given. That is what lets somebody who followed a
+link join without ever being shown a code.
 */
 
 import 'dart:convert';
@@ -9,8 +17,8 @@ import '../helpers/config.dart';
 import '../helpers/auth_helper.dart';
 
 class JoinLeagueApi {
-  // Join a league using a public code
-  static Future<Map<String, dynamic>> joinLeague(String publicCode) async {
+  // Join a league using either a share slug or a 4-digit public code
+  static Future<Map<String, dynamic>> joinLeague(String leagueKey) async {
     // Create the request URL
     final url = Uri.parse('${Config.baseUrl}/join_league');
 
@@ -33,7 +41,7 @@ class JoinLeagueApi {
           'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
-          'public_code': publicCode,
+          'league_key': leagueKey,
         }),
       );
 

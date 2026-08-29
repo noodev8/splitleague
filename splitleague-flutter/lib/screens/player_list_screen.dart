@@ -354,7 +354,7 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
   // lists who has joined and offers Add Guest, so "invite somebody real" belongs beside it.
   Future<void> _invitePlayers() async {
     await ShareHelper.shareLeague(
-      code: widget.league['public_code']?.toString(),
+      shareSlug: widget.league['share_slug']?.toString(),
       name: widget.league['name']?.toString(),
       hasFixtures: _hasFixtures,
     );
