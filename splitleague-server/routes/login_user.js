@@ -27,7 +27,6 @@ Return Codes:
 "SUCCESS"
 "MISSING_FIELDS"
 "INVALID_CREDENTIALS"
-"EMAIL_NOT_VERIFIED"
 "SERVER_ERROR"
 =======================================================================================================================================
 */
@@ -89,13 +88,11 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Check if email is verified
-    if (!user.email_verified) {
-      return res.status(403).json({
-        return_code: 'EMAIL_NOT_VERIFIED',
-        message: 'Please verify your email before logging in'
-      });
-    }
+    // No email verification gate
+    //
+    // This used to reject anyone whose email_verified was false, which locked out 30% of
+    // everyone who ever signed up. Accounts are created already verified now. The column
+    // is still selected above and still exists - it is simply not a barrier any more.
 
     // Generate JWT token
     const token = jwt.sign(

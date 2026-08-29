@@ -8,8 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../api/register_user_api.dart';
+import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
+import 'dashboard_screen.dart' as dashboard;
 // import '../widgets/app_logo.dart';
 
 class RegisterUserScreen extends StatefulWidget {
@@ -77,27 +79,20 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
 
       // Check response
       if (response['return_code'] == 'SUCCESS') {
-        // Show success dialog
+        // Take the new user straight into the app
+        //
+        // Registration has always returned a token, but the app used to ignore it, show a
+        // "check your email to verify your account" dialog and drop the user back at the
+        // login screen. That step cost us 30% of everyone who signed up. Accounts are
+        // created already verified now, so we save the token and go, exactly as login does.
+        await AuthHelper.saveToken(response['token']);
+        await AuthHelper.saveUserData(response['user']);
+
+        // Navigate to dashboard with a clean slate
         if (mounted) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: const Text('Registration Successful'),
-                content: const Text('Please check your email to verify your account before logging in.'),
-                actions: [
-                  TextButton(
-                    child: const Text('OK'),
-                    onPressed: () {
-                      // Pop the dialog and the register screen
-                      Navigator.of(context).pop(); // Pop dialog
-                      Navigator.of(context).pop(); // Pop register screen
-                    },
-                  ),
-                ],
-              );
-            },
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const dashboard.DashboardScreen()),
+            (route) => false, // Remove all previous routes
           );
         }
       } else {

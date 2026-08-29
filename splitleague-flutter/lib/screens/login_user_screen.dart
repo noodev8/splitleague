@@ -11,14 +11,11 @@ import '../api/login_user_api.dart';
 import '../api/forgot_password_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
-import '../helpers/config.dart';
 import '../styles/app_styles.dart';
 import '../widgets/app_logo.dart';
 import 'dashboard_screen.dart' as dashboard;
 import 'developer_screen.dart';
 import 'register_user_screen.dart' as register;
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class LoginUserScreen extends StatefulWidget {
   const LoginUserScreen({super.key});
@@ -89,38 +86,6 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
             (route) => false, // Remove all previous routes
           );
         }
-      } else if (response['return_code'] == 'EMAIL_NOT_VERIFIED') {
-        // Show dialog for unverified email
-        if (mounted) {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: const Text('Email Not Verified'),
-                content: const Text('Please verify your email address to login. Would you like us to send a new verification email?'),
-                actions: [
-                  TextButton(
-                    child: const Text('Cancel'),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                  TextButton(
-                    child: const Text('Resend Email'),
-                    onPressed: () async {
-                      Navigator.of(context).pop();
-                      await _resendVerificationEmail(email);
-                    },
-                  ),
-                ],
-              );
-            },
-          );
-        }
-        setState(() {
-          _isLoading = false;
-        });
       } else {
         // Show error message
         setState(() {
@@ -132,35 +97,6 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
       // Show error message
       setState(() {
         _errorMessage = 'An error occurred. Please try again.';
-        _isLoading = false;
-      });
-    }
-  }
-
-  // Helper function to resend verification email
-  Future<void> _resendVerificationEmail(String email) async {
-    try {
-      setState(() {
-        _isLoading = true;
-      });
-
-      final response = await http.post(
-        Uri.parse('${Config.baseUrl}/resend_verification'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email}),
-      );
-
-      final responseData = jsonDecode(response.body);
-
-      if (responseData['return_code'] == 'SUCCESS') {
-        ErrorHelper.showSuccessToast('Verification email sent! Please check your inbox.');
-      } else {
-        ErrorHelper.showErrorToast(ErrorHelper.getErrorMessage(responseData));
-      }
-    } catch (e) {
-      ErrorHelper.showErrorToast('Failed to send verification email. Please try again.');
-    } finally {
-      setState(() {
         _isLoading = false;
       });
     }

@@ -575,7 +575,29 @@ Each phase stands alone and can go to the stores independently.
 - [x] ~~Data cleanup (§3.4)~~ — **moved to Phase 4**. Deleting dead leagues now would corrupt the very baseline Phase 1 is measured against (§2.3, §2.5)
 
 ### Phase 1 — The funnel (the whole ballgame)
-- [ ] **Email verification mimicked away** (§4.1) — recovers 30% of signups
+- [x] **Email verification mimicked away** (§4.1) — recovers 30% of signups. Done 2026-08-29
+
+  Server: `register_user.js` creates the account with `email_verified = true`, no token, no email send (the now-unused `email_utils` require went too). `login_user.js` no longer has the `EMAIL_NOT_VERIFIED` gate, and it is off the return-code list.
+
+  App: removed the `EMAIL_NOT_VERIFIED` dialog and the raw `http.post` to `/resend_verification` from `login_user_screen.dart` — with those gone the screen no longer bypasses `lib/api/`, and its `http`, `dart:convert` and `Config` imports went with them. **The bigger fix was in `register_user_screen.dart`:** registration has always returned a JWT, but the app threw it away, showed "check your email to verify your account" and dropped the user back at the login screen. It now saves the token and goes straight to the dashboard, exactly as login does. That dialog *was* the funnel leak, as much as the server gate.
+
+  Data: `UPDATE app_user SET email_verified = true` — **75 rows**, matching §2.3 exactly. Those are 75 real people who signed up and could never log in. Verified afterwards that `verification_token` / `verification_expires` were untouched (74 rows still populated) — password reset shares those two columns.
+
+  **End-to-end tested against production data on a local server:**
+
+  | Step | Result |
+  |---|---|
+  | Register a fresh account | `SUCCESS`, token returned |
+  | Row state on insert | `email_verified=true`, both token columns `NULL` |
+  | Log straight in | `SUCCESS` — this was `EMAIL_NOT_VERIFIED` before |
+  | `forgot_password` | `SUCCESS`, writes `verification_token` |
+  | `reset_password` with that token | `SUCCESS` |
+  | Log in with the new password | `SUCCESS` |
+  | Log in with the old password | `INVALID_CREDENTIALS` |
+
+  No verification email is attempted anywhere in the flow. The throwaway test account was checked for references and deleted; `app_user` is back to 397.
+
+  Left in place as the plan specifies: `verify_email.js`, `verify_web_email.js`, `resend_verification.js` are unreferenced but not deleted, and `lib/api/resend_verification_api.dart` with them. Tidy later.
 - [x] **Lift the 2-guest cap** (§4.2) — done 2026-08-29. Removed the count check in `add_guest_player.js`, dropped `GUEST_LIMIT_REACHED` from the route header and return codes, and left a comment recording *why* the cap went so nobody reinstates it. The Flutter branch handling that code in `player_list_screen.dart:256` is now dead but harmless, and is left in place so older installs still talking to this server behave sanely. **Not yet device-tested**
 - [x] **Public read-only league page** at `splitleague.noodev8.com/l/<code>` — standings and fixtures, no login, shareable by any means (WhatsApp, text, pinned in the pub). Decided in §4.2. Built 2026-08-29, **server side only — not yet deployed, and the in-app share button is still to do**
 
