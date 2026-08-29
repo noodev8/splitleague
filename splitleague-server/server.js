@@ -66,6 +66,7 @@ const get_notes = require('./routes/get_notes');
 // Import guest player routes
 const add_guest_player = require('./routes/add_guest_player');
 const convert_guest_to_user = require('./routes/convert_guest_to_user');
+const public_league = require('./routes/public_league');
 
 // Use routes
 app.use('/register_user', register_user);
@@ -116,6 +117,10 @@ app.use('/get_notes', get_notes);
 // Use guest player routes
 app.use('/add_guest_player', add_guest_player);
 app.use('/convert_guest_to_user', convert_guest_to_user);
+
+// Public read-only league page - GET /l/<code>, no login
+// This is the one route that serves HTML to a browser rather than JSON to the app
+app.use('/l', public_league);
 
 // Root route
 app.get('/', (req, res) => {

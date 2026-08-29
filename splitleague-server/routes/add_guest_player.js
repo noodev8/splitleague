@@ -5,7 +5,7 @@ API Route: add_guest_player
 Method: POST
 Purpose: Allows a league organizer to add a guest player to their league without requiring the player to register.
          Creates a guest user account and adds them to the specified league.
-         Limited to a maximum of 2 active guest players per league.
+         There is no limit on the number of guest players - the old cap of 2 was removed deliberately.
 =======================================================================================================================================
 Request Payload:
 {
@@ -29,7 +29,6 @@ Return Codes:
 "LEAGUE_NOT_FOUND"
 "NOT_ORGANIZER"
 "FIXTURES_EXIST"
-"GUEST_LIMIT_REACHED"
 "SERVER_ERROR"
 =======================================================================================================================================
 */
@@ -105,24 +104,16 @@ router.post('/', verifyToken, async (req, res) => {
       });
     }
 
-    // Check if the league already has 2 active guest players
-    const guestCountResult = await client.query(`
-      SELECT COUNT(*)
-      FROM league_members lm
-      JOIN app_user au ON lm.user_id = au.id
-      WHERE lm.league_id = $1
-        AND lm.active = true
-        AND au.nickname LIKE 'guest_%'
-    `, [league_id]);
-
-    // If there are already 2 or more active guest players, return error
-    if (parseInt(guestCountResult.rows[0].count) >= 2) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({
-        return_code: 'GUEST_LIMIT_REACHED',
-        message: 'Cannot add more guest players. Maximum of 2 active guest players allowed per league'
-      });
-    }
+    // There is deliberately no limit on guest players
+    //
+    // There used to be a cap of 2 active guests per league. The idea was to push
+    // people into creating real accounts, with the restriction as a possible future
+    // paywall. Seventeen months of data says it did neither: not one guest ever
+    // converted to a real account, while 48 of the 72 leagues using guests were
+    // sitting exactly on the ceiling, unable to add the rest of their players.
+    // Guest leagues reach fixtures at roughly twice the rate of all-real leagues,
+    // so the cap was throttling the one mechanic that works. See section 4.2 of
+    // docs/rebuild-plan.md.
 
     // Set default guest nickname if not provided
     const baseNickname = guest_nickname || 'Guest Player';

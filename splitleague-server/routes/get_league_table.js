@@ -44,6 +44,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const verifyToken = require('../middleware/auth_middleware');
+const { calculateStandings } = require('../utils/standings_utils');
 
 // Apply authentication middleware to this route
 router.post('/', verifyToken, async (req, res) => {
@@ -129,184 +130,11 @@ router.post('/', verifyToken, async (req, res) => {
     const fixturesResult = await db.query(fixturesQuery, [league_id]);
     const fixtures = fixturesResult.rows;
 
-    // Initialize standings array with all members
-    let standings = members.map(member => {
-      // Base stats for all league types
-      let playerStats = {
-        user_id: member.user_id,
-        name: member.name,
-        nickname: member.nickname,
-        played: 0,
-        won: 0,
-        lost: 0,
-        points: 0,
-        drawn: 0  // Always include drawn field for consistency
-      };
-
-      // Add specific stats for PTS leagues
-      if (winType === 'PTS') {
-        playerStats.score_for = 0;
-        playerStats.score_against = 0;
-        playerStats.score_diff = 0;
-        playerStats.base_points = 0;
-        playerStats.bonus_points = 0;
-      }
-
-      return playerStats;
-    });
-
-    // Calculate standings based on fixtures and league rules
-    fixtures.forEach(fixture => {
-      // Find the players in our standings array
-      const player1Index = standings.findIndex(p => p.user_id === fixture.player_1_id);
-      const player2Index = standings.findIndex(p => p.user_id === fixture.player_2_id);
-
-      // Skip if either player is not found (shouldn't happen, but just in case)
-      if (player1Index === -1 || player2Index === -1) {
-        return;
-      }
-
-      // Increment games played for both players
-      standings[player1Index].played++;
-      standings[player2Index].played++;
-
-      // Calculate points based on league type
-      if (winType === 'PTS') {
-        // Points-based league (like Snooker)
-
-        // Update scores
-        standings[player1Index].score_for += fixture.player_1_score;
-        standings[player1Index].score_against += fixture.player_2_score;
-        standings[player2Index].score_for += fixture.player_2_score;
-        standings[player2Index].score_against += fixture.player_1_score;
-
-        // Update score difference
-        standings[player1Index].score_diff = standings[player1Index].score_for - standings[player1Index].score_against;
-        standings[player2Index].score_diff = standings[player2Index].score_for - standings[player2Index].score_against;
-
-        // Determine winner and loser
-        if (fixture.player_1_score > fixture.player_2_score) {
-          // Player 1 wins
-          standings[player1Index].won++;
-          standings[player2Index].lost++;
-
-          // Base points for win
-          standings[player1Index].points += league.points_for_win;
-          standings[player1Index].base_points += league.points_for_win;
-
-          // Bonus points for winning by margin
-          const margin = fixture.player_1_score - fixture.player_2_score;
-          if (margin >= league.win_margin_threshold) {
-            standings[player1Index].points += league.points_for_win_margin;
-            standings[player1Index].bonus_points += league.points_for_win_margin;
-          }
-
-          // Points for close loss
-          if (margin < league.win_margin_threshold) {
-            standings[player2Index].points += league.points_for_close_loss;
-            standings[player2Index].bonus_points += league.points_for_close_loss;
-          }
-        } else if (fixture.player_2_score > fixture.player_1_score) {
-          // Player 2 wins
-          standings[player2Index].won++;
-          standings[player1Index].lost++;
-
-          // Base points for win
-          standings[player2Index].points += league.points_for_win;
-          standings[player2Index].base_points += league.points_for_win;
-
-          // Bonus points for winning by margin
-          const margin = fixture.player_2_score - fixture.player_1_score;
-          if (margin >= league.win_margin_threshold) {
-            standings[player2Index].points += league.points_for_win_margin;
-            standings[player2Index].bonus_points += league.points_for_win_margin;
-          }
-
-          // Points for close loss
-          if (margin < league.win_margin_threshold) {
-            standings[player1Index].points += league.points_for_close_loss;
-            standings[player1Index].bonus_points += league.points_for_close_loss;
-          }
-        } else {
-          // Draw (equal scores)
-          standings[player1Index].drawn += 1;
-          standings[player2Index].drawn += 1;
-
-          // Points for draw
-          standings[player1Index].points += league.points_for_draw;
-          standings[player2Index].points += league.points_for_draw;
-          standings[player1Index].base_points += league.points_for_draw;
-          standings[player2Index].base_points += league.points_for_draw;
-        }
-      } else if (winType === 'WIN') {
-        // Win-only league (like Pool)
-
-        // In WIN type, we store the result as:
-        // player_1_score = 1, player_2_score = 0 (player 1 wins)
-        // player_1_score = 0, player_2_score = 1 (player 2 wins)
-        if (fixture.player_1_score === 1 && fixture.player_2_score === 0) {
-          // Player 1 wins
-          standings[player1Index].won++;
-          standings[player2Index].lost++;
-          standings[player1Index].points += league.points_for_win;
-        } else if (fixture.player_1_score === 0 && fixture.player_2_score === 1) {
-          // Player 2 wins
-          standings[player2Index].won++;
-          standings[player1Index].lost++;
-          standings[player2Index].points += league.points_for_win;
-        }
-      } else if (winType === 'WDL') {
-        // Win/Draw/Loss league (like Football)
-
-        // In WDL type, we store the result as:
-        // player_1_score = 1, player_2_score = 0 (player 1 wins)
-        // player_1_score = 0, player_2_score = 1 (player 2 wins)
-        // player_1_score = 1, player_2_score = 1 (draw)
-        if (fixture.player_1_score === 1 && fixture.player_2_score === 0) {
-          // Player 1 wins
-          standings[player1Index].won++;
-          standings[player2Index].lost++;
-          standings[player1Index].points += league.points_for_win;
-        } else if (fixture.player_1_score === 0 && fixture.player_2_score === 1) {
-          // Player 2 wins
-          standings[player2Index].won++;
-          standings[player1Index].lost++;
-          standings[player2Index].points += league.points_for_win;
-        } else if (fixture.player_1_score === 1 && fixture.player_2_score === 1) {
-          // Draw
-          standings[player1Index].drawn++;
-          standings[player2Index].drawn++;
-          standings[player1Index].points += league.points_for_draw;
-          standings[player2Index].points += league.points_for_draw;
-        }
-      }
-    });
-
-    // Sort standings by points (highest first)
-    standings.sort((a, b) => {
-      // First sort by points
-      if (b.points !== a.points) {
-        return b.points - a.points;
-      }
-
-      // If points are equal and it's a points-based league, sort by score difference
-      if (winType === 'PTS' && b.score_diff !== a.score_diff) {
-        return b.score_diff - a.score_diff;
-      }
-
-      // If still equal, sort by games won
-      if (b.won !== a.won) {
-        return b.won - a.won;
-      }
-
-      // If still equal, sort by games played (fewer games is better)
-      if (a.played !== b.played) {
-        return a.played - b.played;
-      }
-
-      // If everything is equal, sort alphabetically by name
-      return a.name.localeCompare(b.name);
-    });
+    // Work out the table
+    //
+    // The scoring rules live in utils/standings_utils so that this route and the public
+    // read-only league page produce exactly the same table. Do not inline this logic again.
+    const standings = calculateStandings(league, members, fixtures);
 
     // Return the standings
     return res.json({

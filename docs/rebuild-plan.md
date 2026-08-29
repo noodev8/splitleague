@@ -571,12 +571,21 @@ Each phase stands alone and can go to the stores independently.
 - [x] ~~Convert `minimum_version` to `text`~~ — deferred to Phase 4 (§5.4); not needed for the `2.0.0` force
 - [x] Fix the guest login hole (§5.1) — urgent, and independent of the guest model decision
 - [x] Remove the DDL-on-hot-path (§5.6)
+- [x] **Verified on a real device 2026-08-29** — logged in, reset a password, created a competition. Covers the three things Phase 0 could have broken: the app reads its real version at startup without tripping the update dialog, login still works through the modified guest-excluding query, and the reset flow still works through `forgot_password`. (This is Phase 0 sign-off, not the §9 Phase 1 test pass — that one re-runs after the email-verification change.)
 - [x] ~~Data cleanup (§3.4)~~ — **moved to Phase 4**. Deleting dead leagues now would corrupt the very baseline Phase 1 is measured against (§2.3, §2.5)
 
 ### Phase 1 — The funnel (the whole ballgame)
 - [ ] **Email verification mimicked away** (§4.1) — recovers 30% of signups
-- [ ] **Lift the 2-guest cap** (§4.2) — one line at `add_guest_player.js:117`, unblocks 48 leagues sitting on the ceiling. Cheapest win in the codebase; do it first
-- [ ] **Public read-only league page** at `splitleague.noodev8.com/l/<code>` — standings and fixtures, no login, shareable by any means (WhatsApp, text, pinned in the pub). Decided in §4.2
+- [x] **Lift the 2-guest cap** (§4.2) — done 2026-08-29. Removed the count check in `add_guest_player.js`, dropped `GUEST_LIMIT_REACHED` from the route header and return codes, and left a comment recording *why* the cap went so nobody reinstates it. The Flutter branch handling that code in `player_list_screen.dart:256` is now dead but harmless, and is left in place so older installs still talking to this server behave sanely. **Not yet device-tested**
+- [x] **Public read-only league page** at `splitleague.noodev8.com/l/<code>` — standings and fixtures, no login, shareable by any means (WhatsApp, text, pinned in the pub). Decided in §4.2. Built 2026-08-29, **server side only — not yet deployed, and the in-app share button is still to do**
+
+  **✅ DECIDED — the 4-digit code is the URL key.** Considered a separate unguessable share slug and an opt-in `allow_code_share` gate, and rejected both: the code is the thing people already say out loud, and a second identifier or a dark-by-default rollout undercuts the point. The trade accepted knowingly: 4 digits is a 9,000 value space, so the pages are enumerable and every league is publicly readable by anyone who walks it. Content is a pub league table of nicknames and scores. Mitigated with `noindex` + `X-Robots-Tag`, and a strict 4-digit check so a scraper never reaches a query on rubbish. **Nothing sensitive goes on this page** — no emails, no real names beyond the chosen nickname.
+
+  **Prerequisite done first:** unique index `league_public_code_key` on `league.public_code` (from §5.2, pulled forward — the URL is ambiguous without it). Pre-checked for collisions: none of the 189 codes were duplicated. `create_league.js` now checks codes against *every* league rather than only active ones, and catches Postgres `23505` on insert so the create-race returns `CODE_GENERATION_FAILED` instead of a 500. That race silently produced duplicate codes before.
+
+  **Scoring lives in one place now.** Extracted the ~180-line standings algorithm out of `get_league_table.js` into `utils/standings_utils.js`, which both the app route and the public page call — so the table on a shared link can never drift from the table in the app. **Verified byte-identical:** ran the old inline algorithm and the extracted util against all 189 production leagues (41 with played fixtures, covering all three scoring types — 75 PTS, 75 WDL, 39 WIN). Zero mismatches.
+
+  **Verified locally against production data:** all three scoring types render (PTS/WDL/WIN); `0000`, `abcd`, `12345`, `<script>` and an SQL-injection-shaped code all 404; `X-Robots-Tag` present; guest names show as `Nadir (g)` exactly as the app displays them, with the `guest_` prefix stripped and not leaking anywhere into the HTML. Every user-supplied value is HTML-escaped on the way out — league names and nicknames are untrusted input.
 - [ ] Share button in the app that copies/sends that link
 - [ ] **Delete "Take a look around"** and the 1,238 lines behind it (§5.7) — the real league page replaces the fake demo
 - [ ] Keep the 4-digit code as the manual join fallback — it works, it is just not the front door

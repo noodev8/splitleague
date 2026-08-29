@@ -66,10 +66,16 @@ const generateRandomCode = () => {
   return Math.floor(1000 + Math.random() * 9000).toString();
 };
 
-// Function to check if a code is already in use by an active league
+// Function to check if a code is already in use by ANY league
+//
+// This deliberately does not filter on active = true any more. The code is now the
+// key for the public league page at /l/<code>, so it has to be unique across every
+// league that has ever existed - otherwise that URL is ambiguous. There is also a
+// matching unique index on league.public_code in the database, which is the real
+// guarantee; this check just lets us pick a free code before we try to insert.
 const isCodeUnique = async (code) => {
   const result = await pool.query(
-    'SELECT id FROM league WHERE public_code = $1 AND active = true',
+    'SELECT id FROM league WHERE public_code = $1',
     [code]
   );
   return result.rows.length === 0;
@@ -144,6 +150,13 @@ router.post('/', verifyToken, async (req, res) => {
         message: 'Failed to generate a unique code for the league'
       });
     }
+
+    // Note on the race: two people creating a league at the same moment can both
+    // be handed the same free code by the check above. The unique index on
+    // league.public_code catches that at insert time - Postgres error 23505 - and
+    // the catch block below turns it into CODE_GENERATION_FAILED rather than a
+    // 500. Before the index existed this race silently produced two leagues
+    // sharing a code.
 
     // Log the allow_code_share value for debugging
     console.log('Creating league with allow_code_share:', allow_code_share);
@@ -227,6 +240,19 @@ router.post('/', verifyToken, async (req, res) => {
   } catch (error) {
     // Rollback the transaction in case of error
     await client.query('ROLLBACK');
+
+    // Postgres error 23505 is a unique violation. The only unique constraint that
+    // can realistically fire here is league.public_code - two people creating a
+    // league at the same instant and being handed the same free code. Tell the app
+    // it was a code problem so the user can simply try again, rather than a 500.
+    if (error.code === '23505') {
+      console.error('Public code collision while creating league:', error.detail);
+
+      return res.status(500).json({
+        return_code: 'CODE_GENERATION_FAILED',
+        message: 'Failed to generate a unique code for the league. Please try again'
+      });
+    }
 
     console.error('Error in create_league route:', error);
 
