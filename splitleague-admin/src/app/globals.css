@@ -1,0 +1,91 @@
+@import 'tailwindcss';
+
+/*
+=======================================================================================================================================
+globals.css
+=======================================================================================================================================
+Purpose: The theme, and the handful of shared component classes the pages lean on.
+
+Tailwind v4 has no config file - the theme is declared here with @theme, and utilities are
+declared with @utility. Everything else is plain Tailwind classes in the pages themselves.
+
+The palette is deliberately quiet. This is a tool for reading numbers, so colour is spent
+only where it carries meaning: the three league stages, and the cleanup severities.
+=======================================================================================================================================
+*/
+
+@theme {
+  /* The app chrome */
+  --color-shell: #0f172a;         /* slate-900, the top bar */
+  --color-shell-soft: #1e293b;    /* slate-800, hover on the top bar */
+
+  /* The three league stages. Same three everywhere in the tool. */
+  --color-stage-setup: #b45309;   /* amber-700 - still being put together */
+  --color-stage-play: #15803d;    /* green-700 - actually being used */
+  --color-stage-done: #1d4ed8;    /* blue-700  - finished */
+}
+
+/* The page background. Off-white rather than pure white so that white cards read as cards. */
+body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/*
+ * Buttons get the hand cursor.
+ *
+ * Tailwind v4's reset sets `cursor: default` on buttons - a change from v3, which followed
+ * the browser default. The reasoning is that a button is not a link, but the effect here is
+ * that every button in the tool looks unclickable, which is worse. This puts it back.
+ *
+ * Done once, globally, rather than sprinkling cursor-pointer through twenty components,
+ * because the next button somebody adds should not have to remember.
+ *
+ * Disabled buttons are excluded - they keep the not-allowed cursor the .btn utility gives
+ * them, which is the one case where "you cannot click this" is the right message.
+ */
+button:not(:disabled),
+label,
+input[type='checkbox'] {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/*
+ * A card. Used for every panel in the tool.
+ */
+@utility card {
+  @apply rounded-lg border border-slate-200 bg-white shadow-sm;
+}
+
+/*
+ * A table that scrolls sideways inside its own box rather than pushing the page wide.
+ * The leagues and users tables are both wider than a laptop screen.
+ */
+@utility table-scroll {
+  @apply w-full overflow-x-auto;
+}
+
+/* Table header cell */
+@utility th {
+  @apply px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500;
+}
+
+/* Table body cell */
+@utility td {
+  @apply px-3 py-2 text-sm text-slate-700 whitespace-nowrap;
+}
+
+/* A small pill - stages, reasons, flags */
+@utility pill {
+  @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+}
+
+/* The primary button */
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium
+         transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+}

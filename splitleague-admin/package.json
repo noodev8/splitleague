@@ -1,0 +1,25 @@
+{
+  "name": "splitleague-admin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Internal admin tool for SplitLeague - usage stats, league and user browsing, and cleanup",
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^15.5.24",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.13",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.1.11",
+    "@types/react-dom": "^19.1.7",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.7.2"
+  }
+}

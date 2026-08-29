@@ -70,6 +70,18 @@ const get_league_preview = require('./routes/get_league_preview');
 const public_league = require('./routes/public_league');
 const well_known = require('./routes/well_known');
 
+// Import admin tool routes (splitleague-admin)
+// These are protected by admin_middleware.js, not auth_middleware.js - an ordinary user
+// token will not open them. See middleware/admin_middleware.js for why.
+const admin_login = require('./routes/admin_login');
+const admin_stats = require('./routes/admin_stats');
+const admin_leagues = require('./routes/admin_leagues');
+const admin_league_detail = require('./routes/admin_league_detail');
+const admin_users = require('./routes/admin_users');
+const admin_user_detail = require('./routes/admin_user_detail');
+const admin_cleanup = require('./routes/admin_cleanup');
+const admin_league_action = require('./routes/admin_league_action');
+
 // Use routes
 app.use('/register_user', register_user);
 app.use('/login_user', login_user);
@@ -120,6 +132,16 @@ app.use('/get_notes', get_notes);
 // Use guest player routes
 app.use('/add_guest_player', add_guest_player);
 app.use('/convert_guest_to_user', convert_guest_to_user);
+
+// Use admin tool routes
+app.use('/admin_login', admin_login);
+app.use('/admin_stats', admin_stats);
+app.use('/admin_leagues', admin_leagues);
+app.use('/admin_league_detail', admin_league_detail);
+app.use('/admin_users', admin_users);
+app.use('/admin_user_detail', admin_user_detail);
+app.use('/admin_cleanup', admin_cleanup);
+app.use('/admin_league_action', admin_league_action);
 
 // Public read-only league page - GET /l/<code>, no login
 // This is the one route that serves HTML to a browser rather than JSON to the app
