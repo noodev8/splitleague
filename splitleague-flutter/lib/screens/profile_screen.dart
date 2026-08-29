@@ -6,6 +6,7 @@ Provides options like logout
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../helpers/auth_helper.dart';
+import '../helpers/config.dart';
 import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
 import '../api/delete_account_api.dart';
@@ -734,6 +735,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ),
                             ],
+                          ),
+                        ),
+                      ),
+
+                      // App version
+                      //
+                      // Config.appVersion is read from the platform package at startup, which
+                      // gets it from the version: line in pubspec.yaml. Deliberately NOT
+                      // hardcoded: a hardcoded constant here is exactly what made the forced
+                      // update check compare the wrong number for months without anyone
+                      // noticing. Showing it also means somebody reporting a problem can say
+                      // which build they are on.
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20, bottom: 12),
+                        child: Center(
+                          child: Text(
+                            'Version ${Config.appVersion} (${Config.appBuildNumber})',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.75),
+                            ),
                           ),
                         ),
                       ),
