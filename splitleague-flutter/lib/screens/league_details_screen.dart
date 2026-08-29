@@ -43,7 +43,6 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
 
   // Organizer notes for the current user
   String? _organizerNotes;
-  bool _isLoadingNotes = false;
 
   @override
   void initState() {
@@ -67,10 +66,6 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
   Future<void> _loadOrganizerNotes() async {
     if (_isDisposing) return;
 
-    setState(() {
-      _isLoadingNotes = true;
-    });
-
     try {
       // Get current user ID
       final userData = await AuthHelper.getUserData();
@@ -87,19 +82,16 @@ class _LeagueDetailsScreenState extends State<LeagueDetailsScreen> {
       if (response['return_code'] == 'SUCCESS' && !_isDisposing) {
         setState(() {
           _organizerNotes = response['notes'];
-          _isLoadingNotes = false;
         });
       } else if (!_isDisposing) {
         setState(() {
           _organizerNotes = null;
-          _isLoadingNotes = false;
         });
       }
     } catch (e) {
       if (!_isDisposing) {
         setState(() {
           _organizerNotes = null;
-          _isLoadingNotes = false;
         });
       }
     }

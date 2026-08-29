@@ -63,7 +63,10 @@ class LeagueProvider extends ChangeNotifier {
   bool get isFirstLoad => _isFirstLoad;
 
   // Track if we're applying a filter (to prevent scrolling)
-  bool _isApplyingFilter = false;
+  // Never set anywhere, so isApplyingFilter has always been false. Left in place as a
+  // constant rather than removed, because the getter is part of this provider's public
+  // surface - worth deciding deliberately whether the filter state was meant to exist.
+  final bool _isApplyingFilter = false;
   bool get isApplyingFilter => _isApplyingFilter;
 
   // Standings

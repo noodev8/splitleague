@@ -6,16 +6,12 @@ Only accessible to league organizers
 
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:provider/provider.dart';
 import '../api/get_league_members_api.dart';
 import '../api/get_notes_api.dart';
 import '../api/update_notes_api.dart';
 import '../api/convert_guest_to_user_api.dart';
 import '../helpers/auth_helper.dart';
-import '../helpers/error_helper.dart';
 import '../styles/app_styles.dart';
-import '../providers/league_provider.dart';
-import 'dashboard_screen.dart';
 import 'league_details_screen.dart';
 
 class LeagueMembersScreen extends StatefulWidget {
@@ -44,19 +40,11 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
   bool _isCreator = false;
 
   // League provider
-  late LeagueProvider _leagueProvider;
 
   @override
   void initState() {
     super.initState();
     _loadMembers();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Initialize the league provider
-    _leagueProvider = Provider.of<LeagueProvider>(context, listen: false);
   }
 
   // Load league members

@@ -167,7 +167,7 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 10,
                             offset: const Offset(0, 5),
                           ),
@@ -302,7 +302,7 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: AppStyles.errorColor.withOpacity(0.1),
+                                  color: AppStyles.errorColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(

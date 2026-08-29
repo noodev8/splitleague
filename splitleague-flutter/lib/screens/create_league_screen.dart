@@ -46,7 +46,9 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
   String? _errorMessage;
 
   // Allow code share setting
-  bool _allowCodeShare = true; // Default to true
+  // Always true - the Privacy Settings card that toggled this is commented out further
+  // down this file, so every league is created allowing players to see the code.
+  final bool _allowCodeShare = true;
 
   @override
   void dispose() {

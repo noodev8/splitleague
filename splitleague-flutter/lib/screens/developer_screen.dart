@@ -4,7 +4,6 @@ Only accessible by tapping the app title 5 consecutive times
 */
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../helpers/config.dart';
 import '../helpers/runtime_config.dart';
 import '../styles/app_styles.dart';
@@ -258,7 +257,7 @@ class _DeveloperScreenState extends State<DeveloperScreen> {
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      value: _selectedUrlKey,
+                      initialValue: _selectedUrlKey,
                       isExpanded: true, // Make dropdown take full width
                       decoration: InputDecoration(
                         border: OutlineInputBorder(

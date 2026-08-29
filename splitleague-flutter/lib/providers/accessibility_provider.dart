@@ -66,8 +66,9 @@ class AccessibilityProvider extends ChangeNotifier {
     return baseTheme.copyWith(
       colorScheme: baseTheme.colorScheme.copyWith(
         // Increase contrast for text and background
-        background: Colors.white,
-        onBackground: Colors.black,
+        //
+        // background/onBackground were deprecated aliases of surface/onSurface and were
+        // being set to the same values, so they were removed rather than renamed.
         surface: Colors.white,
         onSurface: Colors.black,
         // Make primary color darker for better contrast

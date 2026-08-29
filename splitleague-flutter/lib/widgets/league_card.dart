@@ -30,12 +30,12 @@ class LeagueCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: AppStyles.iceLightBlue.withOpacity(0.3),
+            color: AppStyles.iceLightBlue.withValues(alpha: 0.3),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: AppStyles.iceDarkBlue.withOpacity(0.08),
+              color: AppStyles.iceDarkBlue.withValues(alpha: 0.08),
               offset: const Offset(0, 2),
               blurRadius: 4,
               spreadRadius: 0,
@@ -72,14 +72,14 @@ class LeagueCard extends StatelessWidget {
                             Icon(
                               Icons.people,
                               size: 16,
-                              color: AppStyles.iceDarkBlue.withOpacity(0.7),
+                              color: AppStyles.iceDarkBlue.withValues(alpha: 0.7),
                             ),
                             const SizedBox(width: 6),
                             Text(
                               '$playerCount ${playerCount == 1 ? 'player' : 'players'}',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: AppStyles.iceDarkBlue.withOpacity(0.7),
+                                color: AppStyles.iceDarkBlue.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
@@ -94,7 +94,7 @@ class LeagueCard extends StatelessWidget {
                       padding: EdgeInsets.zero,
                       icon: Icon(
                         Icons.more_vert,
-                        color: AppStyles.iceDarkBlue.withOpacity(0.7),
+                        color: AppStyles.iceDarkBlue.withValues(alpha: 0.7),
                         size: 20,
                       ),
                       itemBuilder: (context) => [
@@ -104,13 +104,13 @@ class LeagueCard extends StatelessWidget {
                             children: [
                               Icon(Icons.delete_outline, 
                                 size: 18, 
-                                color: AppStyles.errorColor.withOpacity(0.8)
+                                color: AppStyles.errorColor.withValues(alpha: 0.8)
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 'Remove from Dashboard',
                                 style: TextStyle(
-                                  color: AppStyles.errorColor.withOpacity(0.8)
+                                  color: AppStyles.errorColor.withValues(alpha: 0.8)
                                 ),
                               ),
                             ],

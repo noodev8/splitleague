@@ -165,7 +165,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   Center(
                     child: CircleAvatar(
                       radius: 50,
-                      backgroundColor: Colors.white.withOpacity(0.2),
+                      backgroundColor: Colors.white.withValues(alpha: 0.2),
                       child: Text(
                         _getInitials(_nameController.text.trim()),
                         style: const TextStyle(
@@ -181,7 +181,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   // Name field
                   Card(
                     elevation: 2,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -208,7 +208,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   // Nickname field (Display Name)
                   Card(
                     elevation: 2,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -236,7 +236,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
+                        color: Colors.red.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
