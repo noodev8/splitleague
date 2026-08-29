@@ -1,30 +1,29 @@
 # The share slug — built 2026-08-29
 
 Read `docs/rebuild-plan.md` §"Phase 1.5" for the decision and reasoning. This file is the
-handover: what got built, what is verified, and the one step still outstanding.
+handover: what got built and what is verified. It is finished and live.
 
-## The one thing still to do
+## Status: done and live (2026-08-30)
 
-**Deploy the server (`docs/deploy.txt`), then put the NOT NULL back on `league.share_slug`.**
+Deployed, and the `NOT NULL` on `league.share_slug` is back on. Nothing outstanding.
 
-The column was added, backfilled and made NOT NULL against production; the constraint was then
-**deliberately relaxed again**, because the production server still runs the old `create_league`,
-which does not write a slug — with NOT NULL in place nobody could create a league in the gap
-between the schema change and the deploy.
+The constraint had been deliberately relaxed while the deploy was pending, because the old
+`create_league` did not write a slug and `NOT NULL` would have stopped anyone creating a league
+in that window. Sequence of checks before it went back:
 
-So, after `pm2 restart splitleague_prod`:
-
-```sql
--- Anything created during the gap has no slug; give it one first.
--- (Run from a throwaway node script in splitleague-server/ so it resolves pg and dotenv,
---  using generateUniqueShareSlug from utils/share_slug_utils.js.)
-UPDATE league SET share_slug = <generated> WHERE share_slug IS NULL;
-
-ALTER TABLE league ALTER COLUMN share_slug SET NOT NULL;
-```
-
-Check first: `SELECT count(*) FROM league WHERE share_slug IS NULL;` — if it is 0, the ALTER is
-the only statement needed.
+- Production `/l/` behaviour confirmed live: `/l/5374` and `/l/1231` 302 to their slugs,
+  `/l/<slug>` renders 200, `/l/NKC63VHZD4` canonicalises, `/l/abcd` 404s.
+- `SELECT count(*) FROM league WHERE share_slug IS NULL` → **0**. No leagues were created during
+  the gap, so no backfill was needed.
+- **The deployed `create_league` was proved to write a slug before the constraint went on** — a
+  throwaway league created through the live API came back with `f3xsa70ye9`, well formed, and
+  its page resolved. That was the whole risk of `NOT NULL`: a create path that does not write
+  the column turns the constraint into an outage.
+- `ALTER TABLE league ALTER COLUMN share_slug SET NOT NULL` applied; `is_nullable` now `NO`,
+  `league_share_slug_key` unique index present.
+- Creation retested **with the constraint enforced** — succeeded, slug `435rsd6j7x`, page 200.
+- Both throwaway leagues deleted. Final state: 192 leagues, 192 slugs, 192 distinct, 0
+  malformed.
 
 ## What was built
 
@@ -33,7 +32,7 @@ the only statement needed.
 - `league.share_slug varchar(16)` — ten characters of Crockford base32, lowercase.
 - All **192** existing leagues backfilled: 192 distinct, 0 malformed.
 - `CREATE UNIQUE INDEX league_share_slug_key ON league (share_slug)`.
-- NOT NULL added, then relaxed until deploy — see above.
+- NOT NULL added, relaxed for the duration of the deploy, and put back on 2026-08-30 — see above.
 
 ### Server
 
@@ -101,7 +100,7 @@ the only statement needed.
 - The typed route still shows the four boxes and its Join button stays disabled until complete.
 - Share sheet opens from the details screen with the invite wording and a `/l/<slug>` URL.
 
-`flutter analyze` clean, `flutter test` 12 passing.
+`flutter analyze` clean, `flutter test` 17 passing (8 of them new in `share_slug_test.dart`).
 
 The test join was undone afterwards — Brookfield's membership of league 201 was removed, leaving
 the data as it was found.
