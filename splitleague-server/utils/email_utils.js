@@ -12,6 +12,20 @@ require('dotenv').config();
 // Initialize Resend with API key
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+
+// Who the email comes from
+//
+// One place rather than the same ternary repeated in every send. The display name is what a
+// recipient actually sees in their inbox, so it must say Split League - not the company that
+// happens to run the server. Set EMAIL_NAME and EMAIL_FROM in .env; the fallback below keeps
+// the name right even if the environment is not set.
+const fromAddress = () => {
+  const name = process.env.EMAIL_NAME || 'Split League';
+  const address = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+
+  return `"${name}" <${address}>`;
+};
+
 // Function to send verification email
 async function sendVerificationEmail(email, name, verificationToken) {
   try {
@@ -20,9 +34,7 @@ async function sendVerificationEmail(email, name, verificationToken) {
     const verificationLink = `${baseUrl}/verify_web_email?token=${verificationToken}`;
 
     const data = await resend.emails.send({
-      from: process.env.EMAIL_NAME && process.env.EMAIL_FROM ? 
-        `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_FROM}>` : 
-        'onboarding@resend.dev',
+      from: fromAddress(),
       to: email,
       subject: 'Verify Your SplitLeague Account',
       html: `
@@ -59,7 +71,7 @@ async function sendPasswordResetEmail(email, name, resetToken) {
 
     // Send the email
     const data = await resend.emails.send({
-      from: process.env.EMAIL_NAME && process.env.EMAIL_FROM ? `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_FROM}>` : 'onboarding@resend.dev',  // Use the configured email format with fallback
+      from: fromAddress(),
       to: email,
       subject: 'Reset Your SplitLeague Password',
       html: `
@@ -86,38 +98,19 @@ async function sendPasswordResetEmail(email, name, resetToken) {
   }
 }
 
-// Function to send password change confirmation email
-async function sendPasswordChangeConfirmationEmail(email, name) {
-  try {
-    // Send the email
-    const data = await resend.emails.send({
-      from: process.env.EMAIL_NAME && process.env.EMAIL_FROM ? `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_FROM}>` : 'onboarding@resend.dev',  // Use the configured email format with fallback
-      to: email,
-      subject: 'Your SplitLeague Password Has Been Changed',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
-          <h2 style="color: #1976d2;">Password Changed Successfully</h2>
-          <p>Hello ${name},</p>
-          <p>Your SplitLeague account password has been successfully changed.</p>
-          <p>If you did not make this change, please contact our support team immediately.</p>
-          <p>Best regards,<br>The SplitLeague Team</p>
-        </div>
-      `,
-    });
+// Password change confirmation email - REMOVED
+//
+// Used to fire on every password change, from both change_password.js and reset_password.js.
+// It told somebody something they had just done themselves, and it was the single biggest
+// consumer of the Resend free tier. If a password change is ever a security signal worth
+// sending, it wants rate limiting and a real "was this you?" flow, not a receipt.
 
-    return { success: true, data };
-  } catch (error) {
-    console.error('Error sending password change confirmation email:', error);
-    return { success: false, error: error.message };
-  }
-}
 
-// Function to send email verification success email
 async function sendVerificationSuccessEmail(email, name) {
   try {
     // Send the email
     const data = await resend.emails.send({
-      from: process.env.EMAIL_NAME && process.env.EMAIL_FROM ? `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_FROM}>` : 'onboarding@resend.dev',  // Use the configured email format with fallback
+      from: fromAddress(),
       to: email,
       subject: 'Your SplitLeague Email Has Been Verified',
       html: `
@@ -153,7 +146,6 @@ function generateToken(length = 32) {
 module.exports = {
   sendVerificationEmail,
   sendPasswordResetEmail,
-  sendPasswordChangeConfirmationEmail,
   sendVerificationSuccessEmail,
   generateToken
 };

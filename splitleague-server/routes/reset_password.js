@@ -29,7 +29,6 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const bcrypt = require('bcrypt');
-const emailUtils = require('../utils/email_utils');
 
 // POST /reset_password
 router.post('/', async (req, res) => {
@@ -82,8 +81,12 @@ router.post('/', async (req, res) => {
       [passwordHash, user.id]
     );
 
-    // Send password change confirmation email
-    await emailUtils.sendPasswordChangeConfirmationEmail(user.email, user.name);
+    // No confirmation email
+    //
+    // They asked for the reset, followed the link from their own inbox and set a new
+    // password - a second email confirming it adds nothing. It was also awaited, so a Resend
+    // failure would report SERVER_ERROR for a reset that had already been applied, leaving
+    // somebody convinced their new password had not taken.
 
     // Return success response
     return res.status(200).json({

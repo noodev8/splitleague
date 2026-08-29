@@ -30,7 +30,6 @@ const router = express.Router();
 const pool = require('../db');
 const bcrypt = require('bcrypt');
 const verifyToken = require('../middleware/auth_middleware');
-const emailUtils = require('../utils/email_utils');
 
 // POST /change_password
 router.post('/', verifyToken, async (req, res) => {
@@ -85,8 +84,11 @@ router.post('/', verifyToken, async (req, res) => {
       [newPasswordHash, userId]
     );
     
-    // Send password change confirmation email
-    await emailUtils.sendPasswordChangeConfirmationEmail(user.email, user.name);
+    // No confirmation email
+    //
+    // The person just changed their own password while logged in - telling them so by email
+    // is noise. It was also awaited, so a Resend outage would throw into the catch below and
+    // report SERVER_ERROR for a password change that had already succeeded.
     
     // Return success response
     return res.status(200).json({
