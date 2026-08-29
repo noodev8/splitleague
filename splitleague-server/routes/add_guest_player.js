@@ -39,6 +39,7 @@ const router = express.Router();
 const pool = require('../db');
 const verifyToken = require('../middleware/auth_middleware');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 
 // POST /add_guest_player
 router.post('/', verifyToken, async (req, res) => {
@@ -129,9 +130,16 @@ router.post('/', verifyToken, async (req, res) => {
     // Add 'guest_' prefix and (g) suffix to the nickname for display
     const displayNickname = `guest_${baseNickname} (g)`;
 
-    // Hash the password (using 'guest' as the password)
+    // Give the guest row a password nobody can ever use
+    //
+    // This used to be bcrypt.hash('guest'), which meant every guest row in the
+    // database shared one publicly guessable credential. login_user.js now refuses
+    // guest rows outright, and this is the second lock: even if that filter were
+    // ever removed, there is no password that matches. Guests never log in - they
+    // are just a name in someone else's league.
     const saltRounds = 10;
-    const passwordHash = await bcrypt.hash('guest', saltRounds);
+    const unguessablePassword = crypto.randomBytes(32).toString('hex');
+    const passwordHash = await bcrypt.hash(unguessablePassword, saltRounds);
 
     // Insert the guest user into the app_user table
     const insertUserResult = await client.query(

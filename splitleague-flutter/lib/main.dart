@@ -27,6 +27,11 @@ void main() async {
   // Initialize runtime configuration
   // await RuntimeConfig().initialize();
 
+  // Read the real app version from the platform package before anything runs.
+  // The forced update check on the splash screen compares this against the
+  // minimum version held in the app_version_requirement table on the server.
+  await Config.loadAppVersion();
+
   // Run the app
   runApp(const SplitLeagueApp());
 }

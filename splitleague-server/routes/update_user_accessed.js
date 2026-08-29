@@ -32,45 +32,28 @@ router.post('/', verifyToken, async (req, res) => {
     // Get the user ID from the authenticated token
     const userId = req.userId;
 
-    // Check if the user exists
-    const userResult = await pool.query(
-      'SELECT id FROM app_user WHERE id = $1',
+    // Update the accessed timestamp for the user
+    //
+    // This route runs every single time anyone opens the app, so it is the
+    // hottest path we have. It used to query information_schema and conditionally
+    // ALTER TABLE on every call to add the 'accessed' column - DDL on the hot path,
+    // which is also why 'accessed' is unreliable for older accounts. The column
+    // has existed for a long time; the check is gone.
+    //
+    // RETURNING lets one statement do the work that previously took three: if no
+    // row comes back the user in the token no longer exists.
+    const updateResult = await pool.query(
+      'UPDATE app_user SET accessed = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id',
       [userId]
     );
 
-    if (userResult.rows.length === 0) {
+    // The token is valid but the account is gone
+    if (updateResult.rows.length === 0) {
       return res.status(401).json({
         return_code: 'UNAUTHORIZED',
         message: 'User not found'
       });
     }
-
-    // Add accessed column if it doesn't exist
-    try {
-      await pool.query(`
-        DO $$
-        BEGIN
-          IF NOT EXISTS (
-            SELECT 1 
-            FROM information_schema.columns 
-            WHERE table_name = 'app_user' 
-            AND column_name = 'accessed'
-          ) THEN
-            ALTER TABLE app_user ADD COLUMN accessed TIMESTAMP WITH TIME ZONE;
-          END IF;
-        END
-        $$;
-      `);
-    } catch (alterError) {
-      console.error('Error checking/adding accessed column:', alterError);
-      // Continue even if this fails, as the update might still work
-    }
-
-    // Update the accessed timestamp for the user
-    await pool.query(
-      'UPDATE app_user SET accessed = CURRENT_TIMESTAMP WHERE id = $1',
-      [userId]
-    );
 
     // Return success response
     return res.status(200).json({

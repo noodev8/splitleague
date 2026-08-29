@@ -45,7 +45,8 @@ router.post('/', async (req, res) => {
     
     // Find user with this email
     const userResult = await pool.query(
-      'SELECT id, name, email, email_verified FROM app_user WHERE email = $1',
+      // Guest placeholder rows (email = 'guest') are not accounts - see login_user.js
+      `SELECT id, name, email, email_verified FROM app_user WHERE email = $1 AND LOWER(email) <> 'guest'`,
       [email]
     );
     

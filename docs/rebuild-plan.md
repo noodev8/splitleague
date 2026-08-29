@@ -300,7 +300,7 @@ This is somebody registering, not getting (or not finding) the verification emai
 
 ### 3.4 Cleanup order
 
-- [ ] Full `pg_dump` backup, restore-verified locally
+- [x] Full `pg_dump` backup taken 2026-08-29 — both formats in `~/Downloads`: `splitleague.sql` (custom `PGDMP`, for `pg_restore`) and `splitleague-text.sql` (plain SQL). Verified by content, not by restore: all 7 tables present with data, row counts match production exactly (app_user 397, app_version_requirement 2, deletion_log 11, fixture 1113, league 188, league_members 388, league_points 188). **Deliberately not committed** — they hold real emails and password hashes. Keep them somewhere safe off this machine
 - [ ] Review the 83 + 6 league list by name together before deleting anything
 - [ ] Dedupe the 5 email pairs (both copies are unused in every case — keep the lower id)
 - [ ] Delete orphaned guest rows (26)
@@ -388,8 +388,25 @@ The UI is competent Material 3 and is not what is costing us the 74 dead leagues
 
 ## 5. Defect register
 
-### 5.1 Guest login hole — fix first
+### 5.1 Guest login hole ✅ FIXED 2026-08-29
 §4.2(1). Independent of the model decision. 146 rows share a guessable credential that mints a 180-day token.
+
+Two locks, so that removing either one does not reopen it:
+
+- [x] `login_user.js` excludes guest rows outright — `AND LOWER(email) <> 'guest'`. Guest rows are placeholders for people in a league, not accounts, and can never log in
+- [x] `add_guest_player.js` no longer mints `bcrypt.hash('guest')`. New guest rows get `crypto.randomBytes(32)` hashed, so no password matches even if the filter above were removed
+- [x] Same exclusion applied to `forgot_password.js` and `resend_verification.js` — same hole class, both would otherwise act on guest rows
+- [ ] Scramble `password_hash` on the **146 existing** guest rows. They still carry the old `bcrypt('guest')` hash. Unreachable now that login refuses them, so this is defence in depth rather than urgent — and safe, since guests never log in and `convert_guest_to_user` sets a fresh password anyway
+
+**Verified against production data, server running locally:**
+
+| Request | Response |
+|---|---|
+| `POST /login_user {"email":"guest","password":"guest"}` | `INVALID_CREDENTIALS` |
+| `POST /login_user {"email":"GUEST","password":"guest"}` | `INVALID_CREDENTIALS` (case-folded) |
+| `POST /forgot_password {"email":"guest"}` | `EMAIL_NOT_FOUND` |
+| Login query against a real account | resolves, 1 row |
+| Login query against `'guest'` | 0 rows of 146 |
 
 ### 5.2 The database has primary keys and nothing else
 Every table has a `_pkey` and that is all. No foreign keys, no unique indexes, no secondary indexes.
@@ -407,20 +424,52 @@ Every table has a `_pkey` and that is all. No foreign keys, no unique indexes, n
 - [ ] `helmet`
 - [ ] CORS allowlist
 
-### 5.4 Version gate compares a stale constant
-`config.dart:13` is `static const String appVersion = '1.10';` while `pubspec.yaml` says `1.1.2+112`. `version_helper.dart` compares that hardcoded string to the server minimum. It fails open, so nobody is locked out — but forced update does not actually work.
+### 5.4 Version gate compares a stale constant ✅ FIXED 2026-08-29
+`config.dart:13` was `static const String appVersion = '1.10';` while `pubspec.yaml` says `1.1.2+112`. `version_helper.dart` compared that hardcoded string to the server minimum. It failed open, so nobody was locked out — and forced update only worked if you remembered to hand-bump the constant.
 
-- [ ] Read the version from `package_info_plus`
+The mechanism itself was fine: `splash_screen.dart:150` → `VersionHelper.isAppVersionValid()` → POST `/get_app_version` → compare against `app_version_requirement`. Non-dismissible dialog, store link, `SystemNavigator.pop()`. Fails open on any server or network error. **Raising the database row is the lever that forces existing installs to update, and it works.**
 
-### 5.5 `node_modules` is committed to git
+- [x] Read the version from `package_info_plus` (pinned to `^9.0.1` — v10+ needs `win32 ^6`, which collides with `flutter_secure_storage` 9; the v11 upgrade in §6 clears that)
+- [x] `Config.appVersion` is now loaded in `main()` from `PackageInfo.fromPlatform()`, i.e. straight from `pubspec.yaml`. Do not hardcode it again
+- [x] Version comparison hardened: tolerates `1.1.2+112`, `2.0.0-beta`, and the old two-digit `1.05` database values; a segment that is not a number counts as 0 instead of throwing
+- [x] Fails open on a blank/unreadable version and on a blank server minimum
+
+**Two things this now demands, verified by running the comparison over the real values:**
+
+| Running build reports | DB minimum | Result |
+|---|---|---|
+| `1.1.2` (real, new) | `1.01` android | allowed |
+| `1.1.2` (real, new) | `1.05` ios | **BLOCKED** |
+| `1.10` (legacy hardcoded) | `1.0.0` | allowed |
+| `1.10` (legacy hardcoded) | `2.0.0` | **BLOCKED** ← this is the force |
+
+1. ✅ **APPLIED 2026-08-29 — both rows lowered to `1.00`** (`android` was `1.01`, `ios` was `1.05`). Without this, an iOS build reporting its real `1.1.2` would lose to `1.05` and walk every iOS user into the update wall. A no-op for anything in the field today: every shipped build reports the hardcoded `1.10`, which clears both old and new values.
+2. **The rebuild release should ship as `2.0.0`.** Legacy installs all report `1.10`, which beats any `1.x` minimum below `1.10` — so no `1.x` floor can ever force them. `2.0.0` does, cleanly. `numeric(4,2)` can hold `2.00`, so this works either way.
+
+**⚠️ `minimum_version` is `numeric(4,2)`, not text.** This is why the scheme was ever `1.01`/`1.05` — they are decimals, not versions. `1.0.0` is literally not storable, which is why the rows read `1.00`. Two consequences:
+
+- Nothing beyond `major.minor` fits. A minimum of `2.1.3` cannot be expressed at all, and `99.99` is the ceiling.
+- **The formats disagree about what `1.10` means.** As a decimal it is one-point-one; our client parser reads it as major 1, minor 10. Today that is harmless (it is exactly what makes the legacy hardcoded `1.10` clear a `1.00` floor), but it is a trap the first time someone types a decimal minimum meaning one-point-one.
+
+**Decision: the column becomes `text` eventually, but not while it could break live users.** ✅ DECIDED 2026-08-29 — deferred to **Phase 4**, gated on the `2.0.0` forced update having landed. Until then we live with `numeric(4,2)`. The forcing plan does not need the change:
+
+| Running build reports | DB minimum `2.00` | Result |
+|---|---|---|
+| `1.10` (legacy hardcoded) | `2.00` | **BLOCKED** ← the force works |
+| `2.0.0` (rebuild release) | `2.00` | allowed |
+
+**What we live with until then:** minimums are `major.minor` only, capped at `99.99`. Set the row to `2.00` — never `2.0.0`, which the column rejects outright. The client parser already handles both, so only the database side is constrained.
+
+### 5.5 `node_modules` is committed to git ✅ FIXED
 **599 of 917 tracked files**, despite `.gitignore` listing `node_modules/` — they were added before the ignore rule.
 
-- [ ] `git rm -r --cached splitleague-server/node_modules` and commit
+- [x] `git rm -r --cached splitleague-server/node_modules` and commit — done in `efb73bc`. 0 tracked now, 320 files total
 
-### 5.6 DDL on the hot path
-`update_user_accessed.js:48-65` queries `information_schema` and conditionally runs `ALTER TABLE app_user ADD COLUMN accessed` **on every single call** — i.e. every time anyone opens the app. It also explains why `accessed` is unreliable for old accounts (§3.3).
+### 5.6 DDL on the hot path ✅ FIXED 2026-08-29
+`update_user_accessed.js:48-65` queried `information_schema` and conditionally ran `ALTER TABLE app_user ADD COLUMN accessed` **on every single call** — i.e. every time anyone opens the app. It also explains why `accessed` is unreliable for old accounts (§3.3).
 
-- [ ] Delete the check; the column exists
+- [x] Deleted the check. Confirmed against production first: `app_user.accessed` exists, `timestamp with time zone`
+- [x] Collapsed the route from three queries to one — the existence check is now `UPDATE ... RETURNING id`, and no row back means the account behind the token is gone (same `UNAUTHORIZED` response as before)
 
 ### 5.7 Dead weight
 - `models/sample_league.dart` (239) + `sample_fixtures_screen.dart` (491) + `sample_standings_screen.dart` (508) = **1,238 lines of fake data** powering "Take a look around" — 7% of the Dart codebase serving the worst onboarding step
@@ -433,6 +482,25 @@ Every table has a `_pkey` and that is all. No foreign keys, no unique indexes, n
 ---
 
 ## 6. Flutter upgrade — what is actually there
+
+### 6.0 Android toolchain — was blocking all builds ✅ FIXED 2026-08-29
+
+`flutter build` failed outright. The "Flutter Fix / AGP 9" panel the tool prints is a red herring — `android.newDsl=false` and `android.builtInKotlin=false` are already set. The real cause is that Flutter 3.47 enforces **hard error floors** in `DependencyVersionChecker.kt`, and the project was under three of them at once. Gradle just failed first.
+
+| | Was | Errors below | Warns below | Flutter template | **Set to** |
+|---|---|---|---|---|---|
+| Gradle | 8.10.2 | **8.14.0** | 9.1.0 | 9.3.1 | **8.14.3** |
+| AGP | 8.7.0 | **8.11.1** | 9.0.1 | 9.1.0 | **8.11.1** |
+| Kotlin (KGP) | 2.1.0 | **2.2.20** | 2.3.20 | 2.4.0 | **2.2.20** |
+| Java | 21 ✅ | 17 | 17 | — | 21 |
+
+Deliberately took the **clear-the-floor** option, not the full template stack: it keeps the old Gradle DSL the `build.gradle.kts` files are written in, keeps `newDsl=false`, and touches no dependencies. Verified: `flutter build apk --debug` ✅ and `flutter build appbundle --release` ✅ (signed, 54.3 MB).
+
+Three "will soon be dropped" warnings remain (one per row above). They are advisory. Going warning-free means Gradle 9.3.1 / AGP 9.1.0 / KGP 2.4.0 — that belongs in Phase 3, alongside the dependency majors, because `fluttertoast` 8.2.12 still declares Groovy `compileSdkVersion 33` in its own build file and is the most likely thing to break under AGP 9.
+
+Also noted, not fixed: `namespace` is still `com.example.splitleague_flutter` (harmless — `applicationId` is correctly `com.noodev8.splitleague`), and `main.dart` carries a dead `AuthWrapper` with a duplicate copy of the version check that nothing routes to (`home:` is `SplashScreen`) — dead weight for §5.7.
+
+### 6.1 Everything else
 
 **We are already on the latest Flutter.** Installed SDK is 3.47.0 stable / Dart 3.13.0, and the project analyses clean against it. There is no version jump to make and no upgrade cliff.
 
@@ -494,12 +562,16 @@ Each phase stands alone and can go to the stores independently.
 
 ### Phase 0 — Groundwork (no user-visible change)
 - [x] `docs/` folder created, docs moved, archive set up
-- [ ] Full `pg_dump` backup, restore-verified locally
-- [ ] Untrack `node_modules` (§5.5)
-- [ ] Trim `CLAUDE.md` (§7)
-- [ ] Fix the guest login hole (§5.1) — urgent, and independent of the guest model decision
-- [ ] Remove the DDL-on-hot-path (§5.6)
-- [ ] Data cleanup (§3.4) once reviewed together
+- [x] Full `pg_dump` backup taken 2026-08-29 — both formats in `~/Downloads`: `splitleague.sql` (custom `PGDMP`, for `pg_restore`) and `splitleague-text.sql` (plain SQL). Verified by content, not by restore: all 7 tables present with data, row counts match production exactly (app_user 397, app_version_requirement 2, deletion_log 11, fixture 1113, league 188, league_members 388, league_points 188). **Deliberately not committed** — they hold real emails and password hashes. Keep them somewhere safe off this machine
+- [x] Untrack `node_modules` (§5.5) — done in commit `efb73bc`; 0 tracked, repo down to 320 files
+- [x] Trim `CLAUDE.md` (§7) — 334 lines to 121
+- [x] Unblock the Android build — Gradle/AGP/Kotlin floors (§6.0)
+- [x] Version gate reads the real app version (§5.4) — moved up from Phase 4, because forcing existing users onto the rebuild depends on it
+- [x] Lower both `app_version_requirement` rows to `1.00` (§5.4) — defuses the iOS update-wall landmine
+- [x] ~~Convert `minimum_version` to `text`~~ — deferred to Phase 4 (§5.4); not needed for the `2.0.0` force
+- [x] Fix the guest login hole (§5.1) — urgent, and independent of the guest model decision
+- [x] Remove the DDL-on-hot-path (§5.6)
+- [x] ~~Data cleanup (§3.4)~~ — **moved to Phase 4**. Deleting dead leagues now would corrupt the very baseline Phase 1 is measured against (§2.3, §2.5)
 
 ### Phase 1 — The funnel (the whole ballgame)
 - [ ] **Email verification mimicked away** (§4.1) — recovers 30% of signups
@@ -526,8 +598,11 @@ Each phase stands alone and can go to the stores independently.
 ### Phase 4 — Hardening
 - [ ] FKs, unique indexes, indexes (§5.2)
 - [ ] Rate limiting, helmet, CORS allowlist (§5.3)
-- [ ] Version gate from real package version (§5.4)
+- [x] ~~Version gate from real package version (§5.4)~~ — done in Phase 0
+- [ ] Convert `app_version_requirement.minimum_version` from `numeric(4,2)` to `text` (§5.4). **Precondition: the `2.0.0` forced update has landed and legacy installs are off `1.10`** — until then the change could affect live users, so it waits. Afterwards it is a type change only: the route already calls `.toString()`, and the client parser handles both formats
 - [ ] Real tests — `test/` currently holds one widget test for `FixtureCard` from April 2025
+- [ ] **Data cleanup (§3.4)** — moved here from Phase 0. It waits until the Phase 1 success measure has been re-run, because deleting dead leagues changes the numbers we are measuring against. Still to be reviewed together before anything is deleted
+- [ ] Scramble `password_hash` on the 146 existing guest rows (§5.1) — defence in depth
 
 ---
 

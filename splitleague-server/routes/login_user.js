@@ -53,8 +53,17 @@ router.post('/', async (req, res) => {
     }
 
     // Query the database to find the user by email
+    //
+    // Guest players are stored in app_user with the literal email 'guest' and a
+    // shared password. They are placeholders for people in a league, not accounts,
+    // and must never be able to log in - otherwise anyone posting
+    // {"email":"guest","password":"guest"} is handed a 180 day token for whichever
+    // guest row happens to come back first. Excluding them here closes that.
     const userResult = await pool.query(
-      'SELECT id, name, nickname, email, password_hash, email_verified FROM app_user WHERE email = $1',
+      `SELECT id, name, nickname, email, password_hash, email_verified
+       FROM app_user
+       WHERE email = $1
+         AND LOWER(email) <> 'guest'`,
       [email]
     );
 
