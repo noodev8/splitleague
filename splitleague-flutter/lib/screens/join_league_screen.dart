@@ -7,8 +7,8 @@ Once joined, it returns to the dashboard screen
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/join_league_api.dart';
+import '../api/get_league_preview_api.dart';
 import '../helpers/auth_helper.dart';
-import '../helpers/error_helper.dart';
 import '../widgets/pin_input.dart';
 import 'login_user_screen.dart';
 import 'register_user_screen.dart';
@@ -40,6 +40,65 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
 
   // PIN code
   String _pinCode = '';
+
+  // Details of the league being joined, when we arrived from an invite link
+  //
+  // Somebody who typed a code they were told already knows what they are joining. Somebody who
+  // followed a link does not - they never typed anything - so the screen has to say what the
+  // league is and who is running it, or it is just a number they did not choose.
+  String? _inviteLeagueName;
+  String? _inviteOrganiser;
+  int? _invitePlayerCount;
+  bool _loadingPreview = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Only look anything up when a code came in from a link
+    if (widget.initialCode != null) {
+      _loadPreview(widget.initialCode!);
+    }
+  }
+
+  // Fetch the league's name and organiser so the invite can be shown properly
+  //
+  // Failure here is deliberately quiet. The preview is a courtesy - if it cannot be fetched the
+  // screen still works exactly as it did before, with the code filled in and Join ready.
+  Future<void> _loadPreview(String code) async {
+    setState(() {
+      _loadingPreview = true;
+    });
+
+    try {
+      final response = await GetLeaguePreviewApi.getLeaguePreview(code);
+
+      if (!mounted) {
+        return;
+      }
+
+      if (response['return_code'] == 'SUCCESS') {
+        setState(() {
+          _inviteLeagueName = response['name']?.toString();
+          _inviteOrganiser = response['organiser']?.toString();
+          _invitePlayerCount = response['player_count'] is int
+              ? response['player_count']
+              : int.tryParse(response['player_count']?.toString() ?? '');
+          _loadingPreview = false;
+        });
+      } else {
+        setState(() {
+          _loadingPreview = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loadingPreview = false;
+        });
+      }
+    }
+  }
 
   // Handle join league button press
   Future<void> _handleJoinLeague() async {
@@ -84,8 +143,8 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
           widget.onLeagueJoined!();
         }
 
-        // Show success toast
-        ErrorHelper.showSuccessToast(response['message'] ?? 'Successfully joined the league');
+        // No success toast - the league appearing on the dashboard says it already.
+        // onLeagueJoined above refreshes that list before we pop back to it.
 
         // Navigate back immediately
         if (mounted) {
@@ -246,9 +305,15 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
                             const SizedBox(height: 24),
 
                             // Title
-                            const Text(
-                              'Join a League',
-                              style: TextStyle(
+                            //
+                            // Two different arrivals, two different things to say. Somebody who
+                            // typed a code needs instructions; somebody who followed an invite
+                            // link needs to know what they have been invited to.
+                            Text(
+                              _inviteLeagueName != null
+                                  ? "You've been invited"
+                                  : 'Join a League',
+                              style: const TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -256,15 +321,47 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
                             ),
                             const SizedBox(height: 16),
 
-                            // Description
-                            const Text(
-                              'Enter the 4-digit code provided by the league creator to join.',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey,
+                            if (_inviteLeagueName != null) ...[
+                              // The league being joined
+                              Text(
+                                _inviteLeagueName!,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF005F8A),
+                                ),
+                                textAlign: TextAlign.center,
                               ),
-                              textAlign: TextAlign.center,
-                            ),
+                              const SizedBox(height: 8),
+
+                              // Who is running it, and how big it is so far
+                              Text(
+                                [
+                                  if (_inviteOrganiser != null) 'Organised by $_inviteOrganiser',
+                                  if (_invitePlayerCount != null)
+                                    '$_invitePlayerCount ${_invitePlayerCount == 1 ? 'player' : 'players'} so far',
+                                ].join('\n'),
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.grey,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ] else if (_loadingPreview) ...[
+                              // Looking the league up - say nothing rather than flash the
+                              // generic instructions and then replace them
+                              const SizedBox(height: 4),
+                            ] else ...[
+                              // Description
+                              const Text(
+                                'Enter the 4-digit code provided by the league creator to join.',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                             const SizedBox(height: 40),
 
                             // PIN input

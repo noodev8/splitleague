@@ -36,6 +36,22 @@ class DeepLinkHelper {
   // A code that arrived before we could act on it - usually because nobody was logged in yet
   static String? _pendingCode;
 
+  // Whether the dashboard is on screen
+  //
+  // This is what tells us it is safe to push a screen. The splash screen finishes with
+  // Navigator.pushReplacement, which replaces whatever is on TOP of the stack - so anything
+  // pushed before the splash has finished gets silently swallowed by the dashboard replacing
+  // it. That is a real bug that shipped once already: the join screen appeared for a moment,
+  // vanished, and the league was never joined.
+  static bool _dashboardReady = false;
+
+  // What to run after a league is joined from a link
+  //
+  // The dashboard registers its own reload here. Without it a league joined from a link does
+  // not appear until the list is pulled to refresh - the dashboard sits underneath the join
+  // screen and never hears that anything happened.
+  static VoidCallback? _onLeagueJoined;
+
   // The only host we accept links from
   //
   // Deliberately NOT built from Config.baseUrl. The base URL can be pointed at a test VPS or a
@@ -48,11 +64,19 @@ class DeepLinkHelper {
     _appLinks = AppLinks();
 
     // Case 1: the app was launched by a link
+    //
+    // This runs before runApp, so there is no navigator yet and the splash screen is about to
+    // take over the stack. Park the code and let the dashboard collect it - do NOT try to
+    // navigate from here.
     try {
       final Uri? initialUri = await _appLinks!.getInitialLink();
 
       if (initialUri != null) {
-        _handleUri(initialUri);
+        final code = extractCode(initialUri);
+
+        if (code != null) {
+          _pendingCode = code;
+        }
       }
     } catch (e) {
       // A malformed launch URI must never stop the app from starting
@@ -108,12 +132,25 @@ class DeepLinkHelper {
 
     final navigator = navigatorKey.currentState;
 
-    if (navigator == null) {
-      // The app is still starting up; the dashboard will collect it shortly
+    if (navigator == null || !_dashboardReady) {
+      // Still starting up, or the splash screen is still on top and about to replace whatever
+      // sits above it. Either way the dashboard will collect this in a moment.
       return;
     }
 
     _openJoinScreen(navigator);
+  }
+
+  // Told by the dashboard when it comes and goes
+  //
+  // Nothing may be pushed before this is true - see the note on _dashboardReady.
+  static void setDashboardReady(bool ready) {
+    _dashboardReady = ready;
+  }
+
+  // Register what should happen once a league is joined from a link
+  static void setOnLeagueJoined(VoidCallback? callback) {
+    _onLeagueJoined = callback;
   }
 
   // Take any code that arrived earlier and act on it now
@@ -147,7 +184,10 @@ class DeepLinkHelper {
 
     navigator.push(
       MaterialPageRoute(
-        builder: (context) => JoinLeagueScreen(initialCode: code),
+        builder: (context) => JoinLeagueScreen(
+          initialCode: code,
+          onLeagueJoined: _onLeagueJoined,
+        ),
       ),
     );
   }

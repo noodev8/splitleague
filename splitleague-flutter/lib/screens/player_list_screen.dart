@@ -13,6 +13,7 @@ import '../api/remove_player_from_league_api.dart';
 import '../api/add_guest_player_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
+import '../helpers/share_helper.dart';
 import '../styles/app_styles.dart';
 import '../providers/league_provider.dart';
 import 'fixtures_screen.dart';
@@ -278,6 +279,20 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
         .split(' ')
         .map((word) => word.isEmpty ? word : word[0].toUpperCase() + word.substring(1))
         .join(' ');
+  }
+
+  // Invite real players into the league
+  //
+  // This is the same action as "Invite players" on the league details screen - it opens the
+  // share sheet with a link to the league's public page. It is repeated here because this is
+  // the screen an organiser is actually on when they realise they are a player short: it
+  // lists who has joined and offers Add Guest, so "invite somebody real" belongs beside it.
+  Future<void> _invitePlayers() async {
+    await ShareHelper.shareLeague(
+      code: widget.league['public_code']?.toString(),
+      name: widget.league['name']?.toString(),
+      hasFixtures: _hasFixtures,
+    );
   }
 
   // Show dialog to get guest nickname
@@ -580,6 +595,31 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                                 style: AppStyles.sectionHeading,
                               ),
                               const SizedBox(height: 16),
+
+                              // Invite real players
+                              //
+                              // Full width and above the list, because on a league that has
+                              // not started this is usually the thing the organiser came here
+                              // to do. Hidden once fixtures exist - nobody can join then.
+                              if (_isCreator && !_hasFixtures) ...[
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: _invitePlayers,
+                                    icon: const Icon(Icons.person_add, size: 18),
+                                    label: const Text('Invite players'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                              ],
 
                               // Player count and add guest button
                               Row(

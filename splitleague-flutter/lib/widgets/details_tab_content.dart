@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
-import '../helpers/config.dart';
+import '../helpers/share_helper.dart';
 // import '../widgets/error_display.dart';
 
 class DetailsTabContent extends StatelessWidget {
@@ -33,27 +32,13 @@ class DetailsTabContent extends StatelessWidget {
 
   // Share the league's public page
   //
-  // The link is the read-only web page at /l/<code> - standings and fixtures, no login
-  // and no app install needed. Anyone can open it. That is the point: most people in a
-  // league only ever want to look at the table, and making them sign up to do that is
-  // what was killing the funnel.
-  //
-  // Built from Config.baseUrl so a debug build pointed at the test VPS shares a test link.
+  // The message wording and the link are built by ShareHelper, so this and the player list
+  // screen always send exactly the same thing.
   Future<void> _shareLeague(BuildContext context) async {
-    final String code = leagueInfo['public_code']?.toString() ?? '';
-    final String name = leagueInfo['name']?.toString() ?? 'our league';
-
-    if (code.isEmpty) {
-      return;
-    }
-
-    final String url = '${Config.baseUrl}/l/$code';
-
-    await SharePlus.instance.share(
-      ShareParams(
-        text: '$name - live table and results:\n$url',
-        subject: name,
-      ),
+    await ShareHelper.shareLeague(
+      code: leagueInfo['public_code']?.toString(),
+      name: leagueInfo['name']?.toString(),
+      hasFixtures: hasFixtures,
     );
   }
 
@@ -128,6 +113,11 @@ class DetailsTabContent extends StatelessWidget {
                     if (!hasFixtures) ...[
                       // Only show the code if user is creator OR allow_code_share is true
                       if (leagueInfo['is_creator'] == true || leagueInfo['allow_code_share'] == true) ...[
+                        // The code, labelled so it says what it is for
+                        //
+                        // It used to be a bare number in a blue chip with nothing explaining
+                        // it. The word "code" never appeared, so there was no way to tell it
+                        // was the thing you give people to get them into the league.
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
@@ -138,6 +128,13 @@ class DetailsTabContent extends StatelessWidget {
                             onTap: () => onCopyToClipboard(leagueInfo['public_code']),
                             child: Row(
                               children: [
+                                const Text(
+                                  'Join code ',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.blue,
+                                  ),
+                                ),
                                 Text(
                                   leagueInfo['public_code'] ?? 'Unknown',
                                   style: const TextStyle(
@@ -184,20 +181,39 @@ class DetailsTabContent extends StatelessWidget {
                 // Deliberately OUTSIDE the !hasFixtures block above. The join code is
                 // hidden once a league starts, but that is exactly when people want the
                 // table - so sharing has to keep working for the life of the league.
+                //
+                // Before the league starts this is the most important control on the screen:
+                // a new league has one player and nothing to look at, and what the organiser
+                // needs is people. So it becomes a filled, primary "Invite players" button
+                // rather than a quiet outlined one advertising an empty table.
                 SizedBox(
                   width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _shareLeague(context),
-                    icon: const Icon(Icons.ios_share, size: 18),
-                    label: const Text('Share league'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.blue,
-                      side: const BorderSide(color: Colors.blue),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
+                  child: hasFixtures
+                    ? OutlinedButton.icon(
+                        onPressed: () => _shareLeague(context),
+                        icon: const Icon(Icons.ios_share, size: 18),
+                        label: const Text('Share league'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.blue,
+                          side: const BorderSide(color: Colors.blue),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      )
+                    : ElevatedButton.icon(
+                        onPressed: () => _shareLeague(context),
+                        icon: const Icon(Icons.person_add, size: 18),
+                        label: const Text('Invite players'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
                   ),
                 ),
 

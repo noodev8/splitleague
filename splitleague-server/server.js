@@ -66,6 +66,7 @@ const get_notes = require('./routes/get_notes');
 // Import guest player routes
 const add_guest_player = require('./routes/add_guest_player');
 const convert_guest_to_user = require('./routes/convert_guest_to_user');
+const get_league_preview = require('./routes/get_league_preview');
 const public_league = require('./routes/public_league');
 const well_known = require('./routes/well_known');
 
@@ -74,6 +75,7 @@ app.use('/register_user', register_user);
 app.use('/login_user', login_user);
 app.use('/create_league', create_league);
 app.use('/join_league', join_league);
+app.use('/get_league_preview', get_league_preview);
 app.use('/get_user_leagues', get_user_leagues);
 app.use('/generate_fixtures', generate_fixtures);
 app.use('/get_league_fixtures', get_league_fixtures);

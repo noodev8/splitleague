@@ -59,6 +59,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     _loadData();
 
+    // The dashboard being on screen is what makes it safe for a link to push a screen -
+    // before this, the splash screen's pushReplacement would swallow anything we pushed.
+    DeepLinkHelper.setDashboardReady(true);
+
+    // So a league joined from a link shows up here without a manual refresh
+    DeepLinkHelper.setOnLeagueJoined(_loadData);
+
     // Pick up a league link that arrived before there was anyone logged in to use it.
     // Both ways into the app land here - a cold start via the splash screen, and a fresh
     // login - so this is the one place that has to ask.
@@ -67,6 +74,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
+    // Logging out tears the dashboard down, and a link must not push onto a stack that is
+    // being replaced by the login screen.
+    DeepLinkHelper.setDashboardReady(false);
+    DeepLinkHelper.setOnLeagueJoined(null);
+
     _refreshController.dispose();
     super.dispose();
   }
