@@ -28,6 +28,11 @@ Success Response:
       "joined_at": "2025-04-06T12:00:00.000Z", // timestamp - When the user joined the league
       "last_accessed": "2025-04-10T15:30:00.000Z", // timestamp - When the user last accessed the league
       "player_count": 10,                 // integer - Number of players in the league
+      "has_fixtures": false,              // boolean - true once fixtures have been generated.
+                                          //           This is the league's stage: false = still
+                                          //           setting up, true = in play. The app reads
+                                          //           it to label the league and to decide which
+                                          //           screen to open, so it must always be sent.
       "points": {
         "points_for_win": 3,              // integer - Points for win
         "points_for_draw": 1,             // integer - Points for draw
@@ -71,7 +76,15 @@ router.post('/', verifyToken, async (req, res) => {
           SELECT COUNT(*)
           FROM league_members lm2
           WHERE lm2.league_id = l.id AND lm2.active = true
-        ) as player_count
+        ) as player_count,
+        -- The league's stage in one boolean. A league with no fixtures is still being set
+        -- up; the moment fixtures exist it is in play. EXISTS rather than a count because
+        -- we only ever ask the yes/no question.
+        (
+          SELECT EXISTS (
+            SELECT 1 FROM fixture f WHERE f.league_id = l.id
+          )
+        ) as has_fixtures
       FROM league l
       LEFT JOIN league_members lm ON l.id = lm.league_id AND lm.user_id = $1
       LEFT JOIN league_points lp ON l.id = lp.league_id
@@ -109,6 +122,7 @@ router.post('/', verifyToken, async (req, res) => {
         joined_at: row.joined_at,
         last_accessed: row.last_accessed,
         player_count: parseInt(row.player_count),
+        has_fixtures: row.has_fixtures,
         points: {
           points_for_win: row.points_for_win,
           points_for_draw: row.points_for_draw,
