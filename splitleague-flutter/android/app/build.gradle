@@ -1,0 +1,80 @@
+// Android build configuration for the SplitLeague app module.
+//
+// This file is Groovy, not Kotlin DSL, on purpose. Under AGP 9 the old
+// `android { }` extension classes are deprecated at *error* level, which a
+// .kts script cannot compile against, while Flutter 3.47's own Gradle plugin
+// cannot yet run against AGP 9's replacement ("new") DSL. Groovy compiles
+// happily against the deprecated old DSL, so it is what lets us sit on
+// AGP 9 / Gradle 9 / Kotlin 2.4 today. See §6.0 of docs/rebuild-plan.md.
+
+plugins {
+    id "com.android.application"
+    // No "kotlin-android" here: Kotlin is compiled by AGP's built-in Kotlin support
+    // (android.builtInKotlin=true in gradle.properties). The standalone Kotlin Gradle
+    // Plugin is what future Flutter versions will refuse to build against.
+    // The Flutter Gradle Plugin must be applied after the Android plugin.
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+android {
+    namespace = "com.example.splitleague_flutter"
+    compileSdk = flutter.compileSdkVersion
+    // Eight of the pub plugins (app_links, flutter_secure_storage, fluttertoast,
+    // package_info_plus, path_provider_android, share_plus, shared_preferences_android,
+    // url_launcher_android) require this NDK. NDK versions are backward compatible, so
+    // the rule is to take the highest any dependency asks for.
+    ndkVersion = "28.2.13676358"
+
+
+    // Release signing details are kept out of the repo in key.properties.
+    // When that file is absent (a fresh clone, CI) we fall back to the debug
+    // key further down rather than failing the build.
+    def keystoreProperties = new Properties()
+    def keystorePropertiesFile = rootProject.file("key.properties")
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+    }
+
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = file(keystoreProperties["storeFile"])
+                storePassword = keystoreProperties["storePassword"]
+                keyAlias = keystoreProperties["keyAlias"]
+                keyPassword = keystoreProperties["keyPassword"]
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    // No kotlinOptions block -- AGP's built-in Kotlin does not provide that DSL and
+    // takes Kotlin's jvmTarget from the compileOptions above.
+
+    defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId = "com.noodev8.splitleague"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    buildTypes {
+        getByName("release") {
+            signingConfig = keystorePropertiesFile.exists() ? signingConfigs.getByName("release") : signingConfigs.getByName("debug")
+            minifyEnabled = false
+            shrinkResources = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}

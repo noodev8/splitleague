@@ -44,10 +44,30 @@ npm start
 **Server `.env`** (gitignored): `DATABASE_URL`, `PORT`, `JWT_SECRET`, `RESEND_API_KEY`,
 `FRONTEND_URL`, `EMAIL_VERIFICATION_URL`, `EMAIL_FROM`, `EMAIL_NAME`.
 
-**Android toolchain is version-sensitive.** Flutter 3.47 enforces hard floors: Gradle
-8.14.0, AGP 8.11.1, KGP 2.2.20, Java 17. We sit just above all four. If a build fails,
-read the actual Gradle error — the "Flutter Fix / AGP 9" panel the tool prints is a red
-herring, since `android.newDsl=false` is already set. See §6.0 of the rebuild plan.
+**Android toolchain is version-sensitive.** We are on Gradle 9.3.1, AGP 9.1.0, KGP 2.4.0,
+Java 21 — the current Flutter template stack, warning-free. If a build fails, read the
+actual Gradle error; the "Flutter Fix / AGP 9" panel the tool prints is usually a red
+herring.
+
+The Android build scripts are **Groovy, not Kotlin DSL** (`android/settings.gradle`,
+`android/build.gradle`, `android/app/build.gradle`), and that is deliberate: AGP 9
+deprecates the old `android { }` DSL at *error* level so a `.kts` script will not compile
+against it, while Flutter 3.47's own Gradle plugin cannot yet run against AGP 9's new DSL.
+Groovy is the only combination that builds. Keep `android.newDsl=false` and
+`android.builtInKotlin=false`. Revert to `.kts` once Flutter supports the new DSL.
+
+The root `build.gradle` raises each pub plugin's `compileSdk` to the app's after evaluation
+— `fluttertoast` still declares 33, which AGP 9 rejects. Don't remove that hook.
+
+Kotlin is compiled by **AGP's built-in Kotlin** (`android.builtInKotlin=true`), not the
+Kotlin Gradle Plugin. That flag is global, so the app and every pub plugin must be on
+versions that cooperate — don't downgrade `fluttertoast`, `package_info_plus`, `share_plus`
+or `shared_preferences_android` below what `pubspec.yaml` pins, or the build breaks.
+
+**`flutter_secure_storage` is pinned `>=10.0.0 <11.0.0` on purpose.** It holds the JWT, and
+v11 cannot read data written by v9 — a v10 build has to ship and be widely installed first,
+because v10 is what migrates that data on read. Going straight to v11 logs out every
+existing user. See §6.0 of the rebuild plan.
 
 ## Database
 

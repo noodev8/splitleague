@@ -483,22 +483,103 @@ The mechanism itself was fine: `splash_screen.dart:150` → `VersionHelper.isApp
 
 ## 6. Flutter upgrade — what is actually there
 
-### 6.0 Android toolchain — was blocking all builds ✅ FIXED 2026-08-29
+### 6.0 Android toolchain — was blocking all builds ✅ FIXED 2026-08-29, warning-free same day
 
 `flutter build` failed outright. The "Flutter Fix / AGP 9" panel the tool prints is a red herring — `android.newDsl=false` and `android.builtInKotlin=false` are already set. The real cause is that Flutter 3.47 enforces **hard error floors** in `DependencyVersionChecker.kt`, and the project was under three of them at once. Gradle just failed first.
 
 | | Was | Errors below | Warns below | Flutter template | **Set to** |
 |---|---|---|---|---|---|
-| Gradle | 8.10.2 | **8.14.0** | 9.1.0 | 9.3.1 | **8.14.3** |
-| AGP | 8.7.0 | **8.11.1** | 9.0.1 | 9.1.0 | **8.11.1** |
-| Kotlin (KGP) | 2.1.0 | **2.2.20** | 2.3.20 | 2.4.0 | **2.2.20** |
+| Gradle | 8.10.2 | **8.14.0** | 9.1.0 | 9.3.1 | **9.3.1** |
+| AGP | 8.7.0 | **8.11.1** | 9.0.1 | 9.1.0 | **9.1.0** |
+| Kotlin (KGP) | 2.1.0 | **2.2.20** | 2.3.20 | 2.4.0 | **2.4.0** |
 | Java | 21 ✅ | 17 | 17 | — | 21 |
 
-Deliberately took the **clear-the-floor** option, not the full template stack: it keeps the old Gradle DSL the `build.gradle.kts` files are written in, keeps `newDsl=false`, and touches no dependencies. Verified: `flutter build apk --debug` ✅ and `flutter build appbundle --release` ✅ (signed, 54.3 MB).
+The first pass took the **clear-the-floor** option — Gradle 8.14.3 / AGP 8.11.1 / KGP 2.2.20 — which built but left three advisory warnings. A second pass the same day went all the way to the template stack; the "Set to" column above is where we landed, and the section below is what it cost.
 
-Three "will soon be dropped" warnings remain (one per row above). They are advisory. Going warning-free means Gradle 9.3.1 / AGP 9.1.0 / KGP 2.4.0 — that belongs in Phase 3, alongside the dependency majors, because `fluttertoast` 8.2.12 still declares Groovy `compileSdkVersion 33` in its own build file and is the most likely thing to break under AGP 9.
+#### Warning-free, 2026-08-29 (second pass)
 
-Also noted, not fixed: `namespace` is still `com.example.splitleague_flutter` (harmless — `applicationId` is correctly `com.noodev8.splitleague`), and `main.dart` carries a dead `AuthWrapper` with a duplicate copy of the version check that nothing routes to (`home:` is `SplashScreen`) — dead weight for §5.7.
+The three "will soon be dropped" warnings are now gone too. Final versions: **Gradle 9.3.1,
+AGP 9.1.0, KGP 2.4.0, Java 21** — the full Flutter template stack.
+
+The catch, and the reason this is worth writing down: **AGP 9 and Kotlin DSL build scripts
+cannot be combined on Flutter 3.47.** AGP 9 defaults `android.newDsl=true`, and:
+
+- With `newDsl=true`, Flutter's own Gradle plugin fails to apply —
+  `ApplicationExtensionImpl cannot be cast to AbstractAppExtension`. Flutter has not
+  migrated to the new DSL yet. The standalone Kotlin plugin fails the same way and demands
+  `android.builtInKotlin=true`, which then hits the Flutter failure anyway.
+- With `newDsl=false`, the old `android { }` extension classes are deprecated at **error**
+  level, and a `.kts` script cannot compile against them. Three script compilation errors,
+  build never starts.
+
+Groovy build scripts have no such problem — they compile fine against deprecated classes.
+So `settings.gradle.kts`, `build.gradle.kts` and `app/build.gradle.kts` were **converted to
+Groovy** (`settings.gradle`, `build.gradle`, `app/build.gradle`) with `newDsl=false` and
+`builtInKotlin=false` kept. This is a step away from the current Flutter template, which is
+Kotlin DSL; it should be reverted once Flutter supports AGP 9's new DSL, at which point the
+`.kts` files come back and `newDsl` can go to `true`.
+
+`fluttertoast` 8.2.12 did break exactly as predicted — `compileSdkVersion 33`, which AGP 9
+rejects because the AndroidX libraries it pulls require 34+. Files in the pub cache cannot
+be edited, so the root `build.gradle` now carries an `afterEvaluate` hook that raises any
+plugin subproject's `compileSdk` to match the app's. It skips `:app`, which the
+`evaluationDependsOn(":app")` block above it has already evaluated. Only `compileSdk`
+moves; `minSdk` and `targetSdk` are untouched.
+
+Verified again after the change: `flutter build apk --debug` ✅ and
+`flutter build appbundle --release` ✅ (54.3 MB, signed with the real `splitleague` key —
+`META-INF/SPLITLEA.RSA` is present in the bundle).
+
+**NDK raised to 28.2.13676358.** Eight plugins asked for it against a pin of
+27.0.12077973. NDK versions are backward compatible, so the rule is to take the highest any
+dependency asks for. Both builds re-verified after the change; that warning is gone.
+
+**KGP warnings cleared too — the app now builds with zero warnings.** This took the
+dependency upgrades that were previously deferred, so §6's plugin work is largely done.
+
+`android.builtInKotlin` is a **global** flag, not per-module, so the app and every pub
+plugin have to move together. Attempting it on the old versions fails — `:fluttertoast`
+dies with a bare `NullPointerException` at configuration time. The unlock was upgrading the
+four plugins to versions whose Android build files branch on AGP version
+(`if (agpMajor < 9) { apply(plugin = "org.jetbrains.kotlin.android") }`) and otherwise let
+AGP compile their Kotlin.
+
+| package | was | now | why this version |
+|---|---|---|---|
+| `fluttertoast` | 8.2.12 | 10.0.0 | drops KGP; also declares `compileSdk 36` itself |
+| `package_info_plus` | 9.0.1 | 10.2.1 | **10.0.x still applies KGP unconditionally** — 10.2.1 is the first that branches |
+| `share_plus` | 12.0.2 | 13.3.0 | drops KGP |
+| `shared_preferences_android` | 2.4.10 | 2.4.28 | drops KGP (transitive; needed `pub upgrade` by name) |
+| `flutter_secure_storage` | 9.2.4 | 10.3.1 | **forced** — see below |
+
+`app/build.gradle` no longer applies `kotlin-android` and has no `kotlinOptions` block
+(built-in Kotlin provides no such DSL; jvmTarget comes from `compileOptions`).
+
+**⚠️ `flutter_secure_storage` was dragged in, and it holds the JWT.** `package_info_plus`
+10.x requires `win32` ^6, which `flutter_secure_storage` 9 forbids. So the upgrade was not
+optional. It went to **10.3.1 and must not go to 11 yet**: v11 removes the deprecated
+ciphers and the EncryptedSharedPreferences backend outright, and its changelog is explicit
+that data written by v9 is unreadable to it — you have to land on v10 first, which migrates
+that data on read. Shipping straight to v11 would silently log out every existing user.
+The `pubspec.yaml` constraint is pinned `>=10.0.0 <11.0.0` with that reasoning in a comment.
+
+**This needs a real-device upgrade test before release, not just a green build.** Install
+the current store build, then upgrade in place to this one, and confirm the user is *still
+logged in* — that is the v9 → v10 secure-storage migration actually running on a real
+keystore. A fresh install proves nothing here. Toast appearance is worth a glance too,
+`fluttertoast` having jumped two majors, though the API was source-compatible.
+
+**The `compileSdk` afterEvaluate hook in the root `build.gradle` is gone.** It existed only
+because `fluttertoast` 8.2.12 declared `compileSdkVersion 33`; 10.0.0 declares 36. Removed
+and re-verified.
+
+**`newDsl` must stay `false`, so the build scripts stay Groovy.** Re-tested after all of the
+above: Flutter 3.47's own Gradle plugin still fails with `ApplicationExtensionImpl cannot be
+cast to AbstractAppExtension`. That is Flutter-side and no dependency upgrade changes it.
+
+Verified after every change above: `flutter analyze` clean, `flutter test` passes,
+`flutter build apk --debug` ✅, `flutter build appbundle --release` ✅ (54.3 MB, signed —
+`META-INF/SPLITLEA.RSA`), and the `flutter run` output is warning-free.
 
 ### 6.1 Everything else
 
@@ -695,7 +776,16 @@ Each phase stands alone and can go to the stores independently.
 - [ ] Revisit `FIXTURES_EXIST` blocking joins (§5.8)
 
 ### Phase 3 — Flutter and theme modernisation
-- [ ] Everything in §6
+- [x] ~~Android toolchain to the full template stack, warning-free (§6.0)~~ — done 2026-08-29
+- [x] ~~The four KGP plugin upgrades + the forced `flutter_secure_storage` 9 → 10 (§6.0)~~ — done 2026-08-29
+- [ ] **Device upgrade test for the secure-storage migration (§6.0)** — install the current
+      store build, upgrade in place, confirm the user is still logged in. Must happen before
+      this ships; a fresh install does not exercise the migration
+- [ ] `flutter_secure_storage` 10 → 11 — only once a v10 build has shipped and is widely
+      installed, since v11 cannot read v9-written data (§6.0)
+- [ ] Return the Android build scripts from Groovy to `.kts` once Flutter supports AGP 9's
+      new DSL (§6.0)
+- [ ] Everything else in §6
 
 ### Phase 4 — Hardening
 - [ ] FKs, unique indexes, indexes (§5.2)
