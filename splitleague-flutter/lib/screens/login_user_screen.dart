@@ -369,28 +369,6 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
                                       ),
                               ),
                             ),
-                            const SizedBox(height: 16),
-
-                            // Take a look around button
-                            SizedBox(
-                              height: 50, // Fixed height for better tap target
-                              child: OutlinedButton(
-                                onPressed: _isLoading ? null : _handleGuestAccess,
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: AppStyles.primaryColor),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Take a look around',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: AppStyles.primaryColor,
-                                  ),
-                                ),
-                              ),
-                            ),
                             const SizedBox(height: 24),
 
                             // Terms and Privacy
@@ -520,13 +498,6 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
   }
 
   // Handle guest access
-  void _handleGuestAccess() {
-    // Navigate to dashboard without authentication
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const dashboard.DashboardScreen()),
-    );
-  }
-
   // Show forgot password dialog
   void _showForgotPasswordDialog() {
     final TextEditingController emailController = TextEditingController();

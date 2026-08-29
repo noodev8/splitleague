@@ -587,7 +587,13 @@ Each phase stands alone and can go to the stores independently.
 
   **Verified locally against production data:** all three scoring types render (PTS/WDL/WIN); `0000`, `abcd`, `12345`, `<script>` and an SQL-injection-shaped code all 404; `X-Robots-Tag` present; guest names show as `Nadir (g)` exactly as the app displays them, with the `guest_` prefix stripped and not leaking anywhere into the HTML. Every user-supplied value is HTML-escaped on the way out — league names and nicknames are untrusted input.
 - [ ] Share button in the app that copies/sends that link
-- [ ] **Delete "Take a look around"** and the 1,238 lines behind it (§5.7) — the real league page replaces the fake demo
+- [x] **Delete "Take a look around"** and the 1,238 lines behind it (§5.7) — the real league page replaces the fake demo. Done 2026-08-29: **1,299 lines removed, 4 added**
+
+  Gone: `models/sample_league.dart` (239), `screens/sample_fixtures_screen.dart` (491), `screens/sample_standings_screen.dart` (508), the "Take a look around" button and `_handleGuestAccess` on the login screen, and the "View Sample League" button, `_showSampleLeague` and the Guest-branch ternaries in the dashboard empty state.
+
+  **Deliberately left:** the remaining unauthenticated-session plumbing — `_userData = {'nickname': 'Guest'}` when no token is found (`dashboard_screen.dart:145`), the `isGuest` checks that show a login prompt, and the `userData == null || nickname == 'Guest'` guards in `create_league_screen.dart:74` and `join_league_screen.dart:50`. With the entry point gone this is unreachable via the old browse mode, but the `userData == null` half still guards a genuine broken-session state (token expired mid-use), so ripping it out is a behaviour change rather than a deletion. Worth a separate tidy later; it is not sample data.
+
+  Verified: `flutter analyze` 0 errors, 0 new warnings (the 4 that remain are the pre-existing §5.7 ones in other files), debug APK builds, installed on a real device and the app launches to the dashboard with the session intact and no update dialog. The login screen change is verified by compile and grep rather than visually — confirming it on screen means logging the account out.
 - [ ] Keep the 4-digit code as the manual join fallback — it works, it is just not the front door
 
 **Then stop and feel it.** Get it in front of real people before deciding anything else. The guest model (§4.2) and whether we ever need app links at all are both decisions to make on evidence after this ships.
