@@ -1,38 +1,3 @@
-== splitleague
-
---- ONE-TIME STEP (first deploy after the folder rename, 2026-08-29) -------------
-The repo folders were renamed splitleague_server -> splitleague-server and
-splitleague_flutter -> splitleague-flutter. After the first `git pull` below the
-old /apps/splitleague/splitleague_server/ will be gone and the new hyphenated
-folder will appear. The PRODUCTION copy and the pm2 process still point at the
-old path, so do this once, with care:
-
-  cd /apps/splitleague/
-  git pull                                    # brings in the renamed folders
-  ls                                          # confirm splitleague-server exists
-
-  # copy across to a new production dir
-  rsync -av --delete --exclude='.env' --exclude='node_modules' --exclude='.git' \
-        /apps/splitleague/splitleague-server/ /apps/production/splitleague-server/
-
-  # carry the existing .env over - it is NOT in git
-  cp /apps/production/splitleague_server/.env /apps/production/splitleague-server/.env
-
-  cd /apps/production/splitleague-server
-  npm install
-
-  # repoint pm2 at the new directory
-  pm2 delete splitleague_prod
-  pm2 start server.js --name splitleague_prod
-  pm2 save
-  pm2 logs splitleague_prod --lines 50        # confirm it booted and connected to the DB
-
-  # only once you are happy it is serving traffic:
-  # rm -rf /apps/production/splitleague_server
----------------------------------------------------------------------------------
-
-
---- NORMAL DEPLOY (every time after that) ---------------------------------------
 cd /apps/splitleague/
 git pull
 rsync -av --delete --exclude='.env' --exclude='node_modules' --exclude='.git' --exclude='tests' --exclude='docs' --exclude='.github' /apps/splitleague/splitleague-server/ /apps/production/splitleague-server/

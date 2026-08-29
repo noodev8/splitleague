@@ -54,8 +54,9 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
   int? _fixturesCount;
 
   // Guest player tracking
+  // Number of guest players in this league. There is no maximum - the cap was removed
+  // deliberately (see section 4.2 of docs/rebuild-plan.md). This is shown on the button only.
   int _guestPlayerCount = 0;
-  final int _maxGuestPlayers = 2;
 
   // League provider
   late LeagueProvider _leagueProvider;
@@ -253,12 +254,6 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
           _isLoading = false;
           ErrorHelper.showErrorToast('Cannot add guest players after fixtures are generated');
         });
-      } else if (response['return_code'] == 'GUEST_LIMIT_REACHED') {
-        // If guest limit reached
-        setState(() {
-          _isLoading = false;
-          ErrorHelper.showErrorToast('Maximum of 2 active guest players allowed per league');
-        });
       } else {
         setState(() {
           _errorMessage = response['message'] ?? 'Failed to add guest player';
@@ -286,23 +281,10 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Add a guest player. Maximum $_maxGuestPlayers guest players allowed per league.',
+              'Add a guest player - someone who plays but does not have an account.',
               style: const TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.withAlpha(25),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.withAlpha(50)),
-              ),
-              child: const Text(
-                'Note: Guest players will be automatically deleted after 3 months, but can be converted to registered users at any time during this period.',
-                style: TextStyle(fontSize: 12, color: Colors.blue),
-              ),
-            ),
-            const SizedBox(height: 12),
             TextField(
               controller: controller,
               decoration: const InputDecoration(
@@ -385,7 +367,7 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
         // If this was a guest player, decrement the count temporarily for better UX
         if (playerName.startsWith('guest_')) {
           setState(() {
-            _guestPlayerCount = (_guestPlayerCount - 1).clamp(0, _maxGuestPlayers);
+            if (_guestPlayerCount > 0) _guestPlayerCount--;
           });
         }
 
@@ -582,42 +564,22 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
                                     style: AppStyles.subtitle,
                                   ),
                                   if (_isCreator && !_hasFixtures) ...[
-                                    // Show different button states based on guest count
-                                    if (_guestPlayerCount >= _maxGuestPlayers)
-                                      // Option A: Disabled button with tooltip
-                                      Tooltip(
-                                        message: 'Maximum guest limit reached ($_guestPlayerCount/$_maxGuestPlayers)',
-                                        child: ElevatedButton.icon(
-                                          onPressed: null, // Disabled
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.grey.shade300,
-                                            foregroundColor: Colors.grey.shade700,
-                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                          icon: const Icon(Icons.person_add, size: 18),
-                                          label: const Text('Add Guest'),
+                                    // Always available - guests are the mechanic that works
+                                    ElevatedButton.icon(
+                                      onPressed: _addGuestPlayer,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
-                                      )
-                                    else
-                                      // Normal button with guest count indicator
-                                      ElevatedButton.icon(
-                                        onPressed: _addGuestPlayer,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.blue,
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                        ),
-                                        icon: const Icon(Icons.person_add, size: 18),
-                                        label: Text(_guestPlayerCount > 0
-                                          ? 'Add Guest ($_guestPlayerCount/$_maxGuestPlayers)'
-                                          : 'Add Guest'),
                                       ),
+                                      icon: const Icon(Icons.person_add, size: 18),
+                                      label: Text(_guestPlayerCount > 0
+                                        ? 'Add Guest ($_guestPlayerCount)'
+                                        : 'Add Guest'),
+                                    ),
                                   ],
                                 ],
                               ),
