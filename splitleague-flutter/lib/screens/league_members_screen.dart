@@ -547,36 +547,49 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
                                                   ),
                                                 )
                                                 : null,
-                                        trailing:
-                                            isGuest && _isCreator
-                                                ? IconButton(
-                                                  icon: const Icon(
-                                                    Icons.person_add,
-                                                    color: Colors.orange,
+                                        // Actions for this member. Guests can
+                                        // have notes just like anyone else, and
+                                        // the organiser can also turn them into
+                                        // a real player, so the two icons share
+                                        // the trailing slot in a Row that is
+                                        // only as wide as it needs to be.
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            // Notes - for every member,
+                                            // guests included
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.note_add,
+                                                color: AppPalette.teal,
+                                              ),
+                                              onPressed:
+                                                  () => _viewEditNotes(
+                                                    memberId,
+                                                    displayName,
                                                   ),
-                                                  onPressed:
-                                                      () =>
-                                                          _showConvertGuestDialog(
-                                                            memberId,
-                                                            displayName,
-                                                          ),
-                                                  tooltip:
-                                                      'Turn this guest into a player',
-                                                )
-                                                : isGuest
-                                                ? null // No notes for guest players
-                                                : IconButton(
-                                                  icon: const Icon(
-                                                    Icons.note_add,
-                                                    color: Colors.blue,
-                                                  ),
-                                                  onPressed:
-                                                      () => _viewEditNotes(
-                                                        memberId,
-                                                        displayName,
-                                                      ),
-                                                  tooltip: 'Add/Edit Notes',
+                                              tooltip: 'Add/Edit Notes',
+                                            ),
+
+                                            // Turn a guest into a registered
+                                            // player - organiser only
+                                            if (isGuest && _isCreator)
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.person_add,
+                                                  color: AppPalette.guest,
                                                 ),
+                                                onPressed:
+                                                    () =>
+                                                        _showConvertGuestDialog(
+                                                          memberId,
+                                                          displayName,
+                                                        ),
+                                                tooltip:
+                                                    'Turn this guest into a player',
+                                              ),
+                                          ],
+                                        ),
                                       ),
                                     );
                                   },

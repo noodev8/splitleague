@@ -385,10 +385,19 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
         ),
       ),
 
+      // A Scaffold does NOT lift its bottomNavigationBar clear of the keyboard - it
+      // only shrinks the body - so with a score field focused the number pad sat on
+      // top of 'Save result'. Padding the bar by the keyboard height makes the bar
+      // taller by exactly that much, which puts the button back in view. Same fix as
+      // the one on the create league screen; see the traps section of
+      // docs/next-ui-redesign.md.
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: AppPalette.chalk,
           border: Border(top: BorderSide(color: AppPalette.hairline)),
+        ),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
         child: SafeArea(
           top: false,

@@ -282,132 +282,210 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppPalette.chalk,
-      appBar: AppBar(
-        title: const Text('New league'),
-        backgroundColor: AppPalette.surface,
-        shape: const Border(bottom: BorderSide(color: AppPalette.hairline)),
-      ),
+  // Has the person put anything into this screen that leaving would throw away?
+  // The three things they can have touched: the name, the scoring choice, and how
+  // many times people play. Everything else is a default they have not seen.
+  bool get _hasUnsavedDetails {
+    return _leagueNameController.text.trim().isNotEmpty ||
+        _selectedWinType != 'WIN' ||
+        _playEachOtherController.text != '1';
+  }
 
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
-          children: [
-            TextFormField(
-              controller: _leagueNameController,
-              autofocus: true,
-              textCapitalization: TextCapitalization.words,
-              textInputAction: TextInputAction.done,
-              maxLength: 30,
-              style: AppType.t(AppType.title),
-              decoration: const InputDecoration(
-                labelText: 'League name',
-                hintText: 'Thursday Pool',
-                counterText: '',
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Give the league a name';
-                }
-                return null;
-              },
+  // Ask before throwing the details away. Returns true if the person wants to leave.
+  Future<bool> _confirmDiscard() async {
+    final bool? leave = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Discard this league?'),
+            content: Text(
+              'The details you have entered will not be kept.',
+              style: AppType.b(AppType.body),
             ),
-
-            const SizedBox(height: 30),
-
-            Padding(
-              padding: const EdgeInsets.only(left: 4, bottom: 8),
-              child: Text(
-                'HOW A GAME IS SCORED',
-                style: AppType.b(AppType.eyebrow),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Keep editing'),
               ),
-            ),
-
-            Container(
-              decoration: BoxDecoration(
-                color: AppPalette.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppPalette.hairline),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                children: [
-                  for (int i = 0; i < _scoringTypes.length; i++) ...[
-                    if (i > 0)
-                      const Divider(
-                        height: 1,
-                        thickness: 1,
-                        indent: 16,
-                        color: AppPalette.hairline,
-                      ),
-                    _scoringOption(
-                      _scoringTypes[i][0],
-                      _scoringTypes[i][1],
-                      _scoringTypes[i][2],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            Padding(
-              padding: const EdgeInsets.only(left: 4, bottom: 8),
-              child: Text('FIXTURES', style: AppType.b(AppType.eyebrow)),
-            ),
-
-            _meetingsPicker(),
-
-            const SizedBox(height: 24),
-
-            _settingsDisclosure(),
-
-            if (_errorMessage != null) ...[
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppPalette.clayTint,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  _errorMessage!,
-                  style: AppType.b(
-                    AppType.body,
-                    color: AppPalette.clay,
-                    size: 14,
-                  ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text(
+                  'Discard',
+                  style: TextStyle(color: AppPalette.clay),
                 ),
               ),
             ],
-          ],
-        ),
-      ),
+          ),
+    );
 
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: AppPalette.chalk,
-          border: Border(top: BorderSide(color: AppPalette.hairline)),
+    return leave ?? false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Going back loses everything typed so far, and the back arrow is exactly what a
+    // person reaches for when they cannot see the button. Block the pop while there
+    // is something to lose and ask first. This covers the app bar arrow and the
+    // Android system back gesture alike. Creating a league uses pushReplacement, so
+    // the successful path is not affected.
+    // canPop stays false rather than being computed from the fields, because typing
+    // in a text field does not rebuild this screen - a canPop worked out up here would
+    // still be reading an empty name after the person had filled it in. The decision is
+    // made in the callback instead, where it is read fresh. Navigator.pop() is not
+    // blocked by PopScope (only maybePop is, which is what the back arrow calls), so
+    // popping from in here works.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) async {
+        if (didPop) {
+          return;
+        }
+
+        final NavigatorState navigator = Navigator.of(context);
+
+        // Nothing typed yet - let them straight out
+        if (!_hasUnsavedDetails) {
+          navigator.pop();
+          return;
+        }
+
+        if (await _confirmDiscard()) {
+          navigator.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppPalette.chalk,
+        appBar: AppBar(
+          title: const Text('New league'),
+          backgroundColor: AppPalette.surface,
+          shape: const Border(bottom: BorderSide(color: AppPalette.hairline)),
         ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            child: SlButton.primary(
-              label: _isLoading ? 'Creating' : 'Create league',
-              busy: _isLoading,
-              onPressed:
-                  _isLoading
-                      ? null
-                      : () {
-                        FocusScope.of(context).unfocus();
-                        _handleCreateLeague();
-                      },
+
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+            children: [
+              TextFormField(
+                controller: _leagueNameController,
+                autofocus: true,
+                textCapitalization: TextCapitalization.words,
+                textInputAction: TextInputAction.done,
+                maxLength: 30,
+                style: AppType.t(AppType.title),
+                decoration: const InputDecoration(
+                  labelText: 'League name',
+                  hintText: 'Thursday Pool',
+                  counterText: '',
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Give the league a name';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 30),
+
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 8),
+                child: Text(
+                  'HOW A GAME IS SCORED',
+                  style: AppType.b(AppType.eyebrow),
+                ),
+              ),
+
+              Container(
+                decoration: BoxDecoration(
+                  color: AppPalette.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppPalette.hairline),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  children: [
+                    for (int i = 0; i < _scoringTypes.length; i++) ...[
+                      if (i > 0)
+                        const Divider(
+                          height: 1,
+                          thickness: 1,
+                          indent: 16,
+                          color: AppPalette.hairline,
+                        ),
+                      _scoringOption(
+                        _scoringTypes[i][0],
+                        _scoringTypes[i][1],
+                        _scoringTypes[i][2],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 8),
+                child: Text('FIXTURES', style: AppType.b(AppType.eyebrow)),
+              ),
+
+              _meetingsPicker(),
+
+              const SizedBox(height: 24),
+
+              _settingsDisclosure(),
+
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppPalette.clayTint,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    _errorMessage!,
+                    style: AppType.b(
+                      AppType.body,
+                      color: AppPalette.clay,
+                      size: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
+        // A Scaffold does NOT lift its bottomNavigationBar clear of the keyboard - it
+        // only shrinks the body - so with the name field focused the keyboard sat on
+        // top of 'Create league'. Padding the bar by the keyboard height makes the bar
+        // taller by exactly that much, which puts the button back in view and shortens
+        // the list by the same amount. See the traps section of docs/next-ui-redesign.md.
+        bottomNavigationBar: Container(
+          decoration: const BoxDecoration(
+            color: AppPalette.chalk,
+            border: Border(top: BorderSide(color: AppPalette.hairline)),
+          ),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: SlButton.primary(
+                label: _isLoading ? 'Creating' : 'Create league',
+                busy: _isLoading,
+                onPressed:
+                    _isLoading
+                        ? null
+                        : () {
+                          FocusScope.of(context).unfocus();
+                          _handleCreateLeague();
+                        },
+              ),
             ),
           ),
         ),
