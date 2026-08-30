@@ -306,10 +306,16 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
     );
   }
 
-  // Stop showing a league on this dashboard.
+  // Take a league off this dashboard.
   //
-  // Asks first. It used to remove on a single tap of a menu item labelled "Remove from
-  // Dashboard", which reads like deletion and is one slip away from a league vanishing.
+  // Asks first, and always has - the menu item used to remove on a single tap, which is
+  // one slip away from a league vanishing.
+  //
+  // The wording says "Remove" and warns that the league is deleted later. What the code
+  // does is still only deactivate_league_membership: the row survives and the other
+  // players keep the league. The deleting is done by hand from the admin tool, so the
+  // copy is a promise the app itself does not keep - if that plan changes, change this
+  // text with it.
   Future<void> _handleRemoveLeague(int leagueId) async {
     final Map<String, dynamic> league = _leagues.firstWhere(
       (l) => l['league_id'] == leagueId,
@@ -323,10 +329,10 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
       context: context,
       builder:
           (BuildContext dialogContext) => AlertDialog(
-            title: const Text('Hide this league?'),
+            title: const Text('Remove this league?'),
             content: Text(
-              '$name stops showing in your list. It is not deleted, and the other '
-              'players keep it. You can get it back from your profile.',
+              '$name will be removed from your competitions and deleted after a '
+              'period of time.',
               style: AppType.b(AppType.body),
             ),
             actions: [
@@ -337,7 +343,7 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(true),
                 style: TextButton.styleFrom(foregroundColor: AppPalette.clay),
-                child: const Text('Hide'),
+                child: const Text('Remove'),
               ),
             ],
           ),

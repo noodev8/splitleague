@@ -133,7 +133,7 @@ class LeagueCard extends StatelessWidget {
                             PopupMenuItem<String>(
                               value: 'remove',
                               child: Text(
-                                'Hide from my leagues',
+                                'Remove',
                                 style: AppType.b(
                                   AppType.action,
                                   color: AppPalette.clay,
