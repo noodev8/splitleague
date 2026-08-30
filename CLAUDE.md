@@ -8,6 +8,10 @@ Guidance for Claude Code (claude.ai/code) working in this repository.
 substantial. It holds the assessment of the codebase, the production usage analysis, the
 decisions already made, the defect register, and the phased plan we are working through.
 
+**`docs/next-ui-redesign.md` covers the look of the app.** Read it before changing any
+UI. It holds the palette, the type scale, the one-filled-button-per-screen rule, and two
+Flutter layout traps that have already cost time once.
+
 Decisions already settled (do not re-litigate):
 - **Fix in place — not a rewrite, and not a "SplitLeague 2" store listing.**
 - Email verification is being mimicked away: mark verified on signup, send no email,
@@ -119,8 +123,13 @@ These are the ones worth stating; everything else follows normal practice for th
    payload, success response, and the full list of return codes. Match the existing style
    in `splitleague-server/routes/`; screens carry a shorter comment saying what the screen
    is for.
-7. **Material Design 3**, with shared styles from `lib/styles/app_styles.dart`. All UI must
-   work with the accessibility provider (text scaling, high contrast).
+7. **The design system is `lib/styles/app_palette.dart`, `app_type.dart` and the
+   `lib/widgets/sl_*.dart` widgets.** Colours come from `AppPalette`, type from `AppType`,
+   buttons from `SlButton` - and at most ONE filled `SlButton.primary` per screen, because
+   it is what tells the user where to go next. `app_styles.dart` still exists but is only a
+   compatibility layer over the palette for the few screens not yet rewritten; do not add
+   to it. All UI must work with the accessibility provider (text scaling, high contrast).
+   See `docs/next-ui-redesign.md`.
 
 ## Architecture
 
