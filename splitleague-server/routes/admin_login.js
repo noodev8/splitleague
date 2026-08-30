@@ -27,24 +27,26 @@ Return Codes:
 "SERVER_ERROR"
 =======================================================================================================================================
 
-About the hard-coded credentials
---------------------------------
-There is exactly one administrator and the credentials live in this file rather than in the
-database. That is deliberate for now: the admin tool is a private internal thing, there is
-no sign-up, no password reset and no second admin, and putting an is_admin column on
-app_user would mean a schema change plus a risk that some other route starts trusting it.
+About the credentials
+---------------------
+There is exactly one administrator and the credentials do not live in the database. That is
+deliberate for now: the admin tool is a private internal thing, there is no sign-up, no
+password reset and no second admin, and putting an is_admin column on app_user would mean a
+schema change plus a risk that some other route starts trusting it.
 
-The password is stored as a bcrypt hash, not plaintext, so a copy of this file is not
-immediately a working login. The plaintext is written in the comment below on purpose so
-that the password cannot be lost - the whole point of a single hard-coded admin is that
-there is no reset flow to fall back on.
+They also do not live in this file. ADMIN_EMAIL and ADMIN_PASSWORD_HASH are read from the
+server .env, which is gitignored, and there is no fallback - if either is missing the route
+refuses every login rather than quietly falling back to a default that is sitting in a
+public repository. An earlier version of this file carried the hash *and* the plaintext
+password in this comment; that is what a secret scanner picked up.
 
-  Email:    aandreou25@gmail.com
-  Password: aWwSPnQ-Yjv6rLb-YR3qgXQ
+ADMIN_PASSWORD_HASH is a bcrypt hash, so the plaintext is not written down anywhere in this
+project - keep it in a password manager. To set or change it:
 
-If you would rather the hash not sit in the repository, set ADMIN_PASSWORD_HASH in the
-server .env and it wins over the constant below. Same for ADMIN_EMAIL. Nothing else needs
-to change.
+  node -e "console.log(require('bcrypt').hashSync('the-new-password', 10))"
+
+then paste the output into ADMIN_PASSWORD_HASH in splitleague-server/.env (and into the
+same variable wherever the server is hosted) and restart the server.
 
 Token lifetime is 7 days, not the 180 days the app uses. An admin token can delete leagues,
 so it should not be a long-lived key sitting in a browser for half a year.
@@ -56,10 +58,10 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-// The one administrator. Overridable from the environment, but these are the defaults.
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'aandreou25@gmail.com';
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH ||
-  '$2b$10$QYbz/U0V4blljZBwigqjFuFFaSSPhqDYIEXnQoPiiEkmW.3rn/vPm';
+// The one administrator. Both come from the environment - see the header comment. There is
+// no default on purpose: a default is a credential in the repository.
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
 
 // POST /admin_login
 router.post('/', async (req, res) => {
@@ -72,6 +74,18 @@ router.post('/', async (req, res) => {
       return res.status(400).json({
         return_code: 'MISSING_FIELDS',
         message: 'Email and password are required'
+      });
+    }
+
+    // Fail closed when the server is not configured. Without this, a missing hash would make
+    // bcrypt.compare throw and the catch below would report SERVER_ERROR, which is true but
+    // says nothing useful in the log.
+    if (!ADMIN_EMAIL || !ADMIN_PASSWORD_HASH) {
+      console.error('admin_login: ADMIN_EMAIL or ADMIN_PASSWORD_HASH is not set in the environment');
+
+      return res.status(500).json({
+        return_code: 'SERVER_ERROR',
+        message: 'An error occurred while processing your request'
       });
     }
 

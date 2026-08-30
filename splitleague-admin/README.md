@@ -10,23 +10,27 @@ own — everything comes from `admin_*` endpoints on the existing SplitLeague AP
 
 ## The password
 
-```
-Email:    aandreou25@gmail.com
-Password: aWwSPnQ-Yjv6rLb-YR3qgXQ
-```
+There is one administrator, no sign-up, and no password reset. The credentials are **not in
+this repository** — the server reads `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH` from
+`splitleague-server/.env`, which is gitignored, and `admin_login.js` has no fallback: if
+they are unset, every login is refused.
 
-There is one administrator, no sign-up, and no password reset — so the plaintext is written
-down here and in the header comment of `splitleague-server/routes/admin_login.js`, which is
-the only place it can be lost from. What is stored in the code is a bcrypt hash, not the
-password itself.
+`ADMIN_PASSWORD_HASH` is a bcrypt hash, so the password itself is written down nowhere in
+this project. **Keep it in a password manager** — losing it means setting a new hash.
 
-To change it: generate a new hash and either replace the constant in `admin_login.js` or set
-`ADMIN_PASSWORD_HASH` in the server's `.env` (which wins over the constant).
+To set or change it:
 
 ```bash
 cd splitleague-server
 node -e "console.log(require('bcrypt').hashSync('your new password', 10))"
 ```
+
+Paste the output into `ADMIN_PASSWORD_HASH` in `splitleague-server/.env`, set the same
+variable wherever the server is hosted, and restart the server.
+
+> An earlier version of this README and of `admin_login.js` carried the plaintext password
+> in the file. It is in the git history, so that password must be treated as public and
+> replaced with a new one.
 
 ---
 

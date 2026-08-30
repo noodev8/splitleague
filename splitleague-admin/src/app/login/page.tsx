@@ -1,8 +1,8 @@
 /*
  * The login screen. One form, one admin, no sign-up and no password reset.
  *
- * The credentials live in splitleague-server/routes/admin_login.js, and the plaintext
- * password is written in that file's header comment so it cannot be lost.
+ * The credentials are checked by splitleague-server/routes/admin_login.js, which reads
+ * ADMIN_EMAIL and ADMIN_PASSWORD_HASH from the server .env. Nothing secret is in the repo.
  */
 
 'use client';
