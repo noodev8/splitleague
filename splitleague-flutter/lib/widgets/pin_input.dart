@@ -10,7 +10,8 @@ of a link; that has gone, because a link no longer carries a code to pre-fill.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../styles/app_styles.dart';
+import '../styles/app_palette.dart';
+import '../styles/app_type.dart';
 
 class PinInput extends StatefulWidget {
   final Function(String) onCompleted;
@@ -36,9 +37,12 @@ class _PinInputState extends State<PinInput> {
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize controllers, focus nodes, and pin values
-    _controllers = List.generate(widget.pinLength, (index) => TextEditingController());
+    _controllers = List.generate(
+      widget.pinLength,
+      (index) => TextEditingController(),
+    );
     _focusNodes = List.generate(widget.pinLength, (index) => FocusNode());
     _pin = List.generate(widget.pinLength, (index) => '');
 
@@ -84,7 +88,7 @@ class _PinInputState extends State<PinInput> {
       setState(() {
         _pin[index] = value;
       });
-      
+
       // Move to next field if not the last one
       if (index < widget.pinLength - 1) {
         FocusScope.of(context).requestFocus(_focusNodes[index + 1]);
@@ -110,20 +114,13 @@ class _PinInputState extends State<PinInput> {
       children: List.generate(
         widget.pinLength,
         (index) => Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          width: 60,
-          height: 60,
+          margin: const EdgeInsets.symmetric(horizontal: 6),
+          width: 62,
+          height: 68,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppPalette.surface,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withValues(alpha: 0.2),
-                spreadRadius: 1,
-                blurRadius: 5,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            border: Border.all(color: AppPalette.hairline),
           ),
           child: TextField(
             controller: _controllers[index],
@@ -131,28 +128,28 @@ class _PinInputState extends State<PinInput> {
             textAlign: TextAlign.center,
             keyboardType: TextInputType.number,
             maxLength: 1,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppStyles.primaryColor,
-            ),
+            // A join code is read off a phone screen and typed into another one,
+            // so it gets the display face at the size the code is shown at on the
+            // Details screen. The two now look like the same thing.
+            style: AppType.t(AppType.score, size: 26),
             decoration: InputDecoration(
               counterText: '',
+              filled: false,
+              contentPadding: EdgeInsets.zero,
               border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: AppStyles.primaryColor,
-                  width: 2,
-                ),
+                borderSide: const BorderSide(color: AppPalette.teal, width: 2),
               ),
             ),
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-            ],
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (value) {
               _onDigitChanged(value, index);
             },

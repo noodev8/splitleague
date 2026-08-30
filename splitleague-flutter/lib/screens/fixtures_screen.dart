@@ -1,6 +1,17 @@
 /*
-Show the fixtures for a league
-This screen shows fixtures and provides navigation to standings and details
+The fixtures of a league that is in play.
+
+This is the shell: the shared league header, and the fixture list underneath it. The
+list itself is widgets/fixtures_tab_content.dart.
+
+The old version built its own header out of three full-width buttons and a three-line
+stage banner. That is now SlLeagueHeader, which every league screen shares, so the four
+views of a league differ only in their content - which is the whole idea behind them
+being views of one thing.
+
+The navigation between those views is deliberately unchanged: sideways moves replace
+rather than push, so Back always means "leave this league". See docs/next-league-flow.md;
+it is subtle and it was hard won.
 */
 
 import 'package:flutter/material.dart';
@@ -9,8 +20,11 @@ import '../providers/league_provider.dart';
 import '../widgets/fixtures_tab_content.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/league_stage.dart';
-import '../styles/app_styles.dart';
-import '../widgets/league_stage_banner.dart';
+import '../helpers/share_helper.dart';
+import '../styles/app_palette.dart';
+import '../styles/app_type.dart';
+import '../widgets/sl_league_header.dart';
+import '../widgets/sl_segmented.dart';
 import 'update_score_screen.dart';
 import 'standings_screen.dart';
 import 'league_details_screen.dart';
@@ -19,10 +33,7 @@ import 'dashboard_screen.dart';
 class FixturesScreen extends StatefulWidget {
   final Map<String, dynamic> league;
 
-  const FixturesScreen({
-    super.key,
-    required this.league,
-  });
+  const FixturesScreen({super.key, required this.league});
 
   @override
   State<FixturesScreen> createState() => _FixturesScreenState();
@@ -55,10 +66,12 @@ class _FixturesScreenState extends State<FixturesScreen> {
     final userData = await AuthHelper.getUserData();
 
     // Check both creator_id and created_by fields
-    final creatorId = widget.league['creator_id'] ?? widget.league['created_by'];
-    final isCreator = userData != null &&
-                      creatorId != null &&
-                      userData['id'].toString() == creatorId.toString();
+    final creatorId =
+        widget.league['creator_id'] ?? widget.league['created_by'];
+    final isCreator =
+        userData != null &&
+        creatorId != null &&
+        userData['id'].toString() == creatorId.toString();
 
     // Initialize the league provider
     _leagueProvider.initLeague(widget.league['league_id'], isCreator);
@@ -85,13 +98,14 @@ class _FixturesScreenState extends State<FixturesScreen> {
 
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => UpdateScoreScreen(
-          fixture: updatedFixture,
-          onScoreUpdated: () {
-            _leagueProvider.loadFixtures();
-            return true;
-          },
-        ),
+        builder:
+            (context) => UpdateScoreScreen(
+              fixture: updatedFixture,
+              onScoreUpdated: () {
+                _leagueProvider.loadFixtures();
+                return true;
+              },
+            ),
       ),
     );
 
@@ -102,99 +116,102 @@ class _FixturesScreenState extends State<FixturesScreen> {
     }
   }
 
-  // Show filter menu for players only
+  // Choose whose fixtures to show.
+  //
+  // A sheet rather than a menu because a league can have a lot of players, and a
+  // sheet can scroll. "Everyone" is first and separated, so clearing the filter is
+  // always the first thing under your thumb.
   Future<void> _showFilterMenu(BuildContext context) async {
     await showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
       isScrollControlled: true,
-      builder: (BuildContext context) {
-        return Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.8,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    const Icon(Icons.filter_list),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Filter by Player',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+      builder: (BuildContext sheetContext) {
+        return SafeArea(
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(sheetContext).size.height * 0.8,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 8, 10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Show fixtures for',
+                          style: AppType.t(AppType.titleSmall),
+                        ),
                       ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
+                      IconButton(
+                        icon: const Icon(Icons.close, color: AppPalette.slate),
+                        tooltip: 'Close',
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const Divider(),
 
-              // Scrollable content
-              Expanded(
-                child: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    // All players option
-                    ListTile(
-                      leading: const Icon(Icons.people),
-                      title: const Text('All Players'),
-                      onTap: () {
-                        _leagueProvider.clearFilter();
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                    const Divider(),
+                const Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: AppPalette.hairline,
+                ),
 
-                    // Player list section
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      child: Text(
-                        'Select Player',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    padding: EdgeInsets.zero,
+                    children: [
+                      ListTile(
+                        title: Text('Everyone', style: AppType.b(AppType.name)),
+                        onTap: () {
+                          _leagueProvider.clearFilter();
+                          Navigator.of(sheetContext).pop();
+                        },
                       ),
-                    ),
 
-                    // Player list
-                    ...List.generate(
-                      _leagueProvider.leagueMembers.length,
-                      (index) {
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: AppPalette.hairline,
+                      ),
+
+                      ...List.generate(_leagueProvider.leagueMembers.length, (
+                        index,
+                      ) {
                         final member = _leagueProvider.leagueMembers[index];
                         final memberId = member['id'].toString();
-                        final String rawMemberName = member['nickname'] ?? member['name'] ?? 'Unknown Player';
+                        final String rawMemberName =
+                            member['nickname'] ??
+                            member['name'] ??
+                            'Unknown player';
 
-                        // Format player name to remove 'guest_' prefix
-                        final String memberName = rawMemberName.startsWith('guest_')
-                            ? rawMemberName.substring(6)
-                            : rawMemberName;
+                        // Guests are stored with a "guest_" prefix on the nickname.
+                        final String memberName =
+                            rawMemberName.startsWith('guest_')
+                                ? rawMemberName.substring(6)
+                                : rawMemberName;
 
                         return ListTile(
-                          leading: const Icon(Icons.person),
-                          title: Text(memberName),
+                          title: Text(
+                            memberName,
+                            style: AppType.b(AppType.name),
+                          ),
                           onTap: () {
-                            // Pass the formatted name for display but keep the original ID for filtering
+                            // Pass the formatted name for display but keep the
+                            // original ID for filtering.
                             _leagueProvider.applyFilter(memberId, memberName);
-                            Navigator.of(context).pop();
+                            Navigator.of(sheetContext).pop();
                           },
                         );
-                      },
-                    ),
-                  ],
+                      }),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -217,232 +234,118 @@ class _FixturesScreenState extends State<FixturesScreen> {
     super.dispose();
   }
 
+  void _leaveLeague() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder:
+              (context, animation, secondaryAnimation) =>
+                  const DashboardScreen(),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        ),
+      );
+    }
+  }
+
+  // A sideways move to another view of the same league. Replaces rather than pushes.
+  void _replaceWith(Widget screen) {
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => screen,
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+      ),
+    );
+  }
+
+  Future<void> _shareLeague() async {
+    await ShareHelper.shareLeague(
+      shareSlug: widget.league['share_slug']?.toString(),
+      name: widget.league['name']?.toString(),
+      hasFixtures: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Force rebuild when filter status changes by listening to the provider
     Provider.of<LeagueProvider>(context, listen: true);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.league['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            } else {
-              Navigator.of(context).pushReplacement(
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) => const DashboardScreen(),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
-            }
-          },
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF005F8A), // Top color from logo gradient
-                Color(0xFF00B3A4), // Bottom color from logo gradient
-              ],
+      backgroundColor: AppPalette.chalk,
+      body: Column(
+        children: [
+          SlLeagueHeader(
+            leagueName: widget.league['name'] ?? 'League',
+            // Always in play here - you only reach this screen once fixtures exist.
+            stage: LeagueStage.inPlay,
+            selectedIndex: 0,
+            segments: [
+              const SlSegment(label: 'Fixtures'),
+              SlSegment(
+                label: 'Table',
+                onTap:
+                    () => _replaceWith(StandingsScreen(league: widget.league)),
+              ),
+              SlSegment(
+                label: 'Details',
+                onTap:
+                    () => _replaceWith(
+                      LeagueDetailsScreen(
+                        league: widget.league,
+                        hasFixtures: true,
+                      ),
+                    ),
+              ),
+            ],
+            onBack: _leaveLeague,
+            actionIcon: Icons.ios_share,
+            actionTooltip: 'Share this league',
+            onAction: _shareLeague,
+          ),
+
+          Expanded(
+            child: Consumer<LeagueProvider>(
+              builder: (context, leagueProvider, _) {
+                return FixturesTabContent(
+                  isCreator: leagueProvider.isCreator,
+                  isLoadingFixtures: leagueProvider.isLoadingFixtures,
+                  isLoadingMembers: leagueProvider.isLoadingMembers,
+                  fixtures: leagueProvider.fixtures,
+                  filteredFixtures: leagueProvider.filteredFixtures,
+                  filterPlayerId: leagueProvider.filterPlayerId,
+                  filterPlayerName: leagueProvider.filterPlayerName,
+                  filterPlayedStatus: leagueProvider.filterPlayedStatus,
+                  fixturesErrorMessage: leagueProvider.fixturesErrorMessage,
+                  successMessage: leagueProvider.successMessage,
+                  lastUpdatedFixtureId: leagueProvider.lastUpdatedFixtureId,
+                  scrollController: _scrollController,
+                  onLoadFixtures: () {
+                    // Clear the last updated fixture ID after loading fixtures
+                    // so the highlight does not persist forever.
+                    leagueProvider.loadFixtures().then((_) {
+                      if (leagueProvider.lastUpdatedFixtureId != null) {
+                        Future.delayed(const Duration(seconds: 2), () {
+                          leagueProvider.clearLastUpdatedFixtureId();
+                        });
+                      }
+                    });
+                  },
+                  onShowFilterMenu: _showFilterMenu,
+                  onNavigateToUpdateScore: _navigateToUpdateScore,
+                  onClearFilter: leagueProvider.clearFilter,
+                  onApplyPlayedStatusFilter:
+                      leagueProvider.applyPlayedStatusFilter,
+                  onClearPlayedStatusFilter:
+                      leagueProvider.clearPlayedStatusFilter,
+                );
+              },
             ),
           ),
-        ),
-      ),
-      body: Consumer<LeagueProvider>(
-        builder: (context, leagueProvider, _) {
-          return Container(
-            color: AppStyles.backgroundColor,
-            child: SafeArea(
-              bottom: false,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top section with unified design
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withAlpha(30),
-                          spreadRadius: 0,
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                    child: Column(
-                      children: [
-                        // Navigation buttons - unified design
-                        Row(
-                          children: [
-                            // Fixtures label (current screen)
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: AppStyles.primaryColor,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.sports_soccer, color: Colors.white, size: 18),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      'Fixtures',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-
-                            // Standings button
-                            Expanded(
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.of(context).pushReplacement(
-                                    PageRouteBuilder(
-                                      pageBuilder: (context, animation, secondaryAnimation) => StandingsScreen(
-                                        league: widget.league,
-                                      ),
-                                      transitionDuration: Duration.zero,
-                                      reverseTransitionDuration: Duration.zero,
-                                    ),
-                                  );
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.leaderboard, color: AppStyles.primaryColor, size: 18),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Standings',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: AppStyles.primaryColor,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-
-                            // Details button
-                            Expanded(
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.of(context).pushReplacement(
-                                    PageRouteBuilder(
-                                      pageBuilder: (context, animation, secondaryAnimation) => LeagueDetailsScreen(
-                                        league: widget.league,
-                                        hasFixtures: true, // We know fixtures exist since we're on the Fixtures screen
-                                      ),
-                                      transitionDuration: Duration.zero,
-                                      reverseTransitionDuration: Duration.zero,
-                                    ),
-                                  );
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.info_outline, color: AppStyles.primaryColor, size: 18),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Details',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: AppStyles.primaryColor,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Which stage this league is in. Always in play here - you only reach
-                  // the fixtures screen once fixtures exist - but it is stated in the same
-                  // place and the same words as on every other league screen.
-                  const LeagueStageBanner(stage: LeagueStage.inPlay),
-
-                  // Fixtures content - takes remaining space
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: FixturesTabContent(
-                      isCreator: leagueProvider.isCreator,
-                      isLoadingFixtures: leagueProvider.isLoadingFixtures,
-                      isLoadingMembers: leagueProvider.isLoadingMembers,
-                      fixtures: leagueProvider.fixtures,
-                      filteredFixtures: leagueProvider.filteredFixtures,
-                      filterPlayerId: leagueProvider.filterPlayerId,
-                      filterPlayerName: leagueProvider.filterPlayerName,
-                      filterPlayedStatus: leagueProvider.filterPlayedStatus,
-                      fixturesErrorMessage: leagueProvider.fixturesErrorMessage,
-                      successMessage: leagueProvider.successMessage,
-                      lastUpdatedFixtureId: leagueProvider.lastUpdatedFixtureId,
-                      scrollController: _scrollController,
-                      onLoadFixtures: () {
-                        // Clear the last updated fixture ID after loading fixtures
-                        // to prevent scrolling on subsequent loads
-                        leagueProvider.loadFixtures().then((_) {
-                          if (leagueProvider.lastUpdatedFixtureId != null) {
-                            // Wait a bit to ensure the UI has updated before clearing
-                            Future.delayed(const Duration(seconds: 1), () {
-                              leagueProvider.clearLastUpdatedFixtureId();
-                            });
-                          }
-                        });
-                      },
-                      onShowFilterMenu: _showFilterMenu,
-                      onNavigateToUpdateScore: _navigateToUpdateScore,
-                      onClearFilter: leagueProvider.clearFilter,
-                      onApplyPlayedStatusFilter: leagueProvider.applyPlayedStatusFilter,
-                      onClearPlayedStatusFilter: leagueProvider.clearPlayedStatusFilter,
-                    ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+        ],
       ),
     );
   }

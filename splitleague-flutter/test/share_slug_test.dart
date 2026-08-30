@@ -28,16 +28,21 @@ void main() {
       expect(DeepLinkHelper.extractLeagueKey(uri), '7jwpbsz5ym');
     });
 
-    test('still pulls a 4-digit code out of a link shared before slugs existed', () {
-      final uri = Uri.parse('https://splitleague.noodev8.com/l/1231');
+    test(
+      'still pulls a 4-digit code out of a link shared before slugs existed',
+      () {
+        final uri = Uri.parse('https://splitleague.noodev8.com/l/1231');
 
-      expect(DeepLinkHelper.extractLeagueKey(uri), '1231');
-    });
+        expect(DeepLinkHelper.extractLeagueKey(uri), '1231');
+      },
+    );
 
     test('does not care how long the identifier is', () {
       // Nothing here validates the shape - the server decides what it has been handed. If this
       // ever starts returning null for an unfamiliar length, a length assumption has crept back.
-      final uri = Uri.parse('https://splitleague.noodev8.com/l/somethinglongerentirely');
+      final uri = Uri.parse(
+        'https://splitleague.noodev8.com/l/somethinglongerentirely',
+      );
 
       expect(DeepLinkHelper.extractLeagueKey(uri), 'somethinglongerentirely');
     });
@@ -50,27 +55,38 @@ void main() {
 
     test('refuses a link that is not a league link', () {
       expect(
-        DeepLinkHelper.extractLeagueKey(Uri.parse('https://splitleague.noodev8.com/about/7jwpbsz5ym')),
+        DeepLinkHelper.extractLeagueKey(
+          Uri.parse('https://splitleague.noodev8.com/about/7jwpbsz5ym'),
+        ),
         isNull,
       );
 
       expect(
-        DeepLinkHelper.extractLeagueKey(Uri.parse('https://splitleague.noodev8.com/l')),
+        DeepLinkHelper.extractLeagueKey(
+          Uri.parse('https://splitleague.noodev8.com/l'),
+        ),
         isNull,
       );
     });
   });
 
   group('JoinLeagueScreen', () {
-    testWidgets('shows the code boxes when somebody opened it to type a code', (tester) async {
+    testWidgets('shows the code boxes when somebody opened it to type a code', (
+      tester,
+    ) async {
       await tester.pumpWidget(const MaterialApp(home: JoinLeagueScreen()));
       await tester.pump();
 
       expect(find.byType(PinInput), findsOneWidget);
-      expect(find.text('Join a League'), findsOneWidget);
+
+      // The eyebrow above the code boxes. Sentence case since the redesign - the
+      // screen title carries the capital, not every heading on it.
+      expect(find.text('Join a league'), findsWidgets);
     });
 
-    testWidgets('shows NO code boxes when it was opened by a link', (tester) async {
+    testWidgets('shows NO code boxes when it was opened by a link', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(home: JoinLeagueScreen(leagueKey: '7jwpbsz5ym')),
       );

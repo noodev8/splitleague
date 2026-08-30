@@ -126,6 +126,23 @@ flutter:
   assets:
     - assets/
 
+  # Two variable typefaces, bundled rather than fetched at runtime so the app
+  # renders identically offline and on first launch.
+  #
+  # Archivo is the display face - it carries a width axis as well as a weight
+  # axis, and the app sets it slightly expanded for titles and scorelines, which
+  # is what gives them their scoreboard/signage look. See styles/app_type.dart.
+  #
+  # Instrument Sans is the body and interface face. It is narrower and quieter
+  # than the display face on purpose, so the two never compete.
+  fonts:
+    - family: Archivo
+      fonts:
+        - asset: fonts/Archivo.ttf
+    - family: InstrumentSans
+      fonts:
+        - asset: fonts/InstrumentSans.ttf
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

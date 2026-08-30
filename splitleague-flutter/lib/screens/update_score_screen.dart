@@ -1,17 +1,36 @@
 /*
-Screen for updating fixture scores
-Allows users to enter and submit scores for a fixture
+Entering the result of one game.
+
+This is the screen the app exists to make easy - a league is only ever as up to date as
+the last person who could be bothered to open this - so it is the shortest screen in the
+app and the fixture itself is the whole of it.
+
+What it replaces. For a win/lose league the old screen showed two identical cards, each
+one headed "Winner" with a trophy and a name underneath, and neither of them said what
+tapping did. For a points league it showed two boxed number fields under a heading. Then
+a filled indigo Submit button, an italic note about who is allowed to update scores, a
+grey timestamp, and a "Void Fixture" text button.
+
+Now the fixture is drawn the way it is drawn everywhere else in the app - two names with
+the score between them - and you set the result by tapping the person who won. The names
+ARE the control, so there is nothing to explain. A points league gets two number fields in
+the same three-column layout, so the two kinds of league look like the same screen.
+
+The rule about who may enter a result has not changed; what changed is that it is only
+mentioned when it applies to you. It used to be an italic note shown to everybody,
+including the people it was granting permission to.
 */
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:intl/intl.dart';
 import '../api/update_fixture_score_api.dart';
 import '../api/void_fixture_api.dart';
 import '../helpers/auth_helper.dart';
-//import '../helpers/error_helper.dart';
-import '../styles/app_styles.dart';
+import '../styles/app_palette.dart';
+import '../styles/app_type.dart';
+import '../widgets/sl_button.dart';
+import '../widgets/sl_empty.dart';
 
 class UpdateScoreScreen extends StatefulWidget {
   final Map<String, dynamic> fixture;
@@ -64,8 +83,10 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
     // Initialize scores if they exist
     if (widget.fixture['played'] == true) {
       if (_winType == 'PTS') {
-        _player1ScoreController.text = widget.fixture['player_1_score']?.toString() ?? '';
-        _player2ScoreController.text = widget.fixture['player_2_score']?.toString() ?? '';
+        _player1ScoreController.text =
+            widget.fixture['player_1_score']?.toString() ?? '';
+        _player2ScoreController.text =
+            widget.fixture['player_2_score']?.toString() ?? '';
       } else {
         // For WIN/WDL types, set the selected result based on scores
         final p1Score = widget.fixture['player_1_score'];
@@ -96,7 +117,8 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
           final bool isCreator = widget.fixture['is_creator'] ?? false;
 
           // User is authorized if they are the league creator or one of the players
-          _isAuthorized = isCreator || userId == player1Id || userId == player2Id;
+          _isAuthorized =
+              isCreator || userId == player1Id || userId == player2Id;
 
           // Set creator flag (only league creators can void fixtures)
           _isCreator = isCreator;
@@ -145,7 +167,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
         if (_selectedResult == null) {
           setState(() {
             _isSubmitting = false;
-            _errorMessage = 'Please select a result';
+            _errorMessage = 'Tap whoever won, or Draw.';
           });
           return;
         }
@@ -181,7 +203,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
       // Show error message
       setState(() {
         _isSubmitting = false;
-        _errorMessage = 'An error occurred. Please try again.';
+        _errorMessage = 'Could not save that result. Try again.';
       });
     }
   }
@@ -191,25 +213,24 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
     // Show confirmation dialog
     final bool? confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Void Fixture'),
-        content: const Text(
-          'Are you sure you want to void this fixture? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Void this game?'),
+            content: const Text(
+              'It stops counting towards the table for either player. This cannot be undone.',
             ),
-            child: const Text('Void Fixture'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Keep it'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: AppPalette.clay),
+                child: const Text('Void it'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
     // If user cancels, do nothing
@@ -249,7 +270,7 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
       // Show error message
       setState(() {
         _isVoiding = false;
-        _errorMessage = 'An error occurred. Please try again.';
+        _errorMessage = 'Could not void that game. Try again.';
       });
     }
   }
@@ -264,507 +285,210 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get player names
-    String rawPlayer1Name = widget.fixture['player_1_nickname']?.isNotEmpty == true
-        ? widget.fixture['player_1_nickname']
-        : widget.fixture['player_1_name'];
+    final String player1Name = _formatPlayerName(
+      widget.fixture['player_1_nickname']?.toString().isNotEmpty == true
+          ? widget.fixture['player_1_nickname'].toString()
+          : (widget.fixture['player_1_name']?.toString() ?? 'Player 1'),
+    );
 
-    String rawPlayer2Name = widget.fixture['player_2_nickname']?.isNotEmpty == true
-        ? widget.fixture['player_2_nickname']
-        : widget.fixture['player_2_name'];
+    final String player2Name = _formatPlayerName(
+      widget.fixture['player_2_nickname']?.toString().isNotEmpty == true
+          ? widget.fixture['player_2_nickname'].toString()
+          : (widget.fixture['player_2_name']?.toString() ?? 'Player 2'),
+    );
 
-    // Format player names to remove 'guest_' prefix
-    final player1Name = _formatPlayerName(rawPlayer1Name);
-    final player2Name = _formatPlayerName(rawPlayer2Name);
+    final bool played = widget.fixture['played'] == true;
 
-    // Format updated date if available
     String? updatedDate;
-    bool hasBeenUpdated = false;
-
     if (widget.fixture['updated_at'] != null) {
-      final date = DateTime.parse(widget.fixture['updated_at']);
-      // Format with date and time, automatically adjusting for local timezone
-      final formatter = DateFormat('dd/MM/yyyy HH:mm');
-      updatedDate = formatter.format(date.toLocal());
-
-      // Check if the fixture has been played/updated
-      hasBeenUpdated = widget.fixture['played'] == true;
+      final DateTime? date = DateTime.tryParse(
+        widget.fixture['updated_at'].toString(),
+      );
+      if (date != null) {
+        updatedDate = DateFormat('d MMM, HH:mm').format(date.toLocal());
+      }
     }
 
     return Scaffold(
+      backgroundColor: AppPalette.chalk,
       appBar: AppBar(
-        title: const Text('Update Score', style: TextStyle(fontWeight: FontWeight.bold)),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF005F8A), // Top color from logo gradient
-                Color(0xFF00B3A4), // Bottom color from logo gradient
+        // The title says what you are doing, and changes with the state of the
+        // fixture, because changing a result you already entered feels different
+        // from entering one for the first time.
+        title: Text(played ? 'Change the result' : 'Enter the result'),
+        backgroundColor: AppPalette.surface,
+        shape: const Border(bottom: BorderSide(color: AppPalette.hairline)),
+      ),
+
+      body: SafeArea(
+        bottom: false,
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+            children: [
+              if (_winType == 'PTS')
+                _buildScoreEntry(player1Name, player2Name)
+              else
+                _buildWinnerChoice(player1Name, player2Name),
+
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 20),
+                SlError(message: _errorMessage!),
               ],
+
+              // Only said when it applies to you. The old screen told everybody the
+              // rule, including the people it was granting permission to.
+              if (!_isAuthorized && _userData != null) ...[
+                const SizedBox(height: 20),
+                Text(
+                  'Only the organiser and the two players can enter this result.',
+                  textAlign: TextAlign.center,
+                  style: AppType.b(AppType.meta),
+                ),
+              ],
+
+              if (played && updatedDate != null) ...[
+                const SizedBox(height: 24),
+                Text(
+                  'Last changed $updatedDate',
+                  textAlign: TextAlign.center,
+                  style: AppType.b(AppType.meta, size: 12),
+                ),
+              ],
+
+              // Voiding is rare, destructive and organiser-only, so it sits at the
+              // bottom in clay text rather than as a button. Same rule as the
+              // destructive rows on the Details screen.
+              if (_isCreator && played) ...[
+                const SizedBox(height: 28),
+                Center(
+                  child: TextButton(
+                    onPressed:
+                        _isSubmitting || _isVoiding ? null : _handleVoidFixture,
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppPalette.clay,
+                    ),
+                    child: Text(
+                      _isVoiding ? 'Voiding' : 'Void this game',
+                      style: AppType.b(
+                        AppType.action,
+                        color: AppPalette.clay,
+                        size: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: AppPalette.chalk,
+          border: Border(top: BorderSide(color: AppPalette.hairline)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: SlButton.primary(
+              label: _isSubmitting ? 'Saving' : 'Save result',
+              busy: _isSubmitting,
+              onPressed:
+                  _isSubmitting || _isVoiding || !_isAuthorized
+                      ? null
+                      : _handleSubmit,
             ),
           ),
         ),
       ),
-      body: Container(
-        color: AppStyles.backgroundColor,
-        child: SafeArea(
-          bottom: false,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Reduced space at the top
-                  const SizedBox(height: 8),
+    );
+  }
 
-                  // Different UI based on win type
-                  if (_winType == 'PTS')
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(13),
-                            blurRadius: 10,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          // Player names in a row
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                                  decoration: BoxDecoration(
-                                    color: AppStyles.primaryColor.withAlpha(25),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    player1Name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: AppStyles.primaryColor,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                                  decoration: BoxDecoration(
-                                    color: AppStyles.accentColor.withAlpha(25),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    player2Name,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: AppStyles.accentColor,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+  // Win or lose, and draw where the league allows it.
+  //
+  // You tap the person who won. The name is the control, which is why there is no
+  // instruction anywhere on this screen - the old one needed the word "Winner" printed
+  // twice because two identical cards could not say what they were for.
+  Widget _buildWinnerChoice(String player1Name, String player2Name) {
+    // Only a win/draw/lose league can end in a draw. Offering it in a win/lose
+    // league would be offering a result the table cannot represent.
+    final bool allowsDraw = _winType == 'WDL';
 
-                          const SizedBox(height: 24),
+    return Column(
+      children: [
+        Text('WHO WON?', style: AppType.b(AppType.eyebrow)),
+        const SizedBox(height: 14),
 
-                          // Score inputs in a row
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              // Player 1 score
-                              Column(
-                                children: [
-                                  const SizedBox(height: 4),
-                                  Container(
-                                    width: 90,
-                                    height: 80,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: AppStyles.primaryColor.withAlpha(100), width: 1),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.grey.withAlpha(30),
-                                          blurRadius: 4,
-                                          spreadRadius: 1,
-                                          offset: const Offset(0, 1),
-                                        ),
-                                      ],
-                                    ),
-                                    child: TextFormField(
-                                      controller: _player1ScoreController,
-                                      decoration: InputDecoration(
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide.none,
-                                        ),
-                                        filled: true,
-                                        fillColor: Colors.white,
-                                        contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                                      ),
-                                      keyboardType: TextInputType.number,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly,
-                                        LengthLimitingTextInputFormatter(3),
-                                      ],
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Required';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
+        // IntrinsicHeight, not CrossAxisAlignment.stretch. This row sits in a
+        // ListView, so its incoming height is unbounded, and asking two children to
+        // stretch to fill an unbounded height is an assertion rather than a layout.
+        // IntrinsicHeight measures the taller of the two names first, so a one-line
+        // name and a two-line one still produce two tiles of the same height.
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: _winnerTile(player1Name, 'WIN_1')),
+              const SizedBox(width: 10),
+              Expanded(child: _winnerTile(player2Name, 'WIN_2')),
+            ],
+          ),
+        ),
 
-                              // VS indicator
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade200,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    'VS',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: AppStyles.secondaryTextColor,
-                                    ),
-                                  ),
-                                ),
-                              ),
+        if (allowsDraw) ...[
+          const SizedBox(height: 10),
+          _winnerTile('Neither — it was a draw', 'DRAW', wide: true),
+        ],
+      ],
+    );
+  }
 
-                              // Player 2 score
-                              Column(
-                                children: [
-                                  const SizedBox(height: 4),
-                                  Container(
-                                    width: 90,
-                                    height: 80,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: AppStyles.primaryColor.withAlpha(100), width: 1),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.grey.withAlpha(30),
-                                          blurRadius: 4,
-                                          spreadRadius: 1,
-                                          offset: const Offset(0, 1),
-                                        ),
-                                      ],
-                                    ),
-                                    child: TextFormField(
-                                      controller: _player2ScoreController,
-                                      decoration: InputDecoration(
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide.none,
-                                        ),
-                                        filled: true,
-                                        fillColor: Colors.white,
-                                        contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                                      ),
-                                      keyboardType: TextInputType.number,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly,
-                                        LengthLimitingTextInputFormatter(3),
-                                      ],
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Required';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+  // One choice. Filled teal when it is the answer, plain white when it is not -
+  // the same primary/secondary weighting as the buttons, so a selected answer reads
+  // as the committed one.
+  Widget _winnerTile(String label, String value, {bool wide = false}) {
+    final bool selected = _selectedResult == value;
+    final bool enabled = _isAuthorized;
 
-                  const SizedBox(height: 32),
-
-                  // Error message
-                  if (_errorMessage != null)
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppStyles.errorColor.withAlpha(25),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.error_outline, color: AppStyles.errorColor),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _errorMessage!,
-                              style: const TextStyle(
-                                color: AppStyles.errorColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (_errorMessage != null) const SizedBox(height: 24),
-
-                  // Win/Draw/Loss selection for WIN or WDL types
-                  if (_winType == 'WIN' || _winType == 'WDL')
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: AppStyles.cardDecoration,
-                      child: Column(
-                        children: [
-                          // Result selection cards - Winners in a row
-                          Row(
-                            children: [
-                              // Player 1 wins
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedResult = 'WIN_1';
-                                    });
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: _selectedResult == 'WIN_1'
-                                        ? AppStyles.selectedCardDecoration
-                                        : AppStyles.selectionCardDecoration,
-                                    child: Column(
-                                      children: [
-                                        Icon(
-                                          Icons.emoji_events,
-                                          size: 32,
-                                          color: _selectedResult == 'WIN_1' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          'Winner',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: _selectedResult == 'WIN_1' ? AppStyles.primaryColor : AppStyles.textColor,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          player1Name,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: _selectedResult == 'WIN_1' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-
-                              // Player 2 wins
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedResult = 'WIN_2';
-                                    });
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: _selectedResult == 'WIN_2'
-                                        ? AppStyles.selectedCardDecoration
-                                        : AppStyles.selectionCardDecoration,
-                                    child: Column(
-                                      children: [
-                                        Icon(
-                                          Icons.emoji_events,
-                                          size: 32,
-                                          color: _selectedResult == 'WIN_2' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          'Winner',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: _selectedResult == 'WIN_2' ? AppStyles.primaryColor : AppStyles.textColor,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          player2Name,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: _selectedResult == 'WIN_2' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          // Draw option below (only for WDL type)
-                          if (_winType == 'WDL') ...[
-                            const SizedBox(height: 12),
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedResult = 'DRAW';
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: _selectedResult == 'DRAW'
-                                    ? AppStyles.selectedCardDecoration
-                                    : AppStyles.selectionCardDecoration,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.handshake,
-                                      size: 32,
-                                      color: _selectedResult == 'DRAW' ? AppStyles.primaryColor : AppStyles.secondaryTextColor,
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Draw',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: _selectedResult == 'DRAW' ? AppStyles.primaryColor : AppStyles.textColor,
-                                          ),
-                                        ),
-                                        // Removed 'Equal Score' text as requested
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-
-                  const SizedBox(height: 24),
-
-                  // Submit button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isSubmitting || _isVoiding || !_isAuthorized ? null : _handleSubmit,
-                      style: AppStyles.primaryButtonStyle,
-                      child: _isSubmitting
-                          ? const SpinKitThreeBounce(
-                              color: Colors.white,
-                              size: 24,
-                            )
-                          : Text(_winType == 'PTS' ? 'Submit Score' : 'Submit Result'),
-                    ),
-                  ),
-
-                  // Note
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Note: Scores can only be updated by the league organiser or the players involved in the match.',
-                    style: TextStyle(
-                      color: AppStyles.secondaryTextColor,
-                      fontSize: 12,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-
-                  // Last updated date (subtle)
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        hasBeenUpdated ? Icons.update : Icons.schedule,
-                        size: 12,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        hasBeenUpdated
-                            ? 'Last updated: $updatedDate'
-                            : 'Not yet updated',
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Void fixture button (only for league creators)
-                  if (_isCreator) ...[
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: _isSubmitting || _isVoiding ? null : _handleVoidFixture,
-                        icon: Icon(
-                          Icons.remove_circle_outline,
-                          size: 16,
-                          color: Colors.grey[700],
-                        ),
-                        label: Text(
-                          'Void Fixture',
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontSize: 14,
-                          ),
-                        ),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
+    return Semantics(
+      button: true,
+      selected: selected,
+      enabled: enabled,
+      label: label,
+      excludeSemantics: true,
+      child: Material(
+        color: selected ? AppPalette.teal : AppPalette.surface,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: enabled ? () => setState(() => _selectedResult = value) : null,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: wide ? 16 : 28,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: selected ? AppPalette.teal : AppPalette.hairline,
+                width: selected ? 2 : 1,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppType.t(
+                  wide ? AppType.titleSmall : AppType.title,
+                  color: selected ? AppPalette.onDark : AppPalette.ink,
+                  size: wide ? 15 : null,
+                ),
               ),
             ),
           ),
@@ -772,5 +496,80 @@ class _UpdateScoreScreenState extends State<UpdateScoreScreen> {
       ),
     );
   }
-}
 
+  // A points league: the scoreline, with the numbers typed in.
+  //
+  // Laid out in the same three columns as every other scoreline in the app - name,
+  // score, name - so entering a result looks like the row it is about to become.
+  Widget _buildScoreEntry(String player1Name, String player2Name) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 22),
+      decoration: BoxDecoration(
+        color: AppPalette.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppPalette.hairline),
+      ),
+      child: Column(
+        children: [
+          Text('THE SCORE', style: AppType.b(AppType.eyebrow)),
+          const SizedBox(height: 18),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _scoreField(player1Name, _player1ScoreController),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 34),
+                child: Text(
+                  '–',
+                  style: AppType.t(AppType.score, color: AppPalette.slate),
+                ),
+              ),
+              Expanded(
+                child: _scoreField(player2Name, _player2ScoreController),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _scoreField(String name, TextEditingController controller) {
+    return Column(
+      children: [
+        Text(
+          name,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppType.b(AppType.name),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: 96,
+          child: TextFormField(
+            controller: controller,
+            enabled: _isAuthorized,
+            textAlign: TextAlign.center,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            style: AppType.t(AppType.score, size: 30),
+            decoration: const InputDecoration(
+              hintText: '0',
+              counterText: '',
+              contentPadding: EdgeInsets.symmetric(vertical: 14),
+            ),
+            maxLength: 3,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) return 'Needed';
+              if (int.tryParse(value.trim()) == null) return 'Numbers only';
+              return null;
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}

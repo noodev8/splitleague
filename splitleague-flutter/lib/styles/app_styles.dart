@@ -1,168 +1,114 @@
 /*
-Shared styles for the splitleague application
-Contains colors, text styles, and other UI elements
+The old style constants, repointed at the new palette.
+
+This file used to be where the app's look was defined - an indigo primary, a Material grey
+background, a set of ElevatedButton styles. It is now a thin layer over
+styles/app_palette.dart and styles/app_type.dart, and nothing here has a colour of its own.
+
+Why it still exists. The screens that carry most of the app's traffic - the dashboard, the
+four league screens, sign in, register, create and join - were rewritten against the new
+system directly. The handful that are reached rarely, like change password and hidden
+leagues, still refer to these names. Repointing them here means those screens sit inside
+the palette without each one having to be rebuilt, and there is no second palette left in
+the codebase that could drift.
+
+Do not add to this file. New work uses AppPalette and AppType. When the last of the older
+screens is rewritten this file goes away, and the analyzer will say so by finding no
+references.
 */
 
 import 'package:flutter/material.dart';
+import 'app_palette.dart';
+import 'app_type.dart';
 
 class AppStyles {
-  // Colors
-  static const Color primaryColor = Color(0xFF3F51B5);
-  static const Color accentColor = Color(0xFF536DFE);
-  static const Color backgroundColor = Color(0xFFF5F5F5);
-  static const Color textColor = Color(0xFF212121);
-  static const Color secondaryTextColor = Color(0xFF757575);
-  static const Color successColor = Color(0xFF388E3C);
-  static const Color cardColor = Color(0xFFFFFFFF);
+  // Colours - every one of these is now an alias.
+  static const Color primaryColor = AppPalette.teal;
+  static const Color accentColor = AppPalette.tealDeep;
+  static const Color backgroundColor = AppPalette.chalk;
+  static const Color textColor = AppPalette.ink;
+  static const Color secondaryTextColor = AppPalette.slate;
+  static const Color successColor = AppPalette.pitch;
+  static const Color cardColor = AppPalette.surface;
+  static const Color errorColor = AppPalette.clay;
 
-  // Ice theme colors
-  static const Color iceWhite = Color(0xFFFFFFFF);
-  static const Color iceLightBlue = Color(0xFFE3F2FD);
-  static const Color iceBlue = Color(0xFF0288D1);
-  static const Color iceDarkBlue = Color(0xFF005F8A);
-  static const Color errorColor = Color(0xFFD32F2F);
+  // The old "ice theme" names. They were a second palette that had drifted from the
+  // first; they now point at the same places as everything else.
+  static const Color iceWhite = AppPalette.surface;
+  static const Color iceLightBlue = AppPalette.tealTint;
+  static const Color iceBlue = AppPalette.teal;
+  static const Color iceDarkBlue = AppPalette.deep;
 
-  // Text Styles
-  static const TextStyle headingStyle = TextStyle(
-    fontSize: 24,
-    fontWeight: FontWeight.bold,
-    color: textColor,
-  );
+  // Text styles.
+  static TextStyle get headingStyle => AppType.t(AppType.display, size: 24);
+  static TextStyle get subheadingStyle =>
+      AppType.t(AppType.titleSmall, size: 18);
+  static TextStyle get bodyStyle => AppType.b(AppType.body, size: 16);
+  static TextStyle get captionStyle => AppType.b(AppType.meta, size: 14);
+  static TextStyle get sectionHeading => AppType.t(AppType.title);
+  static TextStyle get subtitle => AppType.b(AppType.meta, size: 14);
 
-  static const TextStyle subheadingStyle = TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.w500,
-    color: textColor,
-  );
-
-  static const TextStyle bodyStyle = TextStyle(
-    fontSize: 16,
-    color: textColor,
-  );
-
-  static const TextStyle captionStyle = TextStyle(
-    fontSize: 14,
-    color: secondaryTextColor,
-  );
-
-  static const TextStyle sectionHeading = TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.bold,
-    color: textColor,
-  );
-
-  static const TextStyle subtitle = TextStyle(
-    fontSize: 14,
-    color: secondaryTextColor,
-    fontWeight: FontWeight.w500,
-  );
-
-  // Button Styles
+  // Buttons.
+  //
+  // These match SlButton's three kinds, so a screen still using them looks like one
+  // that has been rewritten. New work uses widgets/sl_button.dart, which also carries
+  // the rule about one filled button per screen.
   static final ButtonStyle primaryButtonStyle = ElevatedButton.styleFrom(
-    backgroundColor: primaryColor,
-    foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
-    ),
+    backgroundColor: AppPalette.teal,
+    foregroundColor: AppPalette.onDark,
+    elevation: 0,
+    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+    textStyle: AppType.b(AppType.action),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
   );
 
   static final ButtonStyle secondaryButtonStyle = OutlinedButton.styleFrom(
-    foregroundColor: primaryColor,
-    side: const BorderSide(color: primaryColor),
-    padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
-    ),
+    foregroundColor: AppPalette.tealDeep,
+    side: BorderSide(color: AppPalette.tealDeep.withValues(alpha: 0.45)),
+    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+    textStyle: AppType.b(AppType.action),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
   );
 
   static final ButtonStyle subtleButtonStyle = TextButton.styleFrom(
-    foregroundColor: primaryColor,
-    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
-    ),
+    foregroundColor: AppPalette.tealDeep,
+    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+    textStyle: AppType.b(AppType.action),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
   );
 
-  static final ButtonStyle tabButtonStyle = ElevatedButton.styleFrom(
-    backgroundColor: Colors.white,
-    foregroundColor: secondaryTextColor,
-    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
-    ),
-    elevation: 0,
-    minimumSize: const Size(10, 36),
-  );
-
-  static final ButtonStyle activeTabButtonStyle = ElevatedButton.styleFrom(
-    backgroundColor: primaryColor,
-    foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
-    ),
-    elevation: 0,
-    minimumSize: const Size(10, 36),
-  );
-
-  // Input Decoration
-  static InputDecoration inputDecoration(String label, {String? hint, Widget? prefixIcon, Widget? suffixIcon}) {
+  // Fields. The theme already styles every field in the app; this stays only so that
+  // the older screens calling it get the same one.
+  static InputDecoration inputDecoration(
+    String label, {
+    String? hint,
+    Widget? prefixIcon,
+    Widget? suffixIcon,
+  }) {
     return InputDecoration(
       labelText: label,
       hintText: hint,
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Colors.grey),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: primaryColor, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: errorColor),
-      ),
-      contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
     );
   }
 
-  // Card Decoration
+  // Surfaces.
   static final BoxDecoration cardDecoration = BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(10),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.grey.withAlpha(51), // 0.2 opacity (51/255)
-        spreadRadius: 1,
-        blurRadius: 5,
-        offset: const Offset(0, 2),
-      ),
-    ],
+    color: AppPalette.surface,
+    borderRadius: BorderRadius.circular(12),
+    border: Border.all(color: AppPalette.hairline),
   );
 
-  // Selection Card Decoration
   static final BoxDecoration selectionCardDecoration = BoxDecoration(
-    color: cardColor,
-    borderRadius: BorderRadius.circular(8),
-    border: Border.all(color: Colors.grey.shade300, width: 1),
+    color: AppPalette.surface,
+    borderRadius: BorderRadius.circular(10),
+    border: Border.all(color: AppPalette.hairline),
   );
 
   static final BoxDecoration selectedCardDecoration = BoxDecoration(
-    color: Colors.grey.shade100,
-    borderRadius: BorderRadius.circular(8),
-    border: Border.all(color: primaryColor, width: 1),
-  );
-
-  // Tab Container Decoration
-  static final BoxDecoration tabContainerDecoration = BoxDecoration(
-    color: Colors.grey.shade100,
-    borderRadius: BorderRadius.circular(8),
-    border: Border.all(color: Colors.grey.shade200),
+    color: AppPalette.tealTint,
+    borderRadius: BorderRadius.circular(10),
+    border: Border.all(color: AppPalette.teal),
   );
 }

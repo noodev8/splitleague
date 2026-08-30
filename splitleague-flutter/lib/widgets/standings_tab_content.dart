@@ -1,62 +1,46 @@
+/*
+The league table.
+
+The table is the reason the app exists - it is the thing people screenshot and send to
+each other - so it is the one place the display face is allowed to do the most work.
+
+Changes from the old table:
+
+  * The top three positions were coloured blue and the rest grey, which said "these
+    three are special" in a two-player league. Position is now plain, and the only
+    thing marked is the row that is you - the one piece of information a person
+    scanning a table actually wants first.
+
+  * W, D and L were green, amber and red. Three more colours on a screen that already
+    had too many, to label columns whose headers already say what they are. They are
+    now all ink, with the points column heavier - because the points column is the
+    one that decides the order, and it should be the one that reads loudest.
+
+  * Numbers are tabular figures in the display face, so the columns line up as
+    columns rather than drifting as scores change.
+
+Which columns appear still depends on the scoring type, which is right: a Win/Lose league
+has no draws, so showing a D column full of zeroes would be noise.
+*/
+
 import 'package:flutter/material.dart';
-import '../widgets/error_display.dart';
+import '../styles/app_palette.dart';
+import '../styles/app_type.dart';
+import 'sl_empty.dart';
 
-class EmptyStateDisplay extends StatelessWidget {
-  final String message;
-  final IconData icon;
-  final String? actionText;
-  final Function()? onAction;
-
-  const EmptyStateDisplay({
-    super.key,
-    required this.message,
-    required this.icon,
-    this.actionText,
-    this.onAction,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 32.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 16,
-              ),
-            ),
-            if (actionText != null && onAction != null) ...[
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: onAction,
-                child: Text(actionText!),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class StandingsTabContent extends StatefulWidget {
+class StandingsTabContent extends StatelessWidget {
   final bool isLoadingStandings;
   final List<Map<String, dynamic>> standings;
   final String? standingsErrorMessage;
   final String? winType;
   final Function() onLoadStandings;
+
+  // Who is looking at the table, so their own row can be marked.
+  //
+  // Done here rather than read off the row because the server has never sent an
+  // `is_current_user` flag - the old table looked for one, so the highlight it was
+  // trying to draw had never appeared for anybody.
+  final int? currentUserId;
 
   const StandingsTabContent({
     super.key,
@@ -65,311 +49,184 @@ class StandingsTabContent extends StatefulWidget {
     required this.standingsErrorMessage,
     required this.winType,
     required this.onLoadStandings,
+    this.currentUserId,
   });
 
-  @override
-  State<StandingsTabContent> createState() => _StandingsTabContentState();
-}
-
-class _StandingsTabContentState extends State<StandingsTabContent> {
-  // Helper method to remove 'guest_' prefix from player names
+  // Guests are stored with a "guest_" prefix on the nickname; never show it.
   String _formatPlayerName(String name) {
-    if (name.startsWith('guest_')) {
-      return name.substring(6); // Remove 'guest_' prefix
-    }
-    return name;
+    return name.startsWith('guest_') ? name.substring(6) : name;
   }
 
-  @override
-  void initState() {
-    super.initState();
-    // No forced reload - we rely on the provider's initialization
+  // Every column apart from the name, in order, decided by the scoring type.
+  //
+  // Held as a list rather than written out twice so the header and the rows cannot
+  // drift apart - which they had, in the old version, for the bonus column.
+  List<_Column> _columns() {
+    final bool isWinOnly = winType == 'WIN';
+    final bool isWdl = winType == 'WDL';
+    final bool isPoints = winType == 'PTS';
+
+    return <_Column>[
+      const _Column('P', 'played', width: 30),
+      if (!isWinOnly) const _Column('W', 'won', width: 30),
+      if (isWdl) const _Column('D', 'drawn', width: 30),
+      if (!isWinOnly) const _Column('L', 'lost', width: 30),
+      if (isPoints) const _Column('B', 'bonus_points', width: 30),
+
+      // The column the table is sorted by, so it is the emphasised one.
+      _Column(
+        isWinOnly ? 'Won' : 'Pts',
+        isWinOnly ? 'won' : 'points',
+        width: 42,
+        emphasis: true,
+      ),
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Loading indicator
-        if (widget.isLoadingStandings)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 32),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text(
-                    'Loading standings...',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 14,
-                    ),
-                  ),
+    if (isLoadingStandings) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 56),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (standingsErrorMessage != null) {
+      return SlError(
+        message: standingsErrorMessage!,
+        onRetry: onLoadStandings,
+        retryLabel: 'Reload the table',
+      );
+    }
+
+    if (standings.isEmpty) {
+      return const SlEmpty(
+        title: 'No table yet',
+        detail: 'It fills in as results are entered.',
+      );
+    }
+
+    final List<_Column> columns = _columns();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppPalette.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppPalette.hairline),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          _buildHeader(columns),
+          for (int i = 0; i < standings.length; i++) ...[
+            const Divider(height: 1, thickness: 1, color: AppPalette.hairline),
+            _buildRow(standings[i], i + 1, columns),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(List<_Column> columns) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+      color: AppPalette.chalk,
+      child: Row(
+        children: [
+          const SizedBox(width: 22),
+          Expanded(child: Text('PLAYER', style: AppType.b(AppType.eyebrow))),
+          for (final column in columns)
+            SizedBox(
+              width: column.width,
+              child: Text(
+                column.label.toUpperCase(),
+                textAlign: TextAlign.center,
+                style: AppType.b(AppType.eyebrow),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRow(
+    Map<String, dynamic> player,
+    int position,
+    List<_Column> columns,
+  ) {
+    final bool isCurrentUser =
+        currentUserId != null &&
+        player['user_id']?.toString() == currentUserId.toString();
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+      // The only highlighted row is you. Everything else stays plain, which is
+      // what makes finding yourself instant.
+      color: isCurrentUser ? AppPalette.tealTint.withValues(alpha: 0.6) : null,
+      child: Row(
+        children: [
+          SizedBox(
+            width: 22,
+            child: Text(
+              '$position',
+              style: AppType.t(
+                AppType.figure,
+                color: AppPalette.slate,
+                size: 14,
+              ),
+            ),
+          ),
+
+          Expanded(
+            child: Text(
+              _formatPlayerName(
+                player['nickname'] ?? player['name'] ?? 'Unknown',
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+              style: AppType.b(AppType.name).copyWith(
+                fontWeight: isCurrentUser ? FontWeight.w700 : FontWeight.w500,
+                fontVariations: <FontVariation>[
+                  FontVariation('wght', isCurrentUser ? 700 : 500),
                 ],
               ),
             ),
-          )
-        // Error message
-        else if (widget.standingsErrorMessage != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: ErrorDisplay(
-              message: widget.standingsErrorMessage!,
-              onRetry: widget.onLoadStandings,
-              retryText: 'Refresh Standings',
-            ),
-          )
-        // Empty standings
-        else if (widget.standings.isEmpty)
-          EmptyStateDisplay(
-            message: 'No Standings Yet\nStandings will appear once matches have been played',
-            icon: Icons.leaderboard,
-            actionText: 'Refresh',
-            onAction: widget.onLoadStandings,
-          )
-        // Standings table
-        else
-          _buildStandingsTable(),
-      ],
-    );
-  }
+          ),
 
-  Widget _buildStandingsTable() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Table header
-            _buildTableHeader(),
-            const SizedBox(height: 8),
-            // Table rows
-            ...List.generate(
-              widget.standings.length,
-              (index) => _buildTableRow(widget.standings[index], index + 1),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTableHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.grey.shade300,
-            width: 1.0,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 24), // Position column
-          Expanded(
-            flex: 3,
-            child: Text(
-              'Player',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade700,
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 30,
-            child: Text(
-              'P',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade700,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          if (widget.winType != 'WIN') ...[
+          for (final column in columns)
             SizedBox(
-              width: 30,
+              width: column.width,
               child: Text(
-                'W',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade700,
-                ),
+                '${player[column.field] ?? 0}',
                 textAlign: TextAlign.center,
-              ),
-            ),
-            if (widget.winType == 'WDL')
-              SizedBox(
-                width: 30,
-                child: Text(
-                  'D',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade700,
-                  ),
-                  textAlign: TextAlign.center,
+                style: AppType.t(
+                  AppType.figure,
+                  color: column.emphasis ? AppPalette.ink : AppPalette.slate,
+                  size: column.emphasis ? 16 : 14,
                 ),
               ),
-            SizedBox(
-              width: 30,
-              child: Text(
-                'L',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade700,
-                ),
-                textAlign: TextAlign.center,
-              ),
             ),
-          ],
-          // Bonus column for PTS type
-          if (widget.winType == 'PTS')
-            SizedBox(
-              width: 30,
-              child: Text(
-                'B',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade700,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          // Points column
-          SizedBox(
-            width: 40,
-            child: Text(
-              widget.winType == 'WIN' ? 'Won' : 'Pts',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade700,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildTableRow(Map<String, dynamic> player, int position) {
-    final isCurrentUser = player['is_current_user'] == true;
+// One numeric column of the table.
+class _Column {
+  final String label;
+  final String field;
+  final double width;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      decoration: BoxDecoration(
-        color: isCurrentUser ? Colors.blue.withAlpha(20) : null,
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.grey.shade200,
-            width: 1.0,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          // Position
-          SizedBox(
-            width: 24,
-            child: Text(
-              '$position',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: position <= 3 ? Colors.blue : Colors.grey.shade700,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          // Player name
-          Expanded(
-            flex: 3,
-            child: Text(
-              _formatPlayerName(player['nickname'] ?? player['name'] ?? 'Unknown'),
-              style: TextStyle(
-                fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.normal,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          // Played
-          SizedBox(
-            width: 30,
-            child: Text(
-              '${player['played'] ?? 0}',
-              textAlign: TextAlign.center,
-            ),
-          ),
-          // Won, Draw, Lost columns (only for WDL and PTS)
-          if (widget.winType != 'WIN') ...[
-            SizedBox(
-              width: 30,
-              child: Text(
-                '${player['won'] ?? 0}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.green,
-                ),
-              ),
-            ),
-            if (widget.winType == 'WDL')
-              SizedBox(
-                width: 30,
-                child: Text(
-                  '${player['drawn'] ?? 0}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.amber.shade700,
-                  ),
-                ),
-              ),
-            SizedBox(
-              width: 30,
-              child: Text(
-                '${player['lost'] ?? 0}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.red,
-                ),
-              ),
-            ),
-          ],
-          // Bonus points for PTS type
-          if (widget.winType == 'PTS')
-            SizedBox(
-              width: 30,
-              child: Text(
-                '${player['bonus_points'] ?? 0}',
-                style: TextStyle(
-                  color: (player['bonus_points'] ?? 0) > 0 ? Colors.purple : Colors.grey,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          // Points
-          SizedBox(
-            width: 40,
-            child: Text(
-              '${player['points'] ?? 0}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // The column the table is ordered by. Drawn heavier and in ink, because it is
+  // the one that explains the order everything else is in.
+  final bool emphasis;
+
+  const _Column(
+    this.label,
+    this.field, {
+    required this.width,
+    this.emphasis = false,
+  });
 }

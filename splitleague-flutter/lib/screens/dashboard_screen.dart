@@ -1,10 +1,41 @@
 /*
-Show the leagues dashboard screen after user login
-Displays a list of leagues the user is a member of
-Provides options to create or join leagues
+The dashboard: every league you are in, and what each of them wants from you.
+
+This is the screen people were leaving from, so it is the screen that changed most.
+
+What was wrong with it. The old dashboard was a full-page teal gradient with white cards
+floating on it, a list of league names with a player count, and a four-item bottom
+navigation bar. Three of those four items - Create, Join, Profile - were not tabs at all;
+they pushed a screen and then the bar snapped back to Home. So the app's most prominent
+piece of navigation was lying about what it did, while the actual next step for a new user
+was not on the screen anywhere.
+
+What it is now.
+
+  * The header answers "does anything need me?" before you read a single league name.
+    That is the whole job of a dashboard and the old one never did it.
+
+  * The list is a to-do list. Each card carries the next step for that league in
+    words - see helpers/league_prompt.dart - and the ones that want something carry a
+    coloured rule.
+
+  * The two things a person actually comes here to do that are not "open a league" -
+    start a new one, join someone else's - are a fixed bar at the bottom, ranked.
+    One filled teal button for the common case, one text link for the other.
+
+  * The bottom navigation bar is gone. Profile moved to the avatar in the header,
+    which is where people look for it anyway.
+
+The empty state is treated as the most important screen in the app rather than as a grey
+apology, because for a new user it IS the app.
+
+Navigation behaviour underneath is deliberately unchanged - the dashboard still opens a
+league with `push` and refreshes on `didPopNext`. See docs/next-league-flow.md for why
+both of those matter; they are subtle and they were hard won.
 */
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import '../api/get_user_leagues_api.dart';
 import '../api/update_last_accessed_api.dart';
@@ -13,11 +44,13 @@ import '../api/get_fixtures_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/deep_link_helper.dart';
 import '../helpers/error_helper.dart';
+import '../helpers/league_prompt.dart';
 import '../helpers/route_observer.dart';
-import '../styles/app_styles.dart';
+import '../styles/app_palette.dart';
+import '../styles/app_type.dart';
 import '../widgets/league_card.dart';
+import '../widgets/sl_button.dart';
 import 'create_league_screen.dart';
-//import 'developer_screen.dart';
 import 'fixtures_screen.dart';
 import 'join_league_screen.dart';
 import 'login_user_screen.dart';
@@ -33,9 +66,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
-  // Selected tab index
-  int _selectedIndex = 0;
-
   // Leagues data
   List<Map<String, dynamic>> _leagues = [];
 
@@ -49,11 +79,9 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
   String? _errorMessage;
 
   // Refresh controller for pull-to-refresh
-  final RefreshController _refreshController = RefreshController(initialRefresh: false);
-
-  // Variables for developer mode tap detection
-  // int _tapCount = 0;
-  // DateTime? _lastTapTime;
+  final RefreshController _refreshController = RefreshController(
+    initialRefresh: false,
+  );
 
   @override
   void initState() {
@@ -126,11 +154,15 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
         final response = await GetUserLeaguesApi.getUserLeagues();
 
         // Check if response is unauthorized (expired/invalid token)
-        final wasUnauthorized = await AuthHelper.handleUnauthorizedResponse(response);
+        final wasUnauthorized = await AuthHelper.handleUnauthorizedResponse(
+          response,
+        );
         if (wasUnauthorized) {
           // Token was invalid/expired, logout and redirect to login
           if (mounted) {
-            ErrorHelper.showErrorToast('Your session has expired. Please log in again.');
+            ErrorHelper.showErrorToast(
+              'Your session has expired. Please log in again.',
+            );
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (context) => const LoginUserScreen()),
               (route) => false,
@@ -144,27 +176,12 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
           final List<dynamic> leaguesData = response['leagues'] ?? [];
 
           // Convert to List<Map<String, dynamic>>
-          final leagues = leaguesData.map((league) => league as Map<String, dynamic>).toList();
+          final leagues =
+              leaguesData
+                  .map((league) => league as Map<String, dynamic>)
+                  .toList();
 
-          // Sort by last_accessed (most recent first)
-          leagues.sort((a, b) {
-            final DateTime? lastAccessedA = a['last_accessed'] != null
-                ? DateTime.parse(a['last_accessed'])
-                : null;
-            final DateTime? lastAccessedB = b['last_accessed'] != null
-                ? DateTime.parse(b['last_accessed'])
-                : null;
-
-            if (lastAccessedA != null && lastAccessedB != null) {
-              return lastAccessedB.compareTo(lastAccessedA);
-            } else if (lastAccessedA != null) {
-              return -1;
-            } else if (lastAccessedB != null) {
-              return 1;
-            } else {
-              return 0;
-            }
-          });
+          _sortLeagues(leagues);
 
           setState(() {
             _userData = userData;
@@ -176,7 +193,8 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
           setState(() {
             _userData = userData;
             _isLoading = false;
-            _errorMessage = response['message'] ?? 'Failed to load leagues';
+            _errorMessage =
+                response['message'] ?? 'Could not load your leagues';
           });
         }
       } else {
@@ -191,9 +209,39 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'An error occurred while loading data';
+        _errorMessage = 'Could not load your leagues. Pull down to try again.';
       });
     }
+  }
+
+  // Order the list so that the leagues wanting something come first.
+  //
+  // This changed with the redesign. It used to be most-recently-opened first, full stop,
+  // which meant a league you had just looked at outranked one with six results waiting.
+  // Now attention wins, and recency breaks the tie inside each group - so the order is
+  // still stable and familiar within a group, but the top of the list is always the work.
+  void _sortLeagues(List<Map<String, dynamic>> leagues) {
+    leagues.sort((a, b) {
+      final bool attentionA = LeaguePrompt.needsAttention(a);
+      final bool attentionB = LeaguePrompt.needsAttention(b);
+
+      if (attentionA != attentionB) {
+        return attentionA ? -1 : 1;
+      }
+
+      final DateTime? lastA = _parseDate(a['last_accessed']);
+      final DateTime? lastB = _parseDate(b['last_accessed']);
+
+      if (lastA != null && lastB != null) return lastB.compareTo(lastA);
+      if (lastA != null) return -1;
+      if (lastB != null) return 1;
+      return 0;
+    });
+  }
+
+  DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    return DateTime.tryParse(value.toString());
   }
 
   // Open a league.
@@ -221,12 +269,15 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
       hasFixtures = league['has_fixtures'] == true;
     } else {
       try {
-        final fixturesResponse = await GetFixturesApi.getFixtures(league['league_id']);
-        hasFixtures = fixturesResponse['return_code'] == 'SUCCESS' &&
-                      (fixturesResponse['fixtures'] as List?)?.isNotEmpty == true;
+        final fixturesResponse = await GetFixturesApi.getFixtures(
+          league['league_id'],
+        );
+        hasFixtures =
+            fixturesResponse['return_code'] == 'SUCCESS' &&
+            (fixturesResponse['fixtures'] as List?)?.isNotEmpty == true;
       } catch (e) {
         if (!mounted) return;
-        ErrorHelper.showErrorToast('Error checking league status');
+        ErrorHelper.showErrorToast('Could not open that league');
         return;
       }
     }
@@ -244,33 +295,74 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
     // didPopNext instead, which fires when the league is actually left.
     Navigator.of(context).push(
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => hasFixtures
-            ? FixturesScreen(league: leagueWithStage)
-            : PlayerListScreen(league: leagueWithStage),
+        pageBuilder:
+            (context, animation, secondaryAnimation) =>
+                hasFixtures
+                    ? FixturesScreen(league: leagueWithStage)
+                    : PlayerListScreen(league: leagueWithStage),
         transitionDuration: Duration.zero,
         reverseTransitionDuration: Duration.zero,
       ),
     );
   }
 
-  // Handle removing a league
+  // Stop showing a league on this dashboard.
+  //
+  // Asks first. It used to remove on a single tap of a menu item labelled "Remove from
+  // Dashboard", which reads like deletion and is one slip away from a league vanishing.
   Future<void> _handleRemoveLeague(int leagueId) async {
+    final Map<String, dynamic> league = _leagues.firstWhere(
+      (l) => l['league_id'] == leagueId,
+      orElse: () => <String, dynamic>{},
+    );
+
+    final String name =
+        league['name'] != null ? league['name'].toString() : 'this league';
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (BuildContext dialogContext) => AlertDialog(
+            title: const Text('Hide this league?'),
+            content: Text(
+              '$name stops showing in your list. It is not deleted, and the other '
+              'players keep it. You can get it back from your profile.',
+              style: AppType.b(AppType.body),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Keep it'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                style: TextButton.styleFrom(foregroundColor: AppPalette.clay),
+                child: const Text('Hide'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed != true) return;
+
     try {
-      final response = await DeactivateLeagueMembershipApi.deactivateLeagueMembership(leagueId);
+      final response =
+          await DeactivateLeagueMembershipApi.deactivateLeagueMembership(
+            leagueId,
+          );
 
       if (response['return_code'] == 'SUCCESS') {
-        if (mounted) {
-          ErrorHelper.showSuccessToast(response['message'] ?? 'League removed');
-        }
         _loadData();
       } else {
         if (mounted) {
-          ErrorHelper.showErrorToast(response['message'] ?? 'Failed to remove league');
+          ErrorHelper.showErrorToast(
+            response['message'] ?? 'Could not hide that league',
+          );
         }
       }
     } catch (e) {
       if (mounted) {
-        ErrorHelper.showErrorToast('An error occurred');
+        ErrorHelper.showErrorToast('Could not hide that league');
       }
     }
   }
@@ -281,52 +373,40 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
 
     List<String> nicknameParts = nickname.split(' ');
     if (nicknameParts.length > 1) {
-      return nicknameParts[0][0].toUpperCase() + nicknameParts[1][0].toUpperCase();
+      return nicknameParts[0][0].toUpperCase() +
+          nicknameParts[1][0].toUpperCase();
     } else {
       return nickname[0].toUpperCase();
     }
   }
 
-  // Navigate to selected tab
-  void _onTabTapped(int index) {
-    if (index == 1) {
-      // Go directly to Create League screen
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const CreateLeagueScreen(),
-        ),
-      ).then((_) => _loadData());
-    } else if (index == 2) {
-      // Go directly to Join League screen
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => JoinLeagueScreen(
-            onLeagueJoined: () {
-              _loadData();
-            },
-          ),
-        ),
-      );
-    } else if (index == 3) {
-      // Check if user is in guest mode
-      final isGuest = _userData != null && _userData!['nickname'] == 'Guest';
+  bool get _isGuest => _userData != null && _userData!['nickname'] == 'Guest';
 
-      if (isGuest) {
-        // Show login/register dialog for guest users
-        _showGuestLoginDialog();
-      } else {
-        // Go directly to Profile screen for logged-in users
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => const ProfileScreen(),
-          ),
-        );
-      }
-    } else {
-      setState(() {
-        _selectedIndex = index;
-      });
+  void _openProfile() {
+    if (_isGuest) {
+      _showGuestLoginDialog();
+      return;
     }
+
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const ProfileScreen()));
+  }
+
+  void _openCreateLeague() {
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(builder: (context) => const CreateLeagueScreen()),
+        )
+        .then((_) => _loadData());
+  }
+
+  void _openJoinLeague() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => JoinLeagueScreen(onLeagueJoined: _loadData),
+      ),
+    );
   }
 
   // Show login/register dialog for guest users
@@ -335,36 +415,40 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Sign in or Register'),
-          content: const Text('Please sign in or register to access your profile and save your leagues.'),
+          title: const Text('Sign in to keep your leagues'),
+          content: Text(
+            'Signing in saves your leagues to your account, so they follow you '
+            'to a new phone.',
+            style: AppType.b(AppType.body),
+          ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-              },
-              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Not now'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                // Navigate to login screen with a clean slate
+                Navigator.of(context).pop();
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const LoginUserScreen()),
-                  (route) => false, // Remove all previous routes
-                );
-              },
-              child: const Text('Sign In'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                // Navigate to register screen with a clean slate
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const RegisterUserScreen()),
-                  (route) => false, // Remove all previous routes
+                  MaterialPageRoute(
+                    builder: (context) => const RegisterUserScreen(),
+                  ),
+                  (route) => false,
                 );
               },
               child: const Text('Register'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (context) => const LoginUserScreen(),
+                  ),
+                  (route) => false,
+                );
+              },
+              child: const Text('Sign in'),
             ),
           ],
         );
@@ -372,298 +456,305 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
     );
   }
 
-  // Handle title tap for developer mode
-  // void _handleTitleTap() {
-  //   final now = DateTime.now();
-
-  //   // Check if this is a consecutive tap (within 2 seconds)
-  //   if (_lastTapTime != null &&
-  //       now.difference(_lastTapTime!).inSeconds < 2) {
-  //     // Increment tap count
-  //     _tapCount++;
-
-  //     // Check if we've reached 5 taps
-  //     if (_tapCount == 5) {
-  //       // Reset tap count
-  //       _tapCount = 0;
-
-  //       // Navigate to developer screen
-  //       Navigator.of(context).push(
-  //         MaterialPageRoute(
-  //           builder: (context) => const DeveloperScreen(),
-  //         ),
-  //       );
-  //     }
-  //   } else {
-  //     // Reset tap count if too much time has passed
-  //     _tapCount = 1;
-  //   }
-
-  //   // Update last tap time
-  //   _lastTapTime = now;
-  // }
-
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF005F8A), // Top color from logo gradient
-            Color(0xFF00B3A4), // Bottom color from logo gradient
-          ],
-        ),
+    // The header is dark, and this is the only screen in the app where it is. The
+    // status bar is drawn by the system over the top of it, so its icons have to be
+    // asked for in white - otherwise the clock and the battery are dark grey on dark
+    // teal, which is how the first build of this screen looked.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
       ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,  // Make scaffold background transparent
-        appBar: AppBar(
-          backgroundColor: Colors.transparent, // Make AppBar background transparent
-          elevation: 0,
-          toolbarHeight: 10,
-        ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _buildCurrentTab(),
-        bottomNavigationBar: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: AppStyles.primaryColor,
-          unselectedItemColor: AppStyles.secondaryTextColor,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Home',
+      child: _buildScaffold(),
+    );
+  }
+
+  Widget _buildScaffold() {
+    return Scaffold(
+      backgroundColor: AppPalette.deep,
+      body: Column(
+        children: [
+          _buildHeader(),
+
+          // The content sits on a chalk sheet with rounded top corners, lifting off
+          // the deep header. One shape change carries the whole "the app is the dark
+          // band, the leagues are the paper" idea, so no other screen needs a gradient.
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: AppPalette.chalk,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child:
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _buildBody(),
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.add_circle_outline),
-              activeIcon: Icon(Icons.add_circle),
-              label: 'Create',
+          ),
+        ],
+      ),
+
+      // The two actions that are not "open a league", ranked rather than stacked.
+      bottomNavigationBar: _isLoading ? null : _buildActionBar(),
+    );
+  }
+
+  // The header: who you are, and whether anything needs you.
+  Widget _buildHeader() {
+    final String userName =
+        _userData != null ? _userData!['nickname'] ?? 'there' : 'there';
+
+    // The one line that makes this a dashboard rather than a list. It is counted
+    // from the same rule that colours the cards, so the number and the rules can
+    // never disagree.
+    final int waiting = _leagues.where(LeaguePrompt.needsAttention).length;
+
+    final String subtitle =
+        _isLoading
+            ? ''
+            : _leagues.isEmpty
+            ? 'Set up your first league'
+            : waiting == 0
+            ? 'Nothing waiting on you'
+            : waiting == 1
+            ? '1 league needs you'
+            : '$waiting leagues need you';
+
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 16, 22),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Your leagues',
+                    style: AppType.t(AppType.display, color: AppPalette.onDark),
+                  ),
+                  if (subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      subtitle,
+                      style: AppType.b(
+                        AppType.meta,
+                        color: AppPalette.onDark.withValues(alpha: 0.75),
+                        size: 14,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.group_add_outlined),
-              activeIcon: Icon(Icons.group_add),
-              label: 'Join',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.account_circle_outlined),
-              activeIcon: Icon(Icons.account_circle),
-              label: 'Profile',
+
+            const SizedBox(width: 12),
+
+            // Profile. It used to be a bottom navigation item that was not a tab;
+            // the avatar is where people look for their account anyway.
+            Semantics(
+              button: true,
+              label: 'Your profile, $userName',
+              excludeSemantics: true,
+              child: Material(
+                color: AppPalette.onDark.withValues(alpha: 0.16),
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: _openProfile,
+                  child: SizedBox(
+                    width: 46,
+                    height: 46,
+                    child: Center(
+                      child: Text(
+                        _getInitials(userName),
+                        style: AppType.t(
+                          AppType.titleSmall,
+                          color: AppPalette.onDark,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
-          currentIndex: _selectedIndex,
-          onTap: _onTabTapped,
         ),
       ),
     );
   }
 
-  Widget _buildCurrentTab() {
-    switch (_selectedIndex) {
-      case 0:
-        return _buildLeaguesTab();
-      default:
-        return _buildLeaguesTab();
-    }
-  }
-
-  Widget _buildLeaguesTab() {
-    // Get user's name from userData
-    final String userName = _userData != null ? _userData!['nickname'] ?? 'User' : 'User';
-
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF005F8A), // Top color from logo gradient
-            Color(0xFF00B3A4), // Bottom color from logo gradient
-          ],
+  Widget _buildBody() {
+    return SmartRefresher(
+      controller: _refreshController,
+      onRefresh: _onRefresh,
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
+      header: const ClassicHeader(
+        refreshStyle: RefreshStyle.Behind,
+        height: 60.0,
+        completeText: '',
+        refreshingText: 'Updating',
+        releaseText: '',
+        idleText: '',
+        textStyle: TextStyle(color: AppPalette.slate, fontSize: 12),
+        failedIcon: Icon(
+          Icons.error_outline,
+          color: AppPalette.clay,
+          size: 18.0,
+        ),
+        completeIcon: Icon(Icons.check, color: AppPalette.pitch, size: 18.0),
+        idleIcon: SizedBox.shrink(),
+        releaseIcon: SizedBox.shrink(),
+        refreshingIcon: SizedBox(
+          width: 18.0,
+          height: 18.0,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.0,
+            valueColor: AlwaysStoppedAnimation<Color>(AppPalette.teal),
+          ),
         ),
       ),
-      child: Column(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
         children: [
-          // Top section with user info
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(32.0, 8.0, 32.0, 16.0),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      // Check if user is in guest mode
-                      final isGuest = _userData != null && _userData!['nickname'] == 'Guest';
+          if (_errorMessage != null) _buildError(),
+          if (_leagues.isEmpty && _errorMessage == null) _buildEmptyState(),
 
-                      if (isGuest) {
-                        // Show login/register dialog for guest users
-                        _showGuestLoginDialog();
-                      } else {
-                        // Go to profile screen for logged-in users
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const ProfileScreen(),
-                          ),
-                        );
-                      }
-                    },
-                    child: CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.white.withAlpha(50),
-                      child: Text(
-                        _getInitials(userName),
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Your Leagues',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        userName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+          for (final league in _leagues)
+            LeagueCard(
+              league: league,
+              onTap: () {
+                UpdateLastAccessedApi.updateLastAccessed(league['league_id']);
+                _openLeague(league);
+              },
+              onRemove: _handleRemoveLeague,
             ),
-          ),
+        ],
+      ),
+    );
+  }
 
-          // Scrollable content
+  Widget _buildError() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppPalette.clayTint,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: AppPalette.clay, size: 20),
+          const SizedBox(width: 10),
           Expanded(
-            child: SmartRefresher(
-              controller: _refreshController,
-              onRefresh: _onRefresh,
-              // Add custom physics to make it less sensitive
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              // Use ClassicHeader which is less sensitive to accidental pulls
-              header: const ClassicHeader(
-                refreshStyle: RefreshStyle.Behind, // Less intrusive style
-                height: 60.0, // Smaller height than default
-                completeText: '',
-                refreshingText: 'Updating...',
-                releaseText: '',
-                idleText: '',
-                textStyle: TextStyle(color: Colors.white70),
-                // Use minimal, subtle icons or no icons at all
-                failedIcon: Icon(Icons.error, color: Colors.white70, size: 18.0),
-                completeIcon: Icon(Icons.check, color: AppStyles.successColor, size: 18.0),
-                idleIcon: SizedBox.shrink(), // No icon in idle state
-                releaseIcon: SizedBox.shrink(), // No icon in release state
-                refreshingIcon: SizedBox(
-                  width: 20.0,
-                  height: 20.0,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.0,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
-                  ),
-                ),
-              ),
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8.0), // Reduced vertical padding from 16.0 to 8.0
-                children: [
-                  // Error message
-                  if (_errorMessage != null)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 8.0), // Reduced from 16.0
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppStyles.errorColor.withAlpha(25),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.error_outline, color: AppStyles.errorColor),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _errorMessage!,
-                              style: const TextStyle(color: AppStyles.errorColor),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                  // Empty state
-                  if (_leagues.isEmpty && _errorMessage == null)
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const SizedBox(height: 16),
-                            const Text(
-                              'You are not a member of any leagues yet.',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Create or join a league to get started',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.white.withAlpha(178), // 0.7 opacity as alpha value
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  // Leagues list
-                  if (_leagues.isNotEmpty)
-                    ...List.generate(
-                      _leagues.length,
-                      (index) => Padding(
-                        padding: const EdgeInsets.only(bottom: 2.0), // Reduced from 4.0 to 2.0
-                        child: LeagueCard(
-                          league: _leagues[index],
-                          onTap: () {
-                            final leagueId = _leagues[index]['league_id'];
-                            UpdateLastAccessedApi.updateLastAccessed(leagueId);
-                            final league = _leagues[index];
-                            _openLeague(league);
-                          },
-                          onRemove: _handleRemoveLeague,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+            child: Text(
+              _errorMessage!,
+              style: AppType.b(AppType.meta, color: AppPalette.clay),
             ),
           ),
         ],
       ),
     );
   }
+
+  // Nothing here yet.
+  //
+  // For a brand new user this is the app, so it gets the display face and says
+  // what a league actually is in one sentence. The old version was two lines of
+  // grey text apologising, with the real actions hidden in a navigation bar.
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 40, 4, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('No leagues yet', style: AppType.t(AppType.display)),
+          const SizedBox(height: 10),
+          Text(
+            'A league is a group of people who play each other and keep a table. '
+            'Set one up, add the players, and start entering results.',
+            style: AppType.b(AppType.body, color: AppPalette.slate),
+          ),
+          const SizedBox(height: 28),
+
+          // The three steps, as a numbered sequence - which is honest here, because
+          // this genuinely is an order: you cannot enter a result before there are
+          // fixtures, and there are no fixtures until there are players.
+          _step('1', 'Name your league and pick how points work'),
+          _step('2', 'Add the players, or share a link to let them join'),
+          _step('3', 'Start it, then enter results as games are played'),
+        ],
+      ),
+    );
+  }
+
+  Widget _step(String number, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 26,
+            child: Text(
+              number,
+              style: AppType.t(AppType.figure, color: AppPalette.teal),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              text,
+              style: AppType.b(AppType.body, color: AppPalette.slate),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // The fixed bar at the bottom.
+  //
+  // One filled button and one text link, never two filled buttons - creating a league
+  // is what most people opening this app are here to do, and joining one is the
+  // occasional case. Ranking them is the point.
+  Widget _buildActionBar() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppPalette.chalk,
+        border: Border(top: BorderSide(color: AppPalette.hairline)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: SlButton.primary(
+                  label: 'New league',
+                  icon: Icons.add,
+                  onPressed: _openCreateLeague,
+                ),
+              ),
+              const SizedBox(width: 8),
+              SlButton.quiet(
+                label: 'Join with a code',
+                onPressed: _openJoinLeague,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
-
-

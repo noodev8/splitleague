@@ -1,16 +1,37 @@
 /*
-Show the create league screen allowing users to create a new league
+Setting up a new league.
+
+The screen a person reaches about ninety seconds after installing the app, and the last
+one before the part that actually matters - getting other people in.
+
+Two things were wrong with it.
+
+First, everything was on screen at once: five cards, seven number fields, and a set of
+margin-bonus rules that only mean anything in a points-scored league. A person naming
+their office pool ladder had to scroll past "Lose within margin bonus" to reach the button.
+The defaults were fine for almost everybody, so the settings are now behind one disclosure
+and the standing screen is a name, a scoring choice, and how many times people play.
+
+Second - and this is the more expensive one - creating a league used to end in a dialog
+showing the join code, and closing it dropped you back on the dashboard. The single most
+important moment in the app, the moment a league exists and needs people, ended with the
+user back where they started looking at a list. Creating a league now takes you into it,
+onto the player list, where inviting people is the filled button. The join code has not
+gone anywhere: it is the first thing on that league's Details tab, at four times the size
+it was in the dialog.
 */
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/create_league_api.dart';
 import '../api/update_last_accessed_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
-import '../styles/app_styles.dart';
+import '../styles/app_palette.dart';
+import '../styles/app_type.dart';
+import '../widgets/sl_button.dart';
 import 'login_user_screen.dart';
+import 'player_list_screen.dart';
 import 'register_user_screen.dart';
 
 class CreateLeagueScreen extends StatefulWidget {
@@ -45,6 +66,11 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
   // Error message
   String? _errorMessage;
 
+  // Whether the scoring settings are open. Closed by default - the defaults suit
+  // almost every league, and the ones they do not suit belong to somebody who will
+  // go looking.
+  bool _settingsOpen = false;
+
   // Allow code share setting
   // Always true - the Privacy Settings card that toggled this is commented out further
   // down this file, so every league is created allowing players to see the code.
@@ -72,8 +98,9 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     }
 
     // Check if user is in guest mode
-    final isGuest = await AuthHelper.getUserData().then((userData) =>
-      userData == null || userData['nickname'] == 'Guest');
+    final isGuest = await AuthHelper.getUserData().then(
+      (userData) => userData == null || userData['nickname'] == 'Guest',
+    );
 
     if (isGuest) {
       // Show registration dialog for guest users
@@ -97,7 +124,8 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
       int drawPoints = int.tryParse(_drawPointsController.text) ?? 0;
       int winMarginBonus = int.tryParse(_winMarginBonusController.text) ?? 0;
       int loseMarginBonus = int.tryParse(_loseMarginBonusController.text) ?? 0;
-      int winMarginThreshold = int.tryParse(_winMarginThresholdController.text) ?? 0;
+      int winMarginThreshold =
+          int.tryParse(_winMarginThresholdController.text) ?? 0;
       int playEachOther = int.tryParse(_playEachOtherController.text) ?? 1;
 
       // Call create league API
@@ -115,23 +143,38 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
 
       // Check response
       if (response['return_code'] == 'SUCCESS') {
-        // Get league ID and public code from the nested league object
-        final leagueId = response['league']['id'];
-        final publicCode = response['league']['public_code'];
+        final league = Map<String, dynamic>.from(response['league']);
+        final leagueId = league['id'];
 
         if (leagueId != null) {
           await UpdateLastAccessedApi.updateLastAccessed(leagueId);
         }
 
-        // Set loading state to false
         setState(() {
           _isLoading = false;
         });
 
-        // Show the league PIN dialog
-        if (mounted) {
-          _showLeaguePinDialog(publicCode, leagueId);
-        }
+        if (!mounted) return;
+
+        // Straight into the new league.
+        //
+        // The player list is the right landing place: the league has exactly one
+        // member and its whole need is people, and that screen leads with Invite.
+        // It replaces this screen rather than stacking on it, so Back from inside
+        // the new league returns to the dashboard and not to a filled-in form for
+        // a league that already exists.
+        //
+        // create_league returns the row itself, so the map handed on carries the
+        // share slug and the join code - nothing here has to be fetched again.
+        league['league_id'] = leagueId;
+        league['is_creator'] = true;
+        league['has_fixtures'] = false;
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => PlayerListScreen(league: league),
+          ),
+        );
       } else {
         // Show error message with more detail
         setState(() {
@@ -140,15 +183,12 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
         });
       }
     } catch (e) {
-      // Show detailed error message
       setState(() {
-        _errorMessage = 'Error: ${e.toString()}';
+        _errorMessage = 'Could not create the league. Try again.';
         _isLoading = false;
       });
     }
   }
-
-
 
   // Show guest registration dialog
   void _showGuestRegistrationDialog() {
@@ -156,13 +196,13 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Registration Required'),
+          title: const Text('Create an account first'),
           content: const Text(
             'From here you can create a league to track scores. '
             'Either win, lose, draw or a points system. '
             'The league appears on the dashboard and is shared amongst players.\n\n'
             'To create a league, you need to register an account or sign in. '
-            'This allows you to save your leagues and access them from any device.'
+            'This allows you to save your leagues and access them from any device.',
           ),
           actions: [
             TextButton(
@@ -176,7 +216,9 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                 Navigator.of(context).pop(); // Close dialog
                 // Navigate to login screen with a clean slate
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const LoginUserScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const LoginUserScreen(),
+                  ),
                   (route) => false, // Remove all previous routes
                 );
               },
@@ -187,7 +229,9 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
                 Navigator.of(context).pop(); // Close dialog
                 // Navigate to register screen with a clean slate
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const RegisterUserScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const RegisterUserScreen(),
+                  ),
                   (route) => false, // Remove all previous routes
                 );
               },
@@ -199,845 +243,322 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
     );
   }
 
-  // Show league PIN dialog
-  void _showLeaguePinDialog(String pin, int leagueId) {
+  // Each scoring type, with the one line that tells you which is yours.
+  //
+  // These are the same three the app has always had. What is new is that each one says
+  // what it means for the table, because "Win/Lose", "Win/Draw/Lose" and "Points" told
+  // you the names of the options and nothing about the choice.
+  static const List<List<String>> _scoringTypes = [
+    [
+      'WIN',
+      'Win or lose',
+      'One point for the winner. Nothing for anyone else.',
+    ],
+    ['WDL', 'Win, draw or lose', 'Points for a win, fewer for a draw.'],
+    ['PTS', 'Points scored', 'You enter the actual score of every game.'],
+  ];
 
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black54,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'League created successfully!',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Share this code with others to join your league:',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15),
-                ),
-                const SizedBox(height: 20),
+  void _selectWinType(String type) {
+    setState(() {
+      _selectedWinType = type;
 
-                // More prominent PIN display
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.blue.shade100, Colors.blue.shade50],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.blue.withAlpha(51), // 0.2 opacity (51/255)
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        pin,
-                        style: const TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                          letterSpacing: 2,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.copy, size: 18),
-                        label: const Text('Copy Code'),
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: pin));
-                          ErrorHelper.showSuccessToast('PIN copied to clipboard');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.blue,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            side: BorderSide(color: Colors.blue.shade200),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Close button
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Close dialog
-                    // Use popUntil to ensure we go back to the dashboard
-                    Navigator.of(context).popUntil((route) => route.isFirst);
-                  },
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                  child: const Text('Close'),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    ).then((_) {
-      // When dialog is dismissed (by any means), navigate back to previous screen
-      if (mounted) {
-        // Use popUntil to ensure we go back to the dashboard
-        Navigator.of(context).popUntil((route) => route.isFirst);
+      // Sensible starting points for the type just chosen. Somebody who wants
+      // something else opens the settings; nobody should have to fill in a form to
+      // get the obvious answer.
+      switch (type) {
+        case 'WIN':
+          _winPointsController.text = '1';
+          _drawPointsController.text = '0';
+          _losePointsController.text = '0';
+        case 'WDL':
+          _winPointsController.text = '3';
+          _drawPointsController.text = '1';
+          _losePointsController.text = '0';
+        case 'PTS':
+          _winPointsController.text = '3';
+          _drawPointsController.text = '1';
+          _losePointsController.text = '0';
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
     return Scaffold(
+      backgroundColor: AppPalette.chalk,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text('Create League',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          )
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: _isLoading
-                ? const SpinKitThreeBounce(
-                    color: Colors.white,
-                    size: 24,
-                  )
-                : TextButton(
-                    onPressed: _handleCreateLeague,
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        title: const Text('New league'),
+        backgroundColor: AppPalette.surface,
+        shape: const Border(bottom: BorderSide(color: AppPalette.hairline)),
+      ),
+
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+          children: [
+            TextFormField(
+              controller: _leagueNameController,
+              autofocus: true,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.done,
+              maxLength: 30,
+              style: AppType.t(AppType.title),
+              decoration: const InputDecoration(
+                labelText: 'League name',
+                hintText: 'Thursday Pool',
+                counterText: '',
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Give the league a name';
+                }
+                return null;
+              },
+            ),
+
+            const SizedBox(height: 30),
+
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 8),
+              child: Text(
+                'HOW A GAME IS SCORED',
+                style: AppType.b(AppType.eyebrow),
+              ),
+            ),
+
+            Container(
+              decoration: BoxDecoration(
+                color: AppPalette.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppPalette.hairline),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                children: [
+                  for (int i = 0; i < _scoringTypes.length; i++) ...[
+                    if (i > 0)
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        indent: 16,
+                        color: AppPalette.hairline,
+                      ),
+                    _scoringOption(
+                      _scoringTypes[i][0],
+                      _scoringTypes[i][1],
+                      _scoringTypes[i][2],
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.check, size: 20),
-                        SizedBox(width: 4),
-                        Text(
-                          'Create',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                  ],
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            Padding(
+              padding: const EdgeInsets.only(left: 4, bottom: 8),
+              child: Text('FIXTURES', style: AppType.b(AppType.eyebrow)),
+            ),
+
+            _meetingsPicker(),
+
+            const SizedBox(height: 24),
+
+            _settingsDisclosure(),
+
+            if (_errorMessage != null) ...[
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppPalette.clayTint,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  _errorMessage!,
+                  style: AppType.b(
+                    AppType.body,
+                    color: AppPalette.clay,
+                    size: 14,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: AppPalette.chalk,
+          border: Border(top: BorderSide(color: AppPalette.hairline)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: SlButton.primary(
+              label: _isLoading ? 'Creating' : 'Create league',
+              busy: _isLoading,
+              onPressed:
+                  _isLoading
+                      ? null
+                      : () {
+                        FocusScope.of(context).unfocus();
+                        _handleCreateLeague();
+                      },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // One scoring type. The whole row is the target, and the selected one is marked
+  // with a filled teal tick rather than a coloured border, so the three rows stay a
+  // list of equals rather than turning into three cards of different weights.
+  Widget _scoringOption(String type, String title, String detail) {
+    final bool selected = _selectedWinType == type;
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '$title. $detail',
+      excludeSemantics: true,
+      child: Material(
+        color:
+            selected
+                ? AppPalette.tealTint.withValues(alpha: 0.5)
+                : AppPalette.surface,
+        child: InkWell(
+          onTap: () => _selectWinType(type),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: AppType.b(
+                          AppType.action,
+                          color:
+                              selected ? AppPalette.tealDeep : AppPalette.ink,
                         ),
-                      ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(detail, style: AppType.b(AppType.meta)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: selected ? AppPalette.teal : Colors.transparent,
+                    border: Border.all(
+                      color:
+                          selected
+                              ? AppPalette.teal
+                              : AppPalette.hairlineStrong,
+                      width: 1.5,
                     ),
                   ),
+                  child:
+                      selected
+                          ? const Icon(
+                            Icons.check,
+                            size: 14,
+                            color: AppPalette.onDark,
+                          )
+                          : null,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // How many times everyone plays everyone.
+  //
+  // Three buttons rather than a number field. It used to be a text box labelled
+  // "Times to play each other:" that would happily accept 40, which in a league of
+  // eight people is 1,120 fixtures. One, two and three cover every real league, and
+  // they say what they mean in words.
+  Widget _meetingsPicker() {
+    final int current = int.tryParse(_playEachOtherController.text) ?? 1;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppPalette.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppPalette.hairline),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Everyone plays everyone', style: AppType.b(AppType.action)),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _meetingOption('Once', 1, current),
+              const SizedBox(width: 8),
+              _meetingOption('Twice', 2, current),
+              const SizedBox(width: 8),
+              _meetingOption('3 times', 3, current),
+            ],
           ),
         ],
       ),
-      extendBodyBehindAppBar: true,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF005F8A), // Top color from logo gradient
-              Color(0xFF00B3A4), // Bottom color from logo gradient
-            ],
-          ),
-        ),
-        child: SafeArea(
-          bottom: false,
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(24.0, 24.0, 24.0, bottomInset > 0 ? bottomInset + 24.0 : 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // League name section
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'League Name',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _leagueNameController,
-                            textCapitalization: TextCapitalization.sentences,
-                            decoration: AppStyles.inputDecoration(
-                              'Max 30 chars',
-                              prefixIcon: const Icon(Icons.sports_soccer),
-                            ),
-                            maxLength: 30,
-                            buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
-                            onChanged: (value) {
-                              if (_formKey.currentState != null) {
-                                _formKey.currentState!.validate();
-                              }
-                            },
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter a league name';
-                              }
-                              return null;
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
+    );
+  }
+
+  Widget _meetingOption(String label, int value, int current) {
+    final bool selected = current == value;
+
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: label,
+        excludeSemantics: true,
+        child: Material(
+          color: selected ? AppPalette.tealTint : AppPalette.chalk,
+          borderRadius: BorderRadius.circular(9),
+          child: InkWell(
+            onTap:
+                () => setState(() => _playEachOtherController.text = '$value'),
+            borderRadius: BorderRadius.circular(9),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(
+                  color:
+                      selected
+                          ? AppPalette.teal.withValues(alpha: 0.45)
+                          : Colors.transparent,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppType.b(
+                    AppType.action,
+                    color: selected ? AppPalette.tealDeep : AppPalette.slate,
+                    size: 14,
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Scoring System Section
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Scoring System',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // WIN option
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                _selectedWinType = 'WIN';
-                                _winPointsController.text = '1';
-                                _drawPointsController.text = '0';
-                                _losePointsController.text = '0';
-                              });
-                            },
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              decoration: BoxDecoration(
-                                color: _selectedWinType == 'WIN' ? Colors.blue.shade50 : Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: _selectedWinType == 'WIN' ? Colors.blue : Colors.grey.shade300,
-                                  width: _selectedWinType == 'WIN' ? 2 : 1,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withAlpha(10),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: _selectedWinType == 'WIN' ? Colors.blue.withAlpha(30) : Colors.grey.shade100,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Icons.emoji_events,
-                                        size: 20,
-                                        color: _selectedWinType == 'WIN' ? Colors.blue : Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Win/Lose',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        color: _selectedWinType == 'WIN' ? Colors.blue : Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // WDL option
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                _selectedWinType = 'WDL';
-                                _winPointsController.text = '3';
-                                _drawPointsController.text = '1';
-                                _losePointsController.text = '0';
-                              });
-                            },
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              decoration: BoxDecoration(
-                                color: _selectedWinType == 'WDL' ? Colors.blue.shade50 : Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: _selectedWinType == 'WDL' ? Colors.blue : Colors.grey.shade300,
-                                  width: _selectedWinType == 'WDL' ? 2 : 1,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withAlpha(10),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: _selectedWinType == 'WDL' ? Colors.blue.withAlpha(30) : Colors.grey.shade100,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Icons.sports_soccer,
-                                        size: 20,
-                                        color: _selectedWinType == 'WDL' ? Colors.blue : Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Win/Draw/Lose',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        color: _selectedWinType == 'WDL' ? Colors.blue : Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // PTS option
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                _selectedWinType = 'PTS';
-                                _winPointsController.text = '2';
-                                _drawPointsController.text = '1';
-                                _losePointsController.text = '0';
-                              });
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: _selectedWinType == 'PTS' ? Colors.blue.shade50 : Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: _selectedWinType == 'PTS' ? Colors.blue : Colors.grey.shade300,
-                                  width: _selectedWinType == 'PTS' ? 2 : 1,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withAlpha(10),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: _selectedWinType == 'PTS' ? Colors.blue.withAlpha(30) : Colors.grey.shade100,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Icons.leaderboard,
-                                        size: 20,
-                                        color: _selectedWinType == 'PTS' ? Colors.blue : Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Points',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        color: _selectedWinType == 'PTS' ? Colors.blue : Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Play each other section
-                  Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Fixtures',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Play each other
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 3,
-                                child: const Text('Times to play each other:'),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: TextFormField(
-                                  controller: _playEachOtherController,
-                                  decoration: AppStyles.inputDecoration(''),
-                                  keyboardType: TextInputType.number,
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                  ],
-                                  // Validate on change to clear error message immediately
-                                  onChanged: (value) {
-                                    if (_formKey.currentState != null) {
-                                      _formKey.currentState!.validate();
-                                    }
-                                  },
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Required';
-                                    }
-                                    if (int.tryParse(value) == 0) {
-                                      return 'Min 1';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Points settings section
-                  if (_selectedWinType != 'WIN')
-                    Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Points Settings',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Win points
-                            Row(
-                              children: [
-                                const Expanded(
-                                  flex: 2,
-                                  child: Text('Points for Win:'),
-                                ),
-                                const SizedBox(width: 8),
-                                SizedBox(
-                                  width: 80,
-                                  child: TextFormField(
-                                    controller: _winPointsController,
-                                    decoration: AppStyles.inputDecoration(''),
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
-                                    onChanged: (value) {
-                                      if (_formKey.currentState != null) {
-                                        _formKey.currentState!.validate();
-                                      }
-                                    },
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Required';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-
-                            // Draw points
-                            Row(
-                              children: [
-                                const Expanded(
-                                  flex: 2,
-                                  child: Text('Points for Draw:'),
-                                ),
-                                const SizedBox(width: 8),
-                                SizedBox(
-                                  width: 80,
-                                  child: TextFormField(
-                                    controller: _drawPointsController,
-                                    decoration: AppStyles.inputDecoration(''),
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
-                                    onChanged: (value) {
-                                      if (_formKey.currentState != null) {
-                                        _formKey.currentState!.validate();
-                                      }
-                                    },
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Required';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-
-                            // Lose points
-                            Row(
-                              children: [
-                                const Expanded(
-                                  flex: 2,
-                                  child: Text('Points for Lose:'),
-                                ),
-                                const SizedBox(width: 8),
-                                SizedBox(
-                                  width: 80,
-                                  child: TextFormField(
-                                    controller: _losePointsController,
-                                    decoration: AppStyles.inputDecoration(''),
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
-                                    onChanged: (value) {
-                                      if (_formKey.currentState != null) {
-                                        _formKey.currentState!.validate();
-                                      }
-                                    },
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Required';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  const SizedBox(height: 16),
-
-                  // Advanced settings section
-                  if (_selectedWinType == 'PTS')
-                    Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Advanced Settings',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Win margin bonus
-                            Row(
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: const Text('Win margin bonus:'),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: TextFormField(
-                                    controller: _winMarginBonusController,
-                                    decoration: AppStyles.inputDecoration(''),
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'Extra points for winning by more than the threshold',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-
-                            // Lose margin bonus
-                            Row(
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: const Text('Lose within margin bonus:'),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: TextFormField(
-                                    controller: _loseMarginBonusController,
-                                    decoration: AppStyles.inputDecoration(''),
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'Extra points for losing by less than the threshold',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-
-                            // Win margin threshold
-                            Row(
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: const Text('Win margin threshold:'),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: TextFormField(
-                                    controller: _winMarginThresholdController,
-                                    decoration: AppStyles.inputDecoration(''),
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'The margin threshold for bonus points',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  const SizedBox(height: 16),
-
-                  // Code sharing settings section - Commenting out instead of deleting
-                  // Keeping _allowCodeShare state variable and its usage in _handleCreateLeague
-                  /* Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Privacy Settings',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Allow code sharing toggle
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Allow players to see the league code after joining',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'When disabled, only you can see the league code on in the details screen',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Switch(
-                                value: _allowCodeShare,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _allowCodeShare = value;
-                                  });
-                                },
-                                activeColor: AppStyles.primaryColor,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ), */
-
-                  const SizedBox(height: 24),
-
-                  // Error message
-                  if (_errorMessage != null)
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppStyles.errorColor.withAlpha(25),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _errorMessage!,
-                        style: const TextStyle(
-                          color: AppStyles.errorColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  if (_errorMessage != null) const SizedBox(height: 16),
-
-                  // Remove these lines
-                  // if (_leagueCode == null) const SizedBox(height: 16),
-
-                  // Remove the Create button section
-                  // if (_leagueCode == null)
-                  //   ElevatedButton(
-                  //     onPressed: _isLoading ? null : _handleCreateLeague,
-                  //     style: AppStyles.primaryButtonStyle,
-                  //     child: _isLoading
-                  //         ? const SpinKitThreeBounce(
-                  //             color: Colors.white,
-                  //             size: 24,
-                  //           )
-                  //         : const Text(
-                  //             'Create League',
-                  //             style: TextStyle(fontSize: 16),
-                  //           ),
-                  //   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -1045,5 +566,130 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
       ),
     );
   }
-}
 
+  // The settings almost nobody changes, behind one line.
+  //
+  // Which settings appear depends on the scoring type, and always did - margin
+  // bonuses are meaningless in a win/lose league, where every score is 1-0. What is
+  // new is that a win/lose league now has nothing here at all and says so, instead of
+  // showing an empty section.
+  Widget _settingsDisclosure() {
+    final bool hasSettings = _selectedWinType != 'WIN';
+    if (!hasSettings) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => setState(() => _settingsOpen = !_settingsOpen),
+            icon: Icon(
+              _settingsOpen ? Icons.expand_less : Icons.expand_more,
+              size: 20,
+            ),
+            label: Text(
+              _settingsOpen ? 'Hide points settings' : 'Points settings',
+              style: AppType.b(
+                AppType.action,
+                color: AppPalette.tealDeep,
+                size: 14,
+              ),
+            ),
+          ),
+        ),
+
+        if (_settingsOpen) ...[
+          const SizedBox(height: 4),
+          Container(
+            decoration: BoxDecoration(
+              color: AppPalette.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppPalette.hairline),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                _numberSetting('Points for a win', _winPointsController),
+
+                if (_selectedWinType == 'WDL') ...[
+                  _settingDivider(),
+                  _numberSetting('Points for a draw', _drawPointsController),
+                ],
+
+                if (_selectedWinType == 'PTS') ...[
+                  _settingDivider(),
+                  _numberSetting(
+                    'The margin',
+                    _winMarginThresholdController,
+                    detail: 'What counts as a comfortable win',
+                  ),
+                  _settingDivider(),
+                  _numberSetting(
+                    'Bonus for winning by it',
+                    _winMarginBonusController,
+                  ),
+                  _settingDivider(),
+                  _numberSetting(
+                    'Bonus for losing within it',
+                    _loseMarginBonusController,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _settingDivider() => const Divider(
+    height: 1,
+    thickness: 1,
+    indent: 16,
+    color: AppPalette.hairline,
+  );
+
+  Widget _numberSetting(
+    String label,
+    TextEditingController controller, {
+    String? detail,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppType.b(AppType.action)),
+                if (detail != null) ...[
+                  const SizedBox(height: 2),
+                  Text(detail, style: AppType.b(AppType.meta, size: 12)),
+                ],
+              ],
+            ),
+          ),
+          SizedBox(
+            width: 68,
+            child: TextFormField(
+              controller: controller,
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              style: AppType.t(AppType.figure, size: 17),
+              decoration: const InputDecoration(
+                hintText: '0',
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 6,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -34,6 +34,15 @@ Success Response:
                                           //           setting up, true = in play. The app reads
                                           //           it to label the league and to decide which
                                           //           screen to open, so it must always be sent.
+      "unplayed_count": 3,                // integer - fixtures in this league with no result yet.
+                                          //           Always 0 while has_fixtures is false. The
+                                          //           dashboard turns this into the line under the
+                                          //           league name - "3 results to enter" - which is
+                                          //           what makes the list read as a to-do rather
+                                          //           than a list of names. An older app that does
+                                          //           not know the field simply shows the player
+                                          //           count instead, so this is safe to deploy on
+                                          //           its own.
       "points": {
         "points_for_win": 3,              // integer - Points for win
         "points_for_draw": 1,             // integer - Points for draw
@@ -85,7 +94,18 @@ router.post('/', verifyToken, async (req, res) => {
           SELECT EXISTS (
             SELECT 1 FROM fixture f WHERE f.league_id = l.id
           )
-        ) as has_fixtures
+        ) as has_fixtures,
+        -- How many games in this league still have no result.
+        --
+        -- This is the one number that tells a user whether a league wants anything from
+        -- them right now, so it is what the dashboard card says underneath the name.
+        -- Counted here rather than derived in the app because the app would otherwise
+        -- have to fetch every fixture of every league just to draw the list.
+        (
+          SELECT COUNT(*)
+          FROM fixture f
+          WHERE f.league_id = l.id AND COALESCE(f.played, false) = false
+        ) as unplayed_count
       FROM league l
       LEFT JOIN league_members lm ON l.id = lm.league_id AND lm.user_id = $1
       LEFT JOIN league_points lp ON l.id = lp.league_id
@@ -127,6 +147,7 @@ router.post('/', verifyToken, async (req, res) => {
         last_accessed: row.last_accessed,
         player_count: parseInt(row.player_count),
         has_fixtures: row.has_fixtures,
+        unplayed_count: parseInt(row.unplayed_count),
         points: {
           points_for_win: row.points_for_win,
           points_for_draw: row.points_for_draw,

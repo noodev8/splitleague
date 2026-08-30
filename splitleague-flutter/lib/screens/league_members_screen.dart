@@ -5,21 +5,18 @@ Only accessible to league organizers
 */
 
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/get_league_members_api.dart';
 import '../api/get_notes_api.dart';
 import '../api/update_notes_api.dart';
 import '../api/convert_guest_to_user_api.dart';
 import '../helpers/auth_helper.dart';
+import '../styles/app_palette.dart';
 import '../styles/app_styles.dart';
 
 class LeagueMembersScreen extends StatefulWidget {
   final Map<String, dynamic> league;
 
-  const LeagueMembersScreen({
-    super.key,
-    required this.league,
-  });
+  const LeagueMembersScreen({super.key, required this.league});
 
   @override
   State<LeagueMembersScreen> createState() => _LeagueMembersScreenState();
@@ -58,11 +55,13 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
       final userData = await AuthHelper.getUserData();
 
       // The creator ID could be in 'creator_id', 'created_by', or the user might have 'is_creator' flag
-      final creatorId = widget.league['creator_id'] ?? widget.league['created_by'];
-      final isCreator = (userData != null &&
-                       creatorId != null &&
-                       userData['id'].toString() == creatorId.toString()) ||
-                      widget.league['is_creator'] == true;
+      final creatorId =
+          widget.league['creator_id'] ?? widget.league['created_by'];
+      final isCreator =
+          (userData != null &&
+              creatorId != null &&
+              userData['id'].toString() == creatorId.toString()) ||
+          widget.league['is_creator'] == true;
 
       // Set creator flag
       setState(() {
@@ -89,7 +88,9 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
       }
 
       // Get league members
-      final response = await GetLeagueMembersApi.getLeagueMembers(widget.league['league_id']);
+      final response = await GetLeagueMembersApi.getLeagueMembers(
+        widget.league['league_id'],
+      );
 
       if (response['return_code'] == 'SUCCESS') {
         setState(() {
@@ -98,7 +99,7 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
         });
       } else {
         setState(() {
-          _errorMessage = response['message'] ?? 'Failed to load members';
+          _errorMessage = response['message'] ?? 'Could not load the players';
           _isLoading = false;
         });
       }
@@ -116,9 +117,7 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
@@ -147,7 +146,7 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
         // Show error
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Failed to load notes'),
+            content: Text(response['message'] ?? 'Could not load the notes'),
             backgroundColor: Colors.red,
           ),
         );
@@ -168,7 +167,10 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
   }
 
   // Show dialog to view/edit notes
-  Future<String?> _showNotesDialog(String playerName, String currentNotes) async {
+  Future<String?> _showNotesDialog(
+    String playerName,
+    String currentNotes,
+  ) async {
     final controller = TextEditingController(text: currentNotes);
 
     // Get current user data to check if we're updating notes for ourselves
@@ -180,7 +182,8 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
     if (currentUserId != null) {
       for (final member in _members) {
         if (member['id'] == currentUserId &&
-            (member['nickname'] == playerName || member['name'] == playerName)) {
+            (member['nickname'] == playerName ||
+                member['name'] == playerName)) {
           isCurrentUser = true;
           break;
         }
@@ -188,58 +191,62 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
     }
 
     // Set the dialog title based on whether we're updating notes for ourselves or another player
-    final dialogTitle = isCurrentUser ? 'Notes for you' : 'Notes for $playerName';
+    final dialogTitle =
+        isCurrentUser ? 'Notes for you' : 'Notes for $playerName';
 
     // Check if the widget is still mounted before showing the dialog
     if (!mounted) return null;
 
     return showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(dialogTitle),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Add notes for this player. Notes for any player may be visible to all league members.',
-              style: TextStyle(fontSize: 14),
+      builder:
+          (dialogContext) => AlertDialog(
+            title: Text(dialogTitle),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Add notes for this player. Notes for any player may be visible to all league members.',
+                  style: TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  maxLength: 100,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Enter notes here...',
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              maxLength: 100,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Enter notes here...',
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(controller.text),
+                child: const Text('Save'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(controller.text),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
     );
   }
 
   // Update notes for a player
-  Future<void> _updateNotes(int playerId, String playerName, String notes) async {
+  Future<void> _updateNotes(
+    int playerId,
+    String playerName,
+    String notes,
+  ) async {
     // Show loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
@@ -270,7 +277,7 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
         // Show error
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Failed to update notes'),
+            content: Text(response['message'] ?? 'Could not save the note'),
             backgroundColor: Colors.red,
           ),
         );
@@ -291,65 +298,71 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
   }
 
   // Show convert guest to user dialog
-  Future<void> _showConvertGuestDialog(int guestUserId, String guestName) async {
+  Future<void> _showConvertGuestDialog(
+    int guestUserId,
+    String guestName,
+  ) async {
     final emailController = TextEditingController();
 
     final result = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Convert Guest to User'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-            Text(
-              'Convert "$guestName" from a guest player to a registered user.',
-              style: const TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Enter the email address of the registered user:',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Email Address',
-                hintText: 'user@example.com',
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Turn this guest into a player'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Convert "$guestName" from a guest player to a registered user.',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Enter the email address of the registered user:',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: emailController,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Email Address',
+                      hintText: 'user@example.com',
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    autofocus: true,
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withAlpha(25),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.withAlpha(50)),
+                    ),
+                    child: const Text(
+                      'Note: This will transfer all fixtures and league data from the guest to the registered user. The guest account will be deleted.',
+                      style: TextStyle(fontSize: 12, color: Colors.orange),
+                    ),
+                  ),
+                ],
               ),
-              keyboardType: TextInputType.emailAddress,
-              autofocus: true,
             ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.withAlpha(25),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.withAlpha(50)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
               ),
-              child: const Text(
-                'Note: This will transfer all fixtures and league data from the guest to the registered user. The guest account will be deleted.',
-                style: TextStyle(fontSize: 12, color: Colors.orange),
+              TextButton(
+                onPressed:
+                    () =>
+                        Navigator.of(context).pop(emailController.text.trim()),
+                child: const Text('Convert'),
               ),
-            ),
-          ],
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(emailController.text.trim()),
-            child: const Text('Convert'),
-          ),
-        ],
-      ),
     );
 
     if (result != null && result.isNotEmpty) {
@@ -358,14 +371,16 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
   }
 
   // Convert guest to registered user
-  Future<void> _convertGuestToUser(int guestUserId, String email, String guestName) async {
+  Future<void> _convertGuestToUser(
+    int guestUserId,
+    String email,
+    String guestName,
+  ) async {
     // Show loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
@@ -384,7 +399,9 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Successfully converted $guestName to registered user'),
+            content: Text(
+              'Successfully converted $guestName to registered user',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -395,7 +412,9 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
         // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Failed to convert guest'),
+            content: Text(
+              response['message'] ?? 'Could not convert that guest',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -419,7 +438,7 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.league['name']} - Members'),
+        title: const Text('Players and notes'),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -427,127 +446,150 @@ class _LeagueMembersScreenState extends State<LeagueMembersScreen> {
             Navigator.of(context).pop();
           },
         ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF005F8A), // Top color from logo gradient
-                Color(0xFF00B3A4), // Bottom color from logo gradient
-              ],
-            ),
-          ),
-        ),
+        backgroundColor: AppPalette.surface,
+        shape: const Border(bottom: BorderSide(color: AppPalette.hairline)),
       ),
-      body: _isLoading
-        ? const Center(
-            child: SpinKitCircle(
-              color: Colors.blue,
-              size: 50.0,
-            ),
-          )
-        : _errorMessage != null
-          ? Center(
-              child: Text(
-                _errorMessage!,
-                style: const TextStyle(color: Colors.red),
-              ),
-            )
-          : Column(
-              children: [
-                // Content area
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Header text
-                              Text(
-                                'League Members',
-                                style: AppStyles.sectionHeading,
-                              ),
-                              const SizedBox(height: 16),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _errorMessage != null
+              ? Center(
+                child: Text(
+                  _errorMessage!,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              )
+              : Column(
+                children: [
+                  // Content area
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // The count, as the eyebrow over the list. The screen
+                                // title already says what this is, so a heading here
+                                // repeating it was one line of nothing.
+                                Text(
+                                  _members.length == 1
+                                      ? 'IN THIS LEAGUE · 1'
+                                      : 'IN THIS LEAGUE · ${_members.length}',
+                                  style: AppStyles.captionStyle,
+                                ),
+                                const SizedBox(height: 12),
 
-                              // Player count
-                              Text(
-                                '${_members.length} players in league',
-                                style: AppStyles.subtitle,
-                              ),
-                              const SizedBox(height: 16),
+                                // Players list
+                                ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: _members.length,
+                                  itemBuilder: (context, index) {
+                                    final member = _members[index];
+                                    final memberId = member['id'];
+                                    final memberName =
+                                        member['nickname'] ??
+                                        member['name'] ??
+                                        'Unknown Player';
+                                    final isCreator =
+                                        member['is_creator'] == true ||
+                                        member['is_organiser'] == true ||
+                                        member['is_organizer'] == true;
 
-                              // Players list
-                              ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: _members.length,
-                                itemBuilder: (context, index) {
-                                  final member = _members[index];
-                                  final memberId = member['id'];
-                                  final memberName = member['nickname'] ?? member['name'] ?? 'Unknown Player';
-                                  final isCreator = member['is_creator'] == true ||
-                                                  member['is_organiser'] == true ||
-                                                  member['is_organizer'] == true;
+                                    // Check if this is a guest player (nickname starts with 'guest_')
+                                    final isGuest = memberName.startsWith(
+                                      'guest_',
+                                    );
 
-                                  // Check if this is a guest player (nickname starts with 'guest_')
-                                  final isGuest = memberName.startsWith('guest_');
+                                    // Display name - for guests, remove the 'guest_' prefix for display
+                                    final displayName =
+                                        isGuest
+                                            ? memberName.substring(
+                                              6,
+                                            ) // Remove 'guest_' prefix
+                                            : memberName;
 
-                                  // Display name - for guests, remove the 'guest_' prefix for display
-                                  final displayName = isGuest
-                                      ? memberName.substring(6) // Remove 'guest_' prefix
-                                      : memberName;
-
-                                  return Card(
-                                    margin: const EdgeInsets.only(bottom: 8.0),
-                                    child: ListTile(
-                                      leading: CircleAvatar(
-                                        backgroundColor: isGuest ? Colors.orange : null,
-                                        child: Text(
-                                          displayName.substring(0, 1).toUpperCase(),
-                                        ),
+                                    return Card(
+                                      margin: const EdgeInsets.only(
+                                        bottom: 8.0,
                                       ),
-                                      title: Text(displayName),
-                                      subtitle: isCreator
-                                        ? const Text('League Organizer',
-                                            style: TextStyle(color: Colors.blue)
-                                          )
-                                        : isGuest
-                                          ? const Text('Guest Player',
-                                              style: TextStyle(color: Colors.orange)
-                                            )
-                                          : null,
-                                      trailing: isGuest && _isCreator
-                                        ? IconButton(
-                                            icon: const Icon(Icons.person_add, color: Colors.orange),
-                                            onPressed: () => _showConvertGuestDialog(memberId, displayName),
-                                            tooltip: 'Convert Guest to User',
-                                          )
-                                        : isGuest
-                                          ? null // No notes for guest players
-                                          : IconButton(
-                                              icon: const Icon(Icons.note_add, color: Colors.blue),
-                                              onPressed: () => _viewEditNotes(memberId, displayName),
-                                              tooltip: 'Add/Edit Notes',
-                                            ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
+                                      child: ListTile(
+                                        leading: CircleAvatar(
+                                          backgroundColor:
+                                              isGuest ? Colors.orange : null,
+                                          child: Text(
+                                            displayName
+                                                .substring(0, 1)
+                                                .toUpperCase(),
+                                          ),
+                                        ),
+                                        title: Text(displayName),
+                                        subtitle:
+                                            isCreator
+                                                ? const Text(
+                                                  'League Organizer',
+                                                  style: TextStyle(
+                                                    color: Colors.blue,
+                                                  ),
+                                                )
+                                                : isGuest
+                                                ? const Text(
+                                                  'Guest Player',
+                                                  style: TextStyle(
+                                                    color: Colors.orange,
+                                                  ),
+                                                )
+                                                : null,
+                                        trailing:
+                                            isGuest && _isCreator
+                                                ? IconButton(
+                                                  icon: const Icon(
+                                                    Icons.person_add,
+                                                    color: Colors.orange,
+                                                  ),
+                                                  onPressed:
+                                                      () =>
+                                                          _showConvertGuestDialog(
+                                                            memberId,
+                                                            displayName,
+                                                          ),
+                                                  tooltip:
+                                                      'Turn this guest into a player',
+                                                )
+                                                : isGuest
+                                                ? null // No notes for guest players
+                                                : IconButton(
+                                                  icon: const Icon(
+                                                    Icons.note_add,
+                                                    color: Colors.blue,
+                                                  ),
+                                                  onPressed:
+                                                      () => _viewEditNotes(
+                                                        memberId,
+                                                        displayName,
+                                                      ),
+                                                  tooltip: 'Add/Edit Notes',
+                                                ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
     );
   }
 }

@@ -1,18 +1,32 @@
 /*
-Show the login screen allowing users to log into the application
-This screen also has an option to Register if the user is not already registered
-Once logged in, it goes straight to the dashboard
+Signing in.
+
+The first thing anybody sees, so it says what the app is for before it asks for anything.
+The old screen led with a translucent "SL" tile on a teal gradient and the line "Track
+scores, anytime, anywhere" - which describes a category of app rather than this one, and
+tells somebody who has just been sent a league link nothing about what they are signing
+in to.
+
+It now says it in the words the app uses everywhere else: fixtures, results, a table. One
+sentence, then the form.
+
+Everything is on the dark ground, with no white card floating on it. The card was there to
+hold the form together against a gradient that had nothing to do with the form; without
+the gradient it is not needed, and losing it lets the sign-in button be the only filled
+thing on the screen.
 */
 
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../api/login_user_api.dart';
 import '../api/forgot_password_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
-import '../styles/app_styles.dart';
-import '../widgets/app_logo.dart';
+import '../styles/app_palette.dart';
+import '../styles/app_type.dart';
+import '../widgets/sl_button.dart';
+import '../widgets/sl_dark_field.dart';
 import 'dashboard_screen.dart' as dashboard;
 import 'developer_screen.dart';
 import 'register_user_screen.dart' as register;
@@ -69,7 +83,10 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
       String password = _passwordController.text;
 
       // Call login API
-      Map<String, dynamic> response = await LoginUserApi.loginUser(email, password);
+      Map<String, dynamic> response = await LoginUserApi.loginUser(
+        email,
+        password,
+      );
 
       // Check response
       if (response['return_code'] == 'SUCCESS') {
@@ -82,7 +99,9 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
           // Use pushAndRemoveUntil to clear the navigation stack
           // This ensures the dashboard is recreated from scratch
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const dashboard.DashboardScreen()),
+            MaterialPageRoute(
+              builder: (context) => const dashboard.DashboardScreen(),
+            ),
             (route) => false, // Remove all previous routes
           );
         }
@@ -96,7 +115,7 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
     } catch (e) {
       // Show error message
       setState(() {
-        _errorMessage = 'An error occurred. Please try again.';
+        _errorMessage = 'Could not sign you in. Try again.';
         _isLoading = false;
       });
     }
@@ -104,285 +123,208 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get the bottom inset (keyboard height)
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
-    return Scaffold(
-      // Explicitly set to true to ensure the body resizes when keyboard appears
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        title: GestureDetector(
-          onTap: _handleTitleTap,
-          child: const Text(
-            'Split League',  // Changed from 'SplitLeague'
-            style: TextStyle(
-              fontWeight: FontWeight.bold
-            )
-          ),
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF005F8A), // Top color from logo gradient
-                Color(0xFF00B3A4), // Bottom color from logo gradient
-              ],
-            ),
-          ),
-        ),
-        elevation: 0, // Remove shadow to blend with body gradient
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // Dark ground, so the system clock and battery have to be asked for in white.
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
       ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF005F8A), // Top color from logo gradient
-                Color(0xFF00B3A4), // Bottom color from logo gradient
-              ],
-            ),
-          ),
+      child: Scaffold(
+        backgroundColor: AppPalette.deep,
+        resizeToAvoidBottomInset: true,
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
           child: SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                // Add padding at the bottom to account for keyboard height
-                padding: EdgeInsets.fromLTRB(24.0, 0, 24.0, bottomInset > 0 ? bottomInset + 24.0 : 24.0),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
+              child: Form(
+                key: _formKey,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Logo at the top
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 24),
-                      child: AppLogo(
-                        size: 100,
-                        showText: false,
-                        backgroundColor: Colors.white,
-                        opacity: 0.2,
+                    // The five taps that open the developer screen still live on the
+                    // app's name, as they always have.
+                    GestureDetector(
+                      onTap: _handleTitleTap,
+                      child: Text(
+                        'Split League',
+                        style: AppType.t(
+                          AppType.display,
+                          color: AppPalette.onDark,
+                          size: 34,
+                        ),
                       ),
                     ),
 
-                    // Login form
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
+                    const SizedBox(height: 10),
+
+                    Text(
+                      'Set up a league, add the players, and keep the table as the '
+                      'games get played.',
+                      style: AppType.b(
+                        AppType.body,
+                        color: AppPalette.onDark.withValues(alpha: 0.75),
                       ),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Text(
-                              'Sign in to continue',
-                              style: TextStyle(
-                                color: Color(0xFF005F8A),
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16),
-                              child: Text(
-                                'Track scores, anytime, anywhere',
-                                style: TextStyle(color: Colors.grey, fontSize: 14),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
+                    ),
 
-                            // Email field
-                            TextFormField(
-                              controller: _emailController,
-                              textInputAction: TextInputAction.next,
-                              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                              decoration: AppStyles.inputDecoration(
-                                'Email',
-                                prefixIcon: const Icon(Icons.email),
-                              ),
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your email';
-                                }
-                                if (!value.contains('@')) {
-                                  return 'Please enter a valid email';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
+                    const SizedBox(height: 40),
 
-                            // Password field
-                            TextFormField(
-                              controller: _passwordController,
-                              textInputAction: TextInputAction.done,
-                              onFieldSubmitted: (_) {
+                    SlDarkField(
+                      controller: _emailController,
+                      label: 'Email',
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      onSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Enter the email you signed up with';
+                        }
+                        if (!value.contains('@')) {
+                          return 'That does not look like an email address';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    SlDarkField(
+                      controller: _passwordController,
+                      label: 'Password',
+                      obscure: true,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) {
+                        FocusScope.of(context).unfocus();
+                        _handleLogin();
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Enter your password';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _showForgotPasswordDialog,
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppPalette.onDark.withValues(
+                            alpha: 0.85,
+                          ),
+                        ),
+                        child: Text(
+                          'Forgotten your password?',
+                          style: AppType.b(
+                            AppType.meta,
+                            color: AppPalette.onDark.withValues(alpha: 0.85),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    if (_errorMessage != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppPalette.clayTint,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          _errorMessage!,
+                          style: AppType.b(
+                            AppType.body,
+                            color: AppPalette.clay,
+                            size: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 20),
+
+                    SlButton.primary(
+                      label: _isLoading ? 'Signing in' : 'Sign in',
+                      busy: _isLoading,
+                      onPressed:
+                          _isLoading
+                              ? null
+                              : () {
                                 FocusScope.of(context).unfocus();
                                 _handleLogin();
                               },
-                              decoration: AppStyles.inputDecoration(
-                                'Password',
-                                prefixIcon: const Icon(Icons.lock),
-                              ),
-                              obscureText: true,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter a password';
-                                }
-                                return null;
-                              },
-                            ),
-                            // Forgot Password link
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: () {
-                                  _showForgotPasswordDialog();
-                                },
-                                child: const Text(
-                                  'Forgot Password?',
-                                  style: TextStyle(
-                                    color: AppStyles.primaryColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
+                    ),
 
-                            const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
-                            // Error message
-                            if (_errorMessage != null)
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: AppStyles.errorColor.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  _errorMessage!,
-                                  style: const TextStyle(
-                                    color: AppStyles.errorColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            if (_errorMessage != null) const SizedBox(height: 24),
-
-                            // Login button
-                            SizedBox(
-                              height: 50, // Fixed height for better tap target
-                              child: ElevatedButton(
-                                onPressed: _isLoading ? null : () {
-                                  FocusScope.of(context).unfocus();
-                                  _handleLogin();
-                                },
-                                style: AppStyles.primaryButtonStyle,
-                                child: _isLoading
-                                    ? const SpinKitThreeBounce(
-                                        color: Colors.white,
-                                        size: 24,
-                                      )
-                                    : const Text(
-                                        'Login',
-                                        style: TextStyle(fontSize: 16),
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-
-                            // Terms and Privacy
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: Wrap(
-                                alignment: WrapAlignment.center,
-                                children: [
-                                  const Text(
-                                    'By signing in, you agree to our ',
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () => _launchURL('https://www.noodev8.com/splitleague-terms-and-conditions/'),
-                                    child: const Text(
-                                      'Terms of Service',
-                                      style: TextStyle(
-                                        color: AppStyles.primaryColor,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                  const Text(
-                                    ' and ',
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () => _launchURL('https://www.noodev8.com/privacy-policy/'),
-                                    child: const Text(
-                                      'Privacy Policy',
-                                      style: TextStyle(
-                                        color: AppStyles.primaryColor,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-
-                            // Register link
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text(
-                                  "Don't have an account? ",
-                                  style: AppStyles.bodyStyle,
-                                ),
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) => const register.RegisterUserScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text(
-                                    'Register Free',
-                                    style: TextStyle(
-                                      color: AppStyles.primaryColor,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'New here? ',
+                          style: AppType.b(
+                            AppType.body,
+                            color: AppPalette.onDark.withValues(alpha: 0.75),
+                            size: 14,
+                          ),
                         ),
-                      ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) =>
+                                        const register.RegisterUserScreen(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Create an account',
+                            style: AppType.b(
+                              AppType.action,
+                              color: AppPalette.onDark,
+                              size: 14,
+                            ).copyWith(decoration: TextDecoration.underline),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 36),
+
+                    // The legal links. Quiet, and at the bottom where they belong -
+                    // they used to sit between the sign-in button and the register
+                    // link, splitting the two things a person is actually choosing
+                    // between.
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      children: [
+                        Text(
+                          'By signing in you agree to the ',
+                          style: _legalStyle(false),
+                        ),
+                        GestureDetector(
+                          onTap:
+                              () => _launchURL(
+                                'https://www.noodev8.com/splitleague-terms-and-conditions/',
+                              ),
+                          child: Text('terms', style: _legalStyle(true)),
+                        ),
+                        Text(' and ', style: _legalStyle(false)),
+                        GestureDetector(
+                          onTap:
+                              () => _launchURL(
+                                'https://www.noodev8.com/privacy-policy/',
+                              ),
+                          child: Text(
+                            'privacy policy',
+                            style: _legalStyle(true),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -394,7 +336,16 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
     );
   }
 
+  TextStyle _legalStyle(bool link) {
+    return AppType.b(
+      AppType.meta,
+      color: AppPalette.onDark.withValues(alpha: link ? 0.9 : 0.6),
+      size: 12,
+    ).copyWith(decoration: link ? TextDecoration.underline : null);
+  }
+
   // Launch URL in browser
+
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -407,8 +358,7 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
     final now = DateTime.now();
 
     // Check if this is a consecutive tap (within 2 seconds)
-    if (_lastTapTime != null &&
-        now.difference(_lastTapTime!).inSeconds < 2) {
+    if (_lastTapTime != null && now.difference(_lastTapTime!).inSeconds < 2) {
       // Increment tap count
       _tapCount++;
 
@@ -419,9 +369,7 @@ class _LoginUserScreenState extends State<LoginUserScreen> {
 
         // Navigate to developer screen
         Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => const DeveloperScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const DeveloperScreen()),
         );
       }
     } else {
@@ -466,18 +414,21 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return AlertDialog(
-      title: const Text('Forgot Password'),
+      title: const Text('Reset your password'),
       content: Padding(
         // Add padding at the bottom to account for keyboard
         padding: EdgeInsets.only(bottom: bottomInset > 0 ? 8.0 : 0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Enter your email address and we\'ll send you a link to reset your password.'),
+            Text(
+              'We will email you a link to set a new one.',
+              style: AppType.b(AppType.body),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: widget.emailController,
-              decoration: AppStyles.inputDecoration('Email'),
+              decoration: const InputDecoration(labelText: 'Email'),
               keyboardType: TextInputType.emailAddress,
               enabled: !_isLoading,
               // Auto-focus the text field
@@ -488,25 +439,24 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
             if (_isLoading)
               const Padding(
                 padding: EdgeInsets.only(top: 16),
-                child: Center(
-                  child: CircularProgressIndicator(),
-                ),
+                child: Center(child: CircularProgressIndicator()),
               ),
           ],
         ),
       ),
       actions: [
         TextButton(
-          onPressed: _isLoading
-              ? null
-              : () {
-                  Navigator.of(context).pop();
-                },
+          onPressed:
+              _isLoading
+                  ? null
+                  : () {
+                    Navigator.of(context).pop();
+                  },
           child: const Text('Cancel'),
         ),
         TextButton(
           onPressed: _isLoading ? null : _handleForgotPassword,
-          child: const Text('Send Reset Link'),
+          child: const Text('Send the link'),
         ),
       ],
     );
@@ -515,7 +465,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
   Future<void> _handleForgotPassword() async {
     final email = widget.emailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
-      ErrorHelper.showErrorToast('Please enter a valid email address');
+      ErrorHelper.showErrorToast('Enter a valid email address');
       return;
     }
 
@@ -530,12 +480,12 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
 
       if (response['return_code'] == 'SUCCESS') {
         Navigator.of(context).pop();
-        ErrorHelper.showSuccessToast('Password reset email sent! Please check your inbox.');
+        ErrorHelper.showSuccessToast('Check your inbox for the reset link');
       } else if (response['return_code'] == 'EMAIL_NOT_FOUND') {
         setState(() {
           _isLoading = false;
         });
-        ErrorHelper.showErrorToast('No account found with this email address');
+        ErrorHelper.showErrorToast('No account uses that email address');
       } else {
         setState(() {
           _isLoading = false;
@@ -548,10 +498,7 @@ class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
           _isLoading = false;
         });
       }
-      ErrorHelper.showErrorToast('Failed to send password reset email. Please try again.');
+      ErrorHelper.showErrorToast('Could not send the reset email. Try again.');
     }
   }
 }
-
-
-

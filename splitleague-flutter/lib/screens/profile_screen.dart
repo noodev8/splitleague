@@ -8,7 +8,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/config.dart';
 import '../helpers/error_helper.dart';
-import '../styles/app_styles.dart';
+import '../styles/app_palette.dart';
+import '../styles/app_type.dart';
+import '../widgets/sl_action_row.dart';
 import '../api/delete_account_api.dart';
 import 'login_user_screen.dart';
 import 'hidden_leagues_screen.dart';
@@ -49,7 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _isLoading = false;
       });
-      ErrorHelper.showErrorToast('Failed to load user data');
+      ErrorHelper.showErrorToast('Could not load your details');
     }
   }
 
@@ -71,23 +73,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _handleLogout() async {
     try {
       // Show confirmation dialog
-      bool confirm = await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Logout'),
-          content: const Text('Are you sure you want to logout?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Logout'),
-            ),
-          ],
-        ),
-      ) ?? false;
+      bool confirm =
+          await showDialog(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  title: const Text('Sign out?'),
+                  content: const Text(
+                    'Your leagues stay on your account. You will need your password to '
+                    'get back in.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text('Sign out'),
+                    ),
+                  ],
+                ),
+          ) ??
+          false;
 
       if (!confirm) return;
 
@@ -105,7 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     } catch (e) {
-      ErrorHelper.showErrorToast('Failed to logout');
+      ErrorHelper.showErrorToast('Could not sign you out');
     }
   }
 
@@ -113,29 +121,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _handleDeleteAccount() async {
     try {
       // Show first confirmation dialog
-      bool firstConfirm = await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Delete Account'),
-          content: const Text(
-            'Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.',
-            style: TextStyle(height: 1.5),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
-              ),
-              child: const Text('Delete'),
-            ),
-          ],
-        ),
-      ) ?? false;
+      bool firstConfirm =
+          await showDialog(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  title: const Text('Delete Account'),
+                  content: const Text(
+                    'Your account, your leagues and every result you have entered are '
+                    'deleted. This cannot be undone.',
+                    style: TextStyle(height: 1.5),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      child: const Text('Delete'),
+                    ),
+                  ],
+                ),
+          ) ??
+          false;
 
       if (!firstConfirm) return;
 
@@ -143,29 +153,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
 
       // Show second confirmation dialog for extra safety
-      bool secondConfirm = await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Final Confirmation'),
-          content: const Text(
-            'This will permanently delete your account and all associated data. You will not be able to recover it. Are you absolutely sure?',
-            style: TextStyle(height: 1.5),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
-              ),
-              child: const Text('Yes, Delete My Account'),
-            ),
-          ],
-        ),
-      ) ?? false;
+      bool secondConfirm =
+          await showDialog(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  title: const Text('Final Confirmation'),
+                  content: const Text(
+                    'This will permanently delete your account and all associated data. You will not be able to recover it. Are you absolutely sure?',
+                    style: TextStyle(height: 1.5),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      child: const Text('Yes, Delete My Account'),
+                    ),
+                  ],
+                ),
+          ) ??
+          false;
 
       if (!secondConfirm) return;
 
@@ -175,7 +186,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         reason = await showDialog<String>(
           context: context,
           builder: (context) {
-            final TextEditingController reasonController = TextEditingController();
+            final TextEditingController reasonController =
+                TextEditingController();
             return AlertDialog(
               title: const Text('Reason for Leaving'),
               content: Column(
@@ -203,7 +215,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: const Text('Skip'),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(reasonController.text),
+                  onPressed:
+                      () => Navigator.of(context).pop(reasonController.text),
                   child: const Text('Submit'),
                 ),
               ],
@@ -241,7 +254,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (response['return_code'] == 'SUCCESS') {
         // Show success message
-        ErrorHelper.showSuccessToast('Account successfully deleted');
+        ErrorHelper.showSuccessToast('Your account has been deleted');
 
         // Log out the user
         await AuthHelper.logout();
@@ -256,574 +269,253 @@ class _ProfileScreenState extends State<ProfileScreen> {
       } else {
         // Show error message
         ErrorHelper.showErrorToast(
-          response['message'] ?? 'Failed to delete account'
+          response['message'] ?? 'Could not delete your account',
         );
       }
     } catch (e) {
-      ErrorHelper.showErrorToast('Failed to delete account');
+      ErrorHelper.showErrorToast('Could not delete your account');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppPalette.chalk,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF005F8A),
-        elevation: 0,
-        title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Your account'),
+        backgroundColor: AppPalette.surface,
+        shape: const Border(bottom: BorderSide(color: AppPalette.hairline)),
       ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF005F8A), // Top color from logo gradient
-              Color(0xFF00B3A4), // Bottom color from logo gradient
-            ],
-          ),
-        ),
-        child: SafeArea(
-          bottom: false,
-          child: _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(),
-                )
-              : SingleChildScrollView(
-                  child: Column(
+
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : ListView(
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 40),
+                children: [
+                  _buildIdentity(),
+
+                  // Everything grouped by who it is for and what it does to you.
+                  //
+                  // The old screen had one card called "Actions" holding eight rows in
+                  // no order: changing a password, restoring a hidden league, reading
+                  // the privacy policy, deleting the account and signing out, all with
+                  // the same tinted circular icon. Deleting an account sat two rows
+                  // above signing out and looked exactly like it.
+                  SlSection(
+                    eyebrow: 'Your leagues',
                     children: [
-                      // Profile info card
-                      Card(
-                        elevation: 2,
-                        margin: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: Column(
-                            children: [
-                              // Avatar
-                              Stack(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 50,
-                                    backgroundColor: AppStyles.primaryColor.withAlpha(40),
-                                    child: Text(
-                                      _getInitials(_userData!['nickname']),
-                                      style: TextStyle(
-                                        fontSize: 36,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppStyles.primaryColor,
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    right: 0,
-                                    bottom: 0,
-                                    child: GestureDetector(
-                                      onTap: _navigateToEditProfile,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: BoxDecoration(
-                                          color: AppStyles.primaryColor,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: Colors.white,
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: const Icon(
-                                          Icons.edit,
-                                          color: Colors.white,
-                                          size: 16,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                      SlActionRow(
+                        label: 'Hidden leagues',
+                        detail: 'Bring back a league you took off your list',
+                        icon: Icons.visibility_off_outlined,
+                        onTap:
+                            () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => const HiddenLeaguesScreen(),
                               ),
-                              const SizedBox(height: 16),
-
-                              // Name and Edit button
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      children: [
-                                        // Name
-                                        Text(
-                                          _userData!['name'],
-                                          style: const TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        // Nickname
-                                        Text(
-                                          '@${_userData!['nickname']}',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.grey[600],
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              // Edit Profile Button
-                              TextButton.icon(
-                                onPressed: _navigateToEditProfile,
-                                icon: const Icon(Icons.edit),
-                                label: const Text('Edit Profile'),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: AppStyles.primaryColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // User info section
-                      Card(
-                        elevation: 2,
-                        margin: const EdgeInsets.symmetric(horizontal: 32.0),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Padding(
-                                padding: EdgeInsets.only(left: 16.0, top: 8.0, bottom: 16.0),
-                                child: Text(
-                                  'Account Information',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              // Email
-                              _buildInfoItem(
-                                icon: Icons.email,
-                                title: 'Email',
-                                value: _userData!['email'],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Actions section
-                      Card(
-                        elevation: 2,
-                        margin: const EdgeInsets.symmetric(horizontal: 32.0),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Padding(
-                                padding: EdgeInsets.only(left: 16.0, top: 8.0, bottom: 16.0),
-                                child: Text(
-                                  'Actions',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              // Change Password button
-                              ListTile(
-                                leading: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: AppStyles.primaryColor.withAlpha(30),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.lock_outline,
-                                    color: AppStyles.primaryColor,
-                                    size: 24,
-                                  ),
-                                ),
-                                title: const Text(
-                                  'Change Password',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                subtitle: const Text(
-                                  'Update your account password',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                trailing: const Icon(Icons.chevron_right),
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => const ChangePasswordScreen(),
-                                    ),
-                                  );
-                                },
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-
-                              const SizedBox(height: 8),
-
-                              // Hidden Leagues button
-                              ListTile(
-                                leading: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: AppStyles.primaryColor.withAlpha(30),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.visibility_off,
-                                    color: AppStyles.primaryColor,
-                                    size: 24,
-                                  ),
-                                ),
-                                title: const Text(
-                                  'Hidden Leagues',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                subtitle: const Text(
-                                  'View and restore hidden leagues',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                trailing: const Icon(Icons.chevron_right),
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => const HiddenLeaguesScreen(),
-                                    ),
-                                  );
-                                },
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              const Divider(),
-                              // Accessibility settings button
-                              ListTile(
-                                leading: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.purple.withAlpha(30),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.accessibility_new,
-                                    color: Colors.purple,
-                                    size: 24,
-                                  ),
-                                ),
-                                title: const Text(
-                                  'Accessibility Settings',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                subtitle: const Text(
-                                  'Customize accessibility options',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                trailing: const Icon(Icons.chevron_right),
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => const AccessibilitySettingsScreen(),
-                                    ),
-                                  );
-                                },
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              const Divider(),
-                              // Contact Us
-                              ListTile(
-                                leading: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.withAlpha(30),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.email_outlined,
-                                    color: Colors.blue,
-                                    size: 24,
-                                  ),
-                                ),
-                                title: const Text(
-                                  'Contact Us',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                subtitle: const Text(
-                                  'Email us at info@splitleague.com',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                trailing: const Icon(Icons.open_in_new),
-                                onTap: () => _launchURL('mailto:info@splitleague.com'),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              // Privacy Policy
-                              ListTile(
-                                leading: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.teal.withAlpha(30),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.privacy_tip_outlined,
-                                    color: Colors.teal,
-                                    size: 24,
-                                  ),
-                                ),
-                                title: const Text(
-                                  'Privacy Policy',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                subtitle: const Text(
-                                  'View our privacy policy',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                trailing: const Icon(Icons.open_in_new),
-                                onTap: () => _launchURL('https://www.noodev8.com/privacy-policy/'),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              // Terms of Service
-                              ListTile(
-                                leading: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber.withAlpha(30),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.description_outlined,
-                                    color: Colors.amber,
-                                    size: 24,
-                                  ),
-                                ),
-                                title: const Text(
-                                  'Terms of Service',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                subtitle: const Text(
-                                  'View our terms of service',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                trailing: const Icon(Icons.open_in_new),
-                                onTap: () => _launchURL('https://www.noodev8.com/splitleague-terms-and-conditions/'),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              const Divider(),
-                              // Delete Account button
-                              ListTile(
-                                leading: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.withAlpha(30),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.delete_forever,
-                                    color: Colors.red,
-                                    size: 24,
-                                  ),
-                                ),
-                                title: const Text(
-                                  'Delete Account',
-                                  style: TextStyle(
-                                    color: Colors.red,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                subtitle: const Text(
-                                  'Permanently delete your account and all data',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                trailing: const Icon(Icons.chevron_right, color: Colors.red),
-                                onTap: _handleDeleteAccount,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              // Logout button
-                              ListTile(
-                                leading: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange.withAlpha(30),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.logout,
-                                    color: Colors.orange,
-                                    size: 24,
-                                  ),
-                                ),
-                                title: const Text(
-                                  'Logout',
-                                  style: TextStyle(
-                                    color: Colors.orange,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                subtitle: const Text(
-                                  'Sign out of your account',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                trailing: const Icon(Icons.chevron_right, color: Colors.orange),
-                                onTap: _handleLogout,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // App version
-                      //
-                      // Config.appVersion is read from the platform package at startup, which
-                      // gets it from the version: line in pubspec.yaml. Deliberately NOT
-                      // hardcoded: a hardcoded constant here is exactly what made the forced
-                      // update check compare the wrong number for months without anyone
-                      // noticing. Showing it also means somebody reporting a problem can say
-                      // which build they are on.
-                      Padding(
-                        padding: const EdgeInsets.only(top: 20, bottom: 12),
-                        child: Center(
-                          child: Text(
-                            'Version ${Config.appVersion} (${Config.appBuildNumber})',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.75),
                             ),
-                          ),
-                        ),
                       ),
                     ],
                   ),
-                ),
+
+                  SlSection(
+                    eyebrow: 'Settings',
+                    children: [
+                      SlActionRow(
+                        label: 'Change your password',
+                        icon: Icons.lock_outline,
+                        onTap:
+                            () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => const ChangePasswordScreen(),
+                              ),
+                            ),
+                      ),
+                      SlActionRow(
+                        label: 'Text size and contrast',
+                        icon: Icons.text_fields,
+                        onTap:
+                            () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (context) =>
+                                        const AccessibilitySettingsScreen(),
+                              ),
+                            ),
+                      ),
+                    ],
+                  ),
+
+                  SlSection(
+                    eyebrow: 'About',
+                    children: [
+                      SlActionRow(
+                        label: 'Get in touch',
+                        detail: 'info@splitleague.com',
+                        icon: Icons.mail_outline,
+                        onTap: () => _launchURL('mailto:info@splitleague.com'),
+                      ),
+                      SlActionRow(
+                        label: 'Privacy policy',
+                        icon: Icons.shield_outlined,
+                        onTap:
+                            () => _launchURL(
+                              'https://www.noodev8.com/privacy-policy/',
+                            ),
+                      ),
+                      SlActionRow(
+                        label: 'Terms of service',
+                        icon: Icons.description_outlined,
+                        onTap:
+                            () => _launchURL(
+                              'https://www.noodev8.com/splitleague-terms-and-conditions/',
+                            ),
+                      ),
+                    ],
+                  ),
+
+                  // Signing out and deleting the account are separated from everything
+                  // else and from each other, because one is routine and the other is
+                  // permanent, and on the old screen they were adjacent and identical.
+                  SlSection(
+                    children: [
+                      SlActionRow(
+                        label: 'Sign out',
+                        icon: Icons.logout,
+                        onTap: _handleLogout,
+                      ),
+                    ],
+                  ),
+
+                  SlSection(
+                    topGap: 12,
+                    children: [
+                      SlActionRow(
+                        label: 'Delete your account',
+                        detail:
+                            'Permanent. Takes your leagues and results with it.',
+                        icon: Icons.delete_outline,
+                        onTap: _handleDeleteAccount,
+                        destructive: true,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  Center(
+                    child: Text(
+                      'Split League ${Config.appVersion} (${Config.appBuildNumber})',
+                      style: AppType.b(AppType.meta, size: 12),
+                    ),
+                  ),
+                ],
+              ),
+    );
+  }
+
+  // Who you are, and the one thing you can change about it here.
+  Widget _buildIdentity() {
+    final String name = _userData?['name']?.toString() ?? '';
+    final String nickname = _userData?['nickname']?.toString() ?? '';
+    final String email = _userData?['email']?.toString() ?? '';
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppPalette.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppPalette.hairline),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: const BoxDecoration(
+              color: AppPalette.tealTint,
+              shape: BoxShape.circle,
             ),
-        ),
+            alignment: Alignment.center,
+            child: Text(
+              _getInitials(nickname),
+              style: AppType.t(AppType.title, color: AppPalette.tealDeep),
+            ),
+          ),
+
+          const SizedBox(width: 16),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  name.isEmpty ? nickname : name,
+                  style: AppType.t(AppType.title),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  // The display name is what other players see, so it is worth
+                  // saying which of these two names that is - it was shown as
+                  // "@nickname" before, which reads like a handle on a social
+                  // network and is not what it is.
+                  nickname.isEmpty ? email : '$nickname in leagues',
+                  style: AppType.b(AppType.meta),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (email.isNotEmpty && nickname.isNotEmpty) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    email,
+                    style: AppType.b(AppType.meta, size: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          IconButton(
+            icon: const Icon(
+              Icons.edit_outlined,
+              size: 19,
+              color: AppPalette.tealDeep,
+            ),
+            tooltip: 'Edit your details',
+            onPressed: _navigateToEditProfile,
+          ),
+        ],
+      ),
     );
   }
 
-  // Helper method to build info items
-  Widget _buildInfoItem({
-    required IconData icon,
-    required String title,
-    required String value,
-  }) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: AppStyles.primaryColor.withAlpha(30),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          icon,
-          color: AppStyles.primaryColor,
-          size: 24,
-        ),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontSize: 14,
-          color: Colors.grey[600],
-        ),
-      ),
-      subtitle: Text(
-        value,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
+  // Initials for the avatar disc.
+  String _getInitials(String? nickname) {
+    if (nickname == null || nickname.isEmpty) return '';
 
-  // Helper method to get initials from nickname
-  String _getInitials(String nickname) {
-    if (nickname.isEmpty) return '';
-
-    List<String> nicknameParts = nickname.split(' ');
-    if (nicknameParts.length > 1) {
-      return nicknameParts[0][0].toUpperCase() + nicknameParts[1][0].toUpperCase();
-    } else {
-      return nickname[0].toUpperCase();
+    final List<String> parts = nickname.trim().split(' ');
+    if (parts.length > 1 && parts[1].isNotEmpty) {
+      return parts[0][0].toUpperCase() + parts[1][0].toUpperCase();
     }
+    return nickname[0].toUpperCase();
   }
 
-  // Launch URL in browser
+  // Open a link outside the app.
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
+
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      ErrorHelper.showErrorToast('Could not launch $url');
+      if (mounted) {
+        ErrorHelper.showErrorToast('Could not open that link');
+      }
     }
   }
 }
-
-
-
-

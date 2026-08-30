@@ -1,18 +1,37 @@
 /*
-Show the registration screen allowing new users to create an account
-This screen allows users to enter their details and register
-Once registered, it automatically logs them in and goes to the dashboard
+Creating an account.
+
+Signing up is pure cost to the person doing it - nobody wants an account, they want a
+league - so the job of this screen is to ask for as little as possible and to say why it
+is asking.
+
+Two fields came off it.
+
+  Confirm password is gone, replaced by a reveal button on the password itself. It was
+  there to catch a typo, and showing the password catches the same typo without a second
+  field to fill in. A mistyped password is also recoverable from the sign-in screen,
+  which a mistyped email is not - so the email is the one that still gets checked.
+
+  Display name is still sent, because it is what appears in every league, but it now
+  fills itself in from the first name as it is typed. Anybody who wants something else
+  types over it and it stops following. Two name fields with no explanation was the most
+  confusing thing on the old screen: nobody could tell which one other people would see.
+
+Everything sits directly on the dark ground, matching the sign-in screen, rather than in
+a white card floating on a gradient.
 */
 
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../api/register_user_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
-import '../styles/app_styles.dart';
+import '../styles/app_palette.dart';
+import '../styles/app_type.dart';
+import '../widgets/sl_button.dart';
+import '../widgets/sl_dark_field.dart';
 import 'dashboard_screen.dart' as dashboard;
-// import '../widgets/app_logo.dart';
 
 class RegisterUserScreen extends StatefulWidget {
   const RegisterUserScreen({super.key});
@@ -30,7 +49,6 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
   final _nicknameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
 
   // Loading state
   bool _isLoading = false;
@@ -38,14 +56,42 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
   // Error message
   String? _errorMessage;
 
+  // Whether the password is being shown. Replaces the confirm-password field.
+  bool _showPassword = false;
+
+  // True until the person edits the display name themselves. While it is true the
+  // display name follows the first word of their real name; the moment they type in
+  // it, it stops - because from then on it is their choice, not our guess.
+  bool _displayNameFollowsName = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(_syncDisplayName);
+  }
+
+  // Keep the display name in step with the first name, until it is edited.
+  void _syncDisplayName() {
+    if (!_displayNameFollowsName) return;
+
+    final String first = _nameController.text.trim().split(' ').first;
+
+    if (_nicknameController.text != first) {
+      _nicknameController.value = TextEditingValue(
+        text: first,
+        selection: TextSelection.collapsed(offset: first.length),
+      );
+    }
+  }
+
   @override
   void dispose() {
+    _nameController.removeListener(_syncDisplayName);
     // Clean up controllers
     _nameController.dispose();
     _nicknameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -91,7 +137,9 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
         // Navigate to dashboard with a clean slate
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const dashboard.DashboardScreen()),
+            MaterialPageRoute(
+              builder: (context) => const dashboard.DashboardScreen(),
+            ),
             (route) => false, // Remove all previous routes
           );
         }
@@ -105,7 +153,7 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
     } catch (e) {
       // Show error message
       setState(() {
-        _errorMessage = 'An error occurred. Please try again.';
+        _errorMessage = 'Could not create your account. Try again.';
         _isLoading = false;
       });
     }
@@ -113,303 +161,238 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get the bottom inset (keyboard height)
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Register',
-          style: TextStyle(
-            fontWeight: FontWeight.bold
-          )
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF005F8A), // Top color from logo gradient
-                Color(0xFF00B3A4), // Bottom color from logo gradient
-              ],
-            ),
-          ),
-        ),
-        elevation: 0, // Remove shadow to blend with body gradient
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
       ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF005F8A), // Top color from logo gradient
-                Color(0xFF00B3A4), // Bottom color from logo gradient
-              ],
-            ),
-          ),
+      child: Scaffold(
+        backgroundColor: AppPalette.deep,
+        resizeToAvoidBottomInset: true,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          foregroundColor: AppPalette.onDark,
+          elevation: 0,
+          title: const SizedBox.shrink(),
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
           child: SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(24.0, 0, 24.0, bottomInset > 0 ? bottomInset + 24.0 : 24.0),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+              child: Form(
+                key: _formKey,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Remove the Padding widget containing AppLogo
-                    
-                    // Registration form
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
+                    Text(
+                      'Create your account',
+                      style: AppType.t(
+                        AppType.display,
+                        color: AppPalette.onDark,
+                        size: 30,
                       ),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Text(
-                              'Create your account',
-                              style: TextStyle(
-                                color: Color(0xFF005F8A),
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 24),
+                    ),
 
-                            // Name field
-                            TextFormField(
-                              controller: _nameController,
-                              textCapitalization: TextCapitalization.words,
-                              textInputAction: TextInputAction.next,
-                              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                              decoration: AppStyles.inputDecoration(
-                                'Full Name',
-                                prefixIcon: const Icon(Icons.person),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your name';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
+                    const SizedBox(height: 10),
 
-                            // Nickname field (changed to Display Name)
-                            TextFormField(
-                              controller: _nicknameController,
-                              textCapitalization: TextCapitalization.words,
-                              textInputAction: TextInputAction.next,
-                              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                              decoration: AppStyles.inputDecoration(
-                                'Display Name',
-                                prefixIcon: const Icon(Icons.person_outline),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter a display name';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
+                    Text(
+                      'So your leagues follow you, and the people you play can find you.',
+                      style: AppType.b(
+                        AppType.body,
+                        color: AppPalette.onDark.withValues(alpha: 0.75),
+                      ),
+                    ),
 
-                            // Email field
-                            TextFormField(
-                              controller: _emailController,
-                              textInputAction: TextInputAction.next,
-                              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                              decoration: AppStyles.inputDecoration(
-                                'Email',
-                                prefixIcon: const Icon(Icons.email),
-                              ),
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your email';
-                                }
-                                if (!value.contains('@')) {
-                                  return 'Please enter a valid email';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
+                    const SizedBox(height: 32),
 
-                            // Password field
-                            TextFormField(
-                              controller: _passwordController,
-                              textInputAction: TextInputAction.next,
-                              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
-                              decoration: AppStyles.inputDecoration(
-                                'Password',
-                                prefixIcon: const Icon(Icons.lock),
-                              ),
-                              obscureText: true,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter a password';
-                                }
-                                if (value.length < 4) {
-                                  return 'Password must be at least 4 characters';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
+                    SlDarkField(
+                      controller: _nameController,
+                      label: 'Your name',
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      onSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Tell us your name';
+                        }
+                        return null;
+                      },
+                    ),
 
-                            // Confirm password field
-                            TextFormField(
-                              controller: _confirmPasswordController,
-                              textInputAction: TextInputAction.done,
-                              onFieldSubmitted: (_) {
+                    const SizedBox(height: 14),
+
+                    SlDarkField(
+                      controller: _nicknameController,
+                      label: 'Name in leagues',
+                      helper: 'What the other players see',
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      onSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                      // Typing here means they have chosen one, so stop following
+                      // the name field.
+                      onChanged: (_) => _displayNameFollowsName = false,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Pick a name for the other players to see';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    SlDarkField(
+                      controller: _emailController,
+                      label: 'Email',
+                      helper:
+                          'Used to get you back in if you forget your password',
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      onSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Enter your email address';
+                        }
+                        if (!value.contains('@')) {
+                          return 'That does not look like an email address';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    SlDarkField(
+                      controller: _passwordController,
+                      label: 'Password',
+                      obscure: !_showPassword,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) {
+                        FocusScope.of(context).unfocus();
+                        _handleRegister();
+                      },
+                      // The reveal, which is what replaced the confirm field.
+                      suffix: IconButton(
+                        icon: Icon(
+                          _showPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          size: 20,
+                          color: AppPalette.onDark.withValues(alpha: 0.7),
+                        ),
+                        tooltip:
+                            _showPassword ? 'Hide password' : 'Show password',
+                        onPressed:
+                            () =>
+                                setState(() => _showPassword = !_showPassword),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Choose a password';
+                        }
+                        // The same minimum the app has always asked for. The
+                        // reveal button is what guards against a typo now; this is
+                        // not the place to quietly tighten the password policy.
+                        if (value.length < 4) {
+                          return 'Use at least 4 characters';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    if (_errorMessage != null) ...[
+                      const SizedBox(height: 20),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppPalette.clayTint,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          _errorMessage!,
+                          style: AppType.b(
+                            AppType.body,
+                            color: AppPalette.clay,
+                            size: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 28),
+
+                    SlButton.primary(
+                      label:
+                          _isLoading
+                              ? 'Creating your account'
+                              : 'Create account',
+                      busy: _isLoading,
+                      onPressed:
+                          _isLoading
+                              ? null
+                              : () {
                                 FocusScope.of(context).unfocus();
                                 _handleRegister();
                               },
-                              decoration: AppStyles.inputDecoration(
-                                'Confirm Password',
-                                prefixIcon: const Icon(Icons.lock_outline),
-                              ),
-                              obscureText: true,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please confirm your password';
-                                }
-                                if (value != _passwordController.text) {
-                                  return 'Passwords do not match';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 24),
+                    ),
 
-                            // Error message
-                            if (_errorMessage != null)
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: AppStyles.errorColor.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  _errorMessage!,
-                                  style: const TextStyle(
-                                    color: AppStyles.errorColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            if (_errorMessage != null) const SizedBox(height: 24),
+                    const SizedBox(height: 12),
 
-                            // Register button
-                            SizedBox(
-                              height: 50, // Fixed height for better tap target
-                              child: ElevatedButton(
-                                onPressed: _isLoading ? null : () {
-                                  FocusScope.of(context).unfocus();
-                                  _handleRegister();
-                                },
-                                style: AppStyles.primaryButtonStyle,
-                                child: _isLoading
-                                    ? const SpinKitThreeBounce(
-                                        color: Colors.white,
-                                        size: 24,
-                                      )
-                                    : const Text(
-                                        'Register',
-                                        style: TextStyle(fontSize: 16),
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-
-                            // Terms and Privacy Policy
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: Wrap(
-                                alignment: WrapAlignment.center,
-                                children: [
-                                  const Text(
-                                    'By registering, you agree to our ',
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () => _launchURL('https://www.noodev8.com/splitleague-terms-and-conditions/'),
-                                    child: const Text(
-                                      'Terms of Service',
-                                      style: TextStyle(
-                                        color: AppStyles.primaryColor,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                  const Text(
-                                    ' and ',
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () => _launchURL('https://www.noodev8.com/privacy-policy/'),
-                                    child: const Text(
-                                      'Privacy Policy',
-                                      style: TextStyle(
-                                        color: AppStyles.primaryColor,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Login link
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text(
-                                  "Already have an account? ",
-                                  style: AppStyles.bodyStyle,
-                                ),
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: const Text(
-                                    'Login',
-                                    style: TextStyle(
-                                      color: AppStyles.primaryColor,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Already have one? ',
+                          style: AppType.b(
+                            AppType.body,
+                            color: AppPalette.onDark.withValues(alpha: 0.75),
+                            size: 14,
+                          ),
                         ),
-                      ),
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pop(),
+                          child: Text(
+                            'Sign in',
+                            style: AppType.b(
+                              AppType.action,
+                              color: AppPalette.onDark,
+                              size: 14,
+                            ).copyWith(decoration: TextDecoration.underline),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 36),
+
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      children: [
+                        Text(
+                          'By registering you agree to the ',
+                          style: _legalStyle(false),
+                        ),
+                        GestureDetector(
+                          onTap:
+                              () => _launchURL(
+                                'https://www.noodev8.com/splitleague-terms-and-conditions/',
+                              ),
+                          child: Text('terms', style: _legalStyle(true)),
+                        ),
+                        Text(' and ', style: _legalStyle(false)),
+                        GestureDetector(
+                          onTap:
+                              () => _launchURL(
+                                'https://www.noodev8.com/privacy-policy/',
+                              ),
+                          child: Text(
+                            'privacy policy',
+                            style: _legalStyle(true),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -421,7 +404,16 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
     );
   }
 
+  TextStyle _legalStyle(bool link) {
+    return AppType.b(
+      AppType.meta,
+      color: AppPalette.onDark.withValues(alpha: link ? 0.9 : 0.6),
+      size: 12,
+    ).copyWith(decoration: link ? TextDecoration.underline : null);
+  }
+
   // Launch URL in browser
+
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -429,5 +421,3 @@ class _RegisterUserScreenState extends State<RegisterUserScreen> {
     }
   }
 }
-
-

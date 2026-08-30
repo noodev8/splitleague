@@ -18,7 +18,7 @@ import 'helpers/deep_link_helper.dart';
 import 'helpers/route_observer.dart';
 // import 'helpers/runtime_config.dart';
 import 'helpers/version_helper.dart';
-import 'styles/app_styles.dart';
+import 'styles/app_theme.dart';
 import 'providers/league_provider.dart';
 import 'providers/accessibility_provider.dart';
 
@@ -57,40 +57,29 @@ class SplitLeagueApp extends StatelessWidget {
           // Apply accessibility settings
           final textScaleFactor = accessibilityProvider.getTextScaleFactor();
 
-          // Create standard base theme
-          final baseTheme = ThemeData(
-            primarySwatch: Colors.indigo,
-            primaryColor: AppStyles.primaryColor,
-            colorScheme: ColorScheme.light(
-              primary: AppStyles.primaryColor,
-              secondary: AppStyles.accentColor,
-            ),
-            scaffoldBackgroundColor: AppStyles.backgroundColor,
-            appBarTheme: const AppBarTheme(
-              backgroundColor: AppStyles.primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 4,
-            ),
-            cardTheme: CardThemeData(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          );
+          // The app's theme lives in styles/app_theme.dart.
+          //
+          // It used to be built inline here, from Material's indigo swatch with a
+          // couple of colours overridden - which is how the app ended up with three
+          // unrelated blues on the same screen. Everything visual now derives from
+          // AppPalette and AppType.
+          final baseTheme = AppTheme.build();
 
           // Apply high contrast if needed
           final theme = accessibilityProvider.getThemeData(baseTheme);
 
           return RefreshConfiguration(
             // Make pull-to-refresh less sensitive
-            headerTriggerDistance: 120.0, // Default is 80.0, higher means less sensitive
-            dragSpeedRatio: 0.7, // Default is 1.0, lower means more drag required
+            headerTriggerDistance:
+                120.0, // Default is 80.0, higher means less sensitive
+            dragSpeedRatio:
+                0.7, // Default is 1.0, lower means more drag required
             // Adjust spring animation to feel less "jumpy"
             springDescription: const SpringDescription(
-              mass: 2.5,       // Default is 2.2
-              stiffness: 120,  // Default is 150, lower means less "snap back" force
-              damping: 20,     // Default is 16, higher means more damping
+              mass: 2.5, // Default is 2.2
+              stiffness:
+                  120, // Default is 150, lower means less "snap back" force
+              damping: 20, // Default is 16, higher means more damping
             ),
             // Other configuration options
             enableScrollWhenRefreshCompleted: true,
@@ -103,16 +92,17 @@ class SplitLeagueApp extends StatelessWidget {
               builder: (context, child) {
                 return MediaQuery(
                   // Apply text scaling
-                  data: MediaQuery.of(context).copyWith(
-                    textScaler: TextScaler.linear(textScaleFactor),
-                  ),
+                  data: MediaQuery.of(
+                    context,
+                  ).copyWith(textScaler: TextScaler.linear(textScaleFactor)),
                   child: child!,
                 );
               },
               title: 'SplitLeague',
               debugShowCheckedModeBanner: false,
               // Enable accessibility features
-              showSemanticsDebugger: false, // Set to true for debugging accessibility
+              showSemanticsDebugger:
+                  false, // Set to true for debugging accessibility
               theme: theme,
               home: const SplashScreen(),
             ),
@@ -167,7 +157,8 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
       storeUrl = 'https://apps.apple.com/us/app/split-league/id6745337065';
     } else if (Platform.isAndroid) {
       // Google Play Store URL
-      storeUrl = 'https://play.google.com/store/apps/details?id=com.noodev8.splitleague';
+      storeUrl =
+          'https://play.google.com/store/apps/details?id=com.noodev8.splitleague';
     } else {
       // Fallback for other platforms
       return;
@@ -191,19 +182,12 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
         return AlertDialog(
           title: const Text(
             'Update Required',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.red,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.system_update,
-                size: 48,
-                color: Colors.red,
-              ),
+              const Icon(Icons.system_update, size: 48, color: Colors.red),
               const SizedBox(height: 16),
               const Text(
                 'A new version of SplitLeague is required to continue.',
@@ -252,11 +236,7 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
   Widget build(BuildContext context) {
     // Show loading indicator while checking login status
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     // Navigate to appropriate screen based on login status

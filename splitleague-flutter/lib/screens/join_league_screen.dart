@@ -20,11 +20,13 @@ Once joined, it returns to the dashboard screen.
 */
 
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/join_league_api.dart';
 import '../api/get_league_preview_api.dart';
 import '../helpers/auth_helper.dart';
+import '../styles/app_palette.dart';
+import '../styles/app_type.dart';
 import '../widgets/pin_input.dart';
+import '../widgets/sl_button.dart';
 import 'login_user_screen.dart';
 import 'register_user_screen.dart';
 
@@ -40,11 +42,7 @@ class JoinLeagueScreen extends StatefulWidget {
   // Null when the person opened this screen themselves and is going to type a code.
   final String? leagueKey;
 
-  const JoinLeagueScreen({
-    super.key,
-    this.onLeagueJoined,
-    this.leagueKey,
-  });
+  const JoinLeagueScreen({super.key, this.onLeagueJoined, this.leagueKey});
 
   @override
   State<JoinLeagueScreen> createState() => _JoinLeagueScreenState();
@@ -119,9 +117,10 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
         setState(() {
           _inviteLeagueName = response['name']?.toString();
           _inviteOrganiser = response['organiser']?.toString();
-          _invitePlayerCount = response['player_count'] is int
-              ? response['player_count']
-              : int.tryParse(response['player_count']?.toString() ?? '');
+          _invitePlayerCount =
+              response['player_count'] is int
+                  ? response['player_count']
+                  : int.tryParse(response['player_count']?.toString() ?? '');
           _inviteHasFixtures = response['has_fixtures'] == true;
           _inviteIsMember = response['is_member'] == true;
           _loadingPreview = false;
@@ -151,14 +150,15 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
     // Only the typed route can produce an incomplete identifier
     if (!_arrivedFromLink && _typedCode.length != 4) {
       setState(() {
-        _errorMessage = 'Please enter a valid 4-digit code';
+        _errorMessage = 'A join code is four digits';
       });
       return;
     }
 
     // Check if user is in guest mode
-    final isGuest = await AuthHelper.getUserData().then((userData) =>
-      userData == null || userData['nickname'] == 'Guest');
+    final isGuest = await AuthHelper.getUserData().then(
+      (userData) => userData == null || userData['nickname'] == 'Guest',
+    );
 
     if (isGuest) {
       // Show registration dialog for guest users
@@ -222,7 +222,7 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
           content: const Text(
             'To join a league, you need to register an account or sign in. '
             'This allows you to track scores and participate in leagues with friends.\n\n'
-            'Registration is free and only takes a minute.'
+            'Registration is free and only takes a minute.',
           ),
           actions: [
             TextButton(
@@ -236,7 +236,9 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
                 Navigator.of(context).pop(); // Close dialog
                 // Navigate to login screen with a clean slate
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const LoginUserScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const LoginUserScreen(),
+                  ),
                   (route) => false, // Remove all previous routes
                 );
               },
@@ -247,7 +249,9 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
                 Navigator.of(context).pop(); // Close dialog
                 // Navigate to register screen with a clean slate
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const RegisterUserScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const RegisterUserScreen(),
+                  ),
                   (route) => false, // Remove all previous routes
                 );
               },
@@ -300,269 +304,180 @@ class _JoinLeagueScreenState extends State<JoinLeagueScreen> {
       return 'Join this league';
     }
 
-    return 'Join a League';
+    return 'Join a league';
   }
 
-  // The line under the title
+  // The line under the title.
+  //
+  // On the link route this is the whole reason the screen is worth showing: the person
+  // tapped a link out of a group chat and wants to know what they are about to join
+  // before they join it. So it is the league's name, in the display face, with who runs
+  // it and how many are already in.
   Widget _buildSubtitle() {
-    // We know the league - say what it is and who runs it
     if (_inviteLeagueName != null) {
+      final List<String> facts = [
+        if (_inviteOrganiser != null) 'Organised by $_inviteOrganiser',
+        if (_invitePlayerCount != null)
+          '$_invitePlayerCount ${_invitePlayerCount == 1 ? 'player' : 'players'} so far',
+      ];
+
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            _inviteLeagueName!,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF005F8A),
+          Text(_inviteLeagueName!, style: AppType.t(AppType.display)),
+          if (facts.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              facts.join(' · '),
+              style: AppType.b(AppType.body, color: AppPalette.slate),
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            [
-              if (_inviteOrganiser != null) 'Organised by $_inviteOrganiser',
-              if (_invitePlayerCount != null)
-                '$_invitePlayerCount ${_invitePlayerCount == 1 ? 'player' : 'players'} so far',
-            ].join('\n'),
-            style: const TextStyle(
-              fontSize: 15,
-              color: Colors.grey,
-            ),
-            textAlign: TextAlign.center,
-          ),
+          ],
         ],
       );
     }
 
-    // Still looking it up - say nothing rather than flash a message and replace it
+    // Still looking it up. Say nothing rather than flash a message and replace it.
     if (_loadingPreview) {
       return const SizedBox(
-        height: 24,
-        child: SpinKitThreeBounce(color: Colors.blue, size: 18),
+        height: 22,
+        width: 22,
+        child: CircularProgressIndicator(strokeWidth: 2),
       );
     }
 
-    // Arrived by link but the lookup failed. The Join button still works - the league key came
-    // from the link, not from the lookup - so say what we can and let them press it.
+    // Arrived by link but the lookup failed. The Join button still works - the league
+    // key came from the link, not from the lookup - so say what we can and let them
+    // press it.
     if (_arrivedFromLink) {
-      return const Text(
-        'Tap Join League to join the league you were invited to.',
-        style: TextStyle(fontSize: 16, color: Colors.grey),
-        textAlign: TextAlign.center,
+      return Text(
+        'We could not load the details, but the invitation is good. Tap Join.',
+        style: AppType.b(AppType.body, color: AppPalette.slate),
       );
     }
 
-    // The typed route
-    return const Text(
-      'Enter the 4-digit code provided by the league creator to join.',
-      style: TextStyle(fontSize: 16, color: Colors.grey),
-      textAlign: TextAlign.center,
+    return Text(
+      'Ask whoever set it up for the four-digit code.',
+      style: AppType.b(AppType.body, color: AppPalette.slate),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get the bottom inset (keyboard height)
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
-    // The Join button is live when there is something to join with, and no join is already
-    // running. On the typed route that means four digits; on the link route the identifier was
-    // there before the screen was, so the only question is whether the league can be joined.
-    final bool canPressJoin = !_isLoading &&
+    // The Join button is live when there is something to join with, and no join is
+    // already running. On the typed route that means four digits; on the link route the
+    // identifier was there before the screen was, so the only question is whether the
+    // league can be joined at all.
+    final bool canPressJoin =
+        !_isLoading &&
         _canJoin &&
         (_arrivedFromLink ? !_loadingPreview : _typedCode.length == 4);
 
     return Scaffold(
-      // This ensures the body resizes when the keyboard appears
+      backgroundColor: AppPalette.chalk,
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF005F8A),
-        elevation: 0,
-        title: const Text('Join League'),
+        title: const Text('Join a league'),
+        backgroundColor: AppPalette.surface,
+        shape: const Border(bottom: BorderSide(color: AppPalette.hairline)),
       ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF005F8A), // Top color from logo gradient
-              Color(0xFF00B3A4), // Bottom color from logo gradient
-            ],
-          ),
-        ),
-        child: SafeArea(
-          bottom: false, // Allow content to extend to the bottom edge
-          child: GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
-            child: SingleChildScrollView(
-              // Add padding at the bottom to ensure content is visible above keyboard
-              padding: EdgeInsets.fromLTRB(
-                16.0,
-                24.0,
-                16.0,
-                bottomInset > 0 ? bottomInset + 20 : 24.0
+
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
+          children: [
+            Text(_title, style: AppType.b(AppType.eyebrow)),
+            const SizedBox(height: 10),
+
+            _buildSubtitle(),
+
+            // The code boxes, on the typed route ONLY.
+            //
+            // Somebody who followed a link has no code and never needs one, so there is
+            // nothing here for them to look at or get wrong. This is the difference the
+            // share slug was built to make.
+            if (!_arrivedFromLink) ...[
+              const SizedBox(height: 32),
+              PinInput(
+                onCompleted: _onPinCompleted,
+                pinLength: 4,
+                autoFocus: true,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Card for join league content
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width - 32,
-                    ),
-                    child: Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            // Icon in a circle
-                            Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withAlpha(30),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.group_add,
-                                size: 40,
-                                color: Colors.blue,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
+            ],
 
-                            // Title
-                            Text(
-                              _title,
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
+            // A league that has already started cannot be joined. Say so plainly
+            // instead of offering a button the server will refuse.
+            if (!_canJoin) ...[
+              const SizedBox(height: 28),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppPalette.amberTint,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  _inviteOrganiser != null
+                      ? 'This league has already started, so nobody else can join. '
+                          'Ask $_inviteOrganiser to add you next time.'
+                      : 'This league has already started, so nobody else can join. '
+                          'Ask the organiser to add you next time.',
+                  style: AppType.b(
+                    AppType.body,
+                    color: AppPalette.amber,
+                    size: 14,
+                  ),
+                ),
+              ),
+            ],
 
-                            _buildSubtitle(),
+            if (_errorMessage != null) ...[
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppPalette.clayTint,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  _errorMessage!,
+                  style: AppType.b(
+                    AppType.body,
+                    color: AppPalette.clay,
+                    size: 14,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
 
-                            const SizedBox(height: 40),
-
-                            // The code boxes, on the typed route ONLY
-                            //
-                            // Somebody who followed a link has no code and never needs one, so
-                            // there is nothing here for them to look at or get wrong. This is
-                            // the difference the share slug was built to make.
-                            if (!_arrivedFromLink) ...[
-                              PinInput(
-                                onCompleted: _onPinCompleted,
-                                pinLength: 4,
-                                autoFocus: true,
-                              ),
-                              const SizedBox(height: 32),
-                            ],
-
-                            // A league that has already started cannot be joined
-                            //
-                            // Say so plainly instead of offering a button that the server will
-                            // refuse. This is the same wording as the public web page.
-                            if (!_canJoin) ...[
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange.withAlpha(25),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  _inviteOrganiser != null
-                                      ? 'This league has already started, so new players cannot join. Ask $_inviteOrganiser.'
-                                      : 'This league has already started, so new players cannot join. Ask the organiser.',
-                                  style: const TextStyle(color: Colors.black87),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                            ],
-
-                            // Join button
-                            //
-                            // Disabled until there is something to join with, and while a join
-                            // is in flight, so it cannot be pressed twice.
-                            if (_canJoin)
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: canPressJoin ? _handleJoinLeague : null,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF005F8A),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    _inviteIsMember ? 'Open League' : 'Join League',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            const SizedBox(height: 24),
-
-                            // Error message
-                            if (_errorMessage != null)
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.red.withAlpha(25),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.error_outline, color: Colors.red),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        _errorMessage!,
-                                        style: const TextStyle(
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            if (_errorMessage != null) const SizedBox(height: 24),
-
-                            // Loading indicator
-                            if (_isLoading)
-                              Container(
-                                margin: const EdgeInsets.only(top: 24),
-                                child: const SpinKitThreeBounce(
-                                  color: Colors.blue,
-                                  size: 24,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
+      // The button sits in a fixed bar rather than in the scroll, so that on the link
+      // route - where the screen is three lines long - it is under the thumb instead of
+      // floating in the middle of an empty card.
+      bottomNavigationBar:
+          !_canJoin
+              ? null
+              : Container(
+                decoration: const BoxDecoration(
+                  color: AppPalette.chalk,
+                  border: Border(top: BorderSide(color: AppPalette.hairline)),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                    child: SlButton.primary(
+                      label:
+                          _isLoading
+                              ? 'Joining'
+                              : (_inviteIsMember ? 'Open the league' : 'Join'),
+                      busy: _isLoading,
+                      onPressed: canPressJoin ? _handleJoinLeague : null,
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

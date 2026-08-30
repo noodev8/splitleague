@@ -18,11 +18,9 @@ in the same words instead of each one re-deciding what `hasFixtures` means.
 */
 
 import 'package:flutter/material.dart';
+import '../styles/app_palette.dart';
 
-enum LeagueStage {
-  setup,
-  inPlay,
-}
+enum LeagueStage { setup, inPlay }
 
 class LeagueStageInfo {
   // Work out the stage from a league map as the API returns it.
@@ -78,15 +76,19 @@ class LeagueStageInfo {
     }
   }
 
-  // One line saying what you can do in this stage. This is the sentence that does the
-  // actual work of explaining the app, so it is written for somebody who has never seen
-  // it before.
+  // One short line saying what you do in this stage.
+  //
+  // This used to be a full sentence each, sitting in a three-line banner on every
+  // league screen. It said the same thing every time you moved between tabs, which
+  // is how a helpful sentence turns into wallpaper. It is now one clause on one
+  // line, shown beside the stage name in the header - short enough to be read
+  // rather than skipped.
   static String description(LeagueStage stage) {
     switch (stage) {
       case LeagueStage.setup:
-        return 'Add players and set the scoring. The league starts when you generate fixtures.';
+        return 'Add players, then start it';
       case LeagueStage.inPlay:
-        return 'Fixtures are set. Enter scores as games are played.';
+        return 'Enter results as games are played';
     }
   }
 
@@ -100,23 +102,25 @@ class LeagueStageInfo {
   }
 
   // Amber for setup, green for in play. Amber reads as "unfinished, still yours to
-  // change"; green reads as "running". Both are dark enough for white text.
+  // change"; green reads as "running". Both come from AppPalette so they sit inside
+  // the app's palette rather than shouting over it - the old pair were Material's
+  // stock amber and green and were the loudest thing on every league screen.
   static Color colour(LeagueStage stage) {
     switch (stage) {
       case LeagueStage.setup:
-        return const Color(0xFFB26A00);
+        return AppPalette.amber;
       case LeagueStage.inPlay:
-        return const Color(0xFF2E7D32);
+        return AppPalette.pitch;
     }
   }
 
-  // The tint used behind that colour on a chip or banner.
+  // The tint used behind that colour on a chip.
   static Color background(LeagueStage stage) {
     switch (stage) {
       case LeagueStage.setup:
-        return const Color(0xFFFFF4E0);
+        return AppPalette.amberTint;
       case LeagueStage.inPlay:
-        return const Color(0xFFE7F4E8);
+        return AppPalette.pitchTint;
     }
   }
 }

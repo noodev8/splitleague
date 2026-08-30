@@ -91,7 +91,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       // Check response
       if (response['return_code'] == 'SUCCESS') {
         // Show success message
-        ErrorHelper.showSuccessToast('Password changed successfully!');
+        ErrorHelper.showSuccessToast('Password changed');
 
         // Go back to profile screen
         if (mounted) {
@@ -117,7 +117,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Change Password', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Change Password',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: Container(
         color: AppStyles.backgroundColor,
@@ -158,7 +161,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _currentPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                              _currentPasswordVisible
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
                             ),
                             onPressed: _toggleCurrentPasswordVisibility,
                           ),
@@ -166,7 +171,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         obscureText: !_currentPasswordVisible,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your current password';
+                            return 'Enter your current password';
                           }
                           return null;
                         },
@@ -190,7 +195,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           prefixIcon: const Icon(Icons.lock),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _newPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                              _newPasswordVisible
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
                             ),
                             onPressed: _toggleNewPasswordVisibility,
                           ),
@@ -198,7 +205,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         obscureText: !_newPasswordVisible,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter a new password';
+                            return 'Choose a new password';
                           }
                           if (value.length < 6) {
                             return 'Password must be at least 6 characters';
@@ -225,7 +232,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           prefixIcon: const Icon(Icons.lock),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _confirmPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                              _confirmPasswordVisible
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
                             ),
                             onPressed: _toggleConfirmPasswordVisibility,
                           ),
@@ -278,18 +287,19 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _handleSave,
                         style: AppStyles.primaryButtonStyle,
-                        child: _isLoading
-                            ? const SpinKitThreeBounce(
-                                color: Colors.white,
-                                size: 24,
-                              )
-                            : const Text(
-                                'Change Password',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                        child:
+                            _isLoading
+                                ? const SpinKitThreeBounce(
+                                  color: Colors.white,
+                                  size: 24,
+                                )
+                                : const Text(
+                                  'Change Password',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
                       ),
                     ),
                   ),

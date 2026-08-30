@@ -4,10 +4,10 @@ Allows users to update their name and nickname
 */
 
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import '../api/update_profile_api.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
+import '../styles/app_palette.dart';
 import '../styles/app_styles.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -38,7 +38,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.initState();
     // Initialize controllers with current user data
     _nameController = TextEditingController(text: widget.userData['name']);
-    _nicknameController = TextEditingController(text: widget.userData['nickname']);
+    _nicknameController = TextEditingController(
+      text: widget.userData['nickname'],
+    );
   }
 
   @override
@@ -79,11 +81,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         await AuthHelper.saveUserData(response['user']);
 
         // Show success message
-        ErrorHelper.showSuccessToast('Profile updated successfully!');
+        ErrorHelper.showSuccessToast('Saved');
 
         // Go back to profile screen
         if (mounted) {
-          Navigator.of(context).pop(true); // Return true to indicate successful update
+          Navigator.of(
+            context,
+          ).pop(true); // Return true to indicate successful update
         }
       } else {
         // Show error message
@@ -105,54 +109,50 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Profile', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF005F8A),
-        elevation: 0,
+        title: const Text(
+          'Edit Profile',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: AppPalette.surface,
+        shape: const Border(bottom: BorderSide(color: AppPalette.hairline)),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
-            child: _isLoading
-                ? const SpinKitThreeBounce(
-                    color: Colors.white,
-                    size: 24,
-                  )
-                : TextButton(
-                    onPressed: _handleSave,
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.check, size: 20),
-                        SizedBox(width: 4),
-                        Text(
-                          'Save',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+            child:
+                _isLoading
+                    ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : TextButton(
+                      onPressed: _handleSave,
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppPalette.tealDeep,
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check, size: 20),
+                          SizedBox(width: 4),
+                          Text(
+                            'Save',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
           ),
         ],
       ),
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF005F8A), // Top color from logo gradient
-              Color(0xFF00B3A4), // Bottom color from logo gradient
-            ],
-          ),
-        ),
+        color: AppPalette.chalk,
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -196,7 +196,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your name';
+                            return 'Enter your name';
                           }
                           return null;
                         },
@@ -223,7 +223,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter a display name';
+                            return 'Pick a name for the other players to see';
                           }
                           return null;
                         },
@@ -269,4 +269,3 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 }
-

@@ -13,9 +13,10 @@ import '../helpers/auth_helper.dart';
 import '../helpers/config.dart';
 import '../helpers/version_helper.dart';
 // import '../styles/app_styles.dart';
-import '../widgets/app_logo.dart';
 import 'dashboard_screen.dart';
 import 'login_user_screen.dart';
+import '../styles/app_palette.dart';
+import '../styles/app_type.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -24,7 +25,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   // Animation controller for fade-in effect
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -44,10 +46,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     // Create fade-in animation
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeIn,
-      ),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
 
     // Start animation
@@ -72,7 +71,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       storeUrl = 'https://apps.apple.com/us/app/split-league/id6745337065';
     } else if (Platform.isAndroid) {
       // Google Play Store URL
-      storeUrl = 'https://play.google.com/store/apps/details?id=com.noodev8.splitleague';
+      storeUrl =
+          'https://play.google.com/store/apps/details?id=com.noodev8.splitleague';
     } else {
       // Fallback for other platforms
       return;
@@ -96,19 +96,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         return AlertDialog(
           title: const Text(
             'Update Required',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.red,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.system_update,
-                size: 48,
-                color: Colors.red,
-              ),
+              const Icon(Icons.system_update, size: 48, color: Colors.red),
               const SizedBox(height: 16),
               const Text(
                 'A new version of SplitLeague is required to continue.',
@@ -164,7 +157,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         final response = await UpdateUserAccessedApi.updateUserAccessed();
 
         // Check if token is invalid/expired
-        final wasUnauthorized = await AuthHelper.handleUnauthorizedResponse(response);
+        final wasUnauthorized = await AuthHelper.handleUnauthorizedResponse(
+          response,
+        );
         if (wasUnauthorized) {
           // Token was invalid, treat as not logged in
           isLoggedIn = false;
@@ -201,39 +196,50 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF005F8A), // Top color from logo gradient
-              Color(0xFF00B3A4), // Bottom color from logo gradient
-            ],
-          ),
-        ),
-        child: FadeTransition(
+    // The first frame of the app. It is on screen for well under a second, so it does
+    // one thing: the name, set the way the app sets names, on the app's own ground.
+    //
+    // It used to be the logo tile plus the line "Track scores, anytime, anywhere", which
+    // described a category of app rather than this one, and which the sign-in screen then
+    // repeated a second later.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: AppPalette.deep,
+        body: FadeTransition(
           opacity: _fadeAnimation,
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App Logo
-                const AppLogo(
-                  size: 150,
-                  subtitle: 'Track scores, anytime, anywhere',
+                Text(
+                  'Split League',
+                  style: AppType.t(
+                    AppType.display,
+                    color: AppPalette.onDark,
+                    size: 36,
+                  ),
                 ),
 
-                const SizedBox(height: 48),
+                const SizedBox(height: 44),
 
-                // Loading indicator
-                if (_isCheckingAuth)
-                  const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
+                SizedBox(
+                  height: 22,
+                  width: 22,
+                  child:
+                      _isCheckingAuth
+                          ? const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white54,
+                            ),
+                          )
+                          : null,
+                ),
               ],
             ),
           ),
@@ -241,5 +247,4 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       ),
     );
   }
-
 }

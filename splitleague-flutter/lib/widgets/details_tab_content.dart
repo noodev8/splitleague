@@ -1,6 +1,32 @@
+/*
+The body of the Details screen.
+
+Three blocks, in the order somebody needs them:
+
+  1. The join code, while it still works. It is the biggest thing on the screen and it
+     is set in the display face with wide tracking, because it is a code somebody is
+     about to read out loud or type into another phone. It disappears the moment the
+     league starts, which is correct - the code stops working then.
+
+  2. What the league is: who runs it, how points work, when it started. A definition
+     list of label and value, not five rows of tinted icon tiles.
+
+  3. Organiser controls, in a section headed ORGANISER so that a member never wonders
+     why they cannot see them. Ordinary controls first, the two that destroy data last
+     and in clay.
+
+What is gone: five icon tiles in blue-tinted squares, six "points card" rows each in its
+own tinted blue box with its own white icon tile, and four full-width filled blue buttons.
+The points rules are now a plain two-column list, which is how a rules table is written
+everywhere else in the world.
+*/
+
 import 'package:flutter/material.dart';
 import '../helpers/share_helper.dart';
-// import '../widgets/error_display.dart';
+import '../styles/app_palette.dart';
+import '../styles/app_type.dart';
+import 'sl_action_row.dart';
+import 'sl_button.dart';
 
 class DetailsTabContent extends StatelessWidget {
   final Map<String, dynamic> leagueInfo;
@@ -30,10 +56,12 @@ class DetailsTabContent extends StatelessWidget {
     this.organizerNotes,
   });
 
-  // Share the league's public page
+  bool get _isCreator => leagueInfo['is_creator'] == true;
+
+  // Share the league's public page.
   //
-  // The message wording and the link are built by ShareHelper, so this and the player list
-  // screen always send exactly the same thing.
+  // The message wording and the link are built by ShareHelper, so this and every other
+  // share entry point in the app send exactly the same thing.
   Future<void> _shareLeague(BuildContext context) async {
     await ShareHelper.shareLeague(
       shareSlug: leagueInfo['share_slug']?.toString(),
@@ -44,590 +72,392 @@ class DetailsTabContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The code is only shown before the league starts, and only to people entitled to
+    // hand it out. Both conditions were already here and both are right - the code
+    // stops working at kick-off, so showing it afterwards would be a promise the
+    // server does not keep.
+    final bool showCode =
+        !hasFixtures &&
+        (_isCreator || leagueInfo['allow_code_share'] == true) &&
+        leagueInfo['public_code'] != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // League info card
-        Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+        if (showCode) _buildJoinCode(context),
+
+        // Before a league starts, getting people in is the whole job, so inviting
+        // is the one filled button on the screen. Afterwards nobody can join, and
+        // sharing becomes a quieter thing you do with a finished table - so it
+        // steps down to the icon in the header and this button goes away.
+        if (!hasFixtures) ...[
+          const SizedBox(height: 20),
+          SlButton.primary(
+            label: 'Invite players',
+            icon: Icons.person_add_alt,
+            onPressed: () => _shareLeague(context),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // League name and PIN
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withAlpha(25),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.sports_soccer,
-                        color: Colors.blue,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'League Name',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
+        ],
+
+        _buildAbout(context),
+        _buildRules(),
+        _buildOrganiserSection(),
+
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  // The join code.
+  //
+  // It used to be a small blue chip tucked to the right of the league name, easy to
+  // miss on the screen whose whole purpose at that moment is to get people in. It is
+  // now the first thing, at the size of something meant to be read aloud.
+  Widget _buildJoinCode(BuildContext context) {
+    final String code = leagueInfo['public_code'].toString();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Semantics(
+        button: true,
+        label: 'Join code $code. Tap to copy it.',
+        excludeSemantics: true,
+        child: Material(
+          color: AppPalette.tealTint,
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            onTap: () => onCopyToClipboard(code),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'JOIN CODE',
+                          style: AppType.b(
+                            AppType.eyebrow,
+                            color: AppPalette.tealDeep,
                           ),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  leagueInfo['name'] ?? 'Unknown',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              // Edit button - only visible to the creator
-                              if (leagueInfo['is_creator'] == true && onEditLeagueName != null)
-                                IconButton(
-                                  icon: const Icon(Icons.edit, size: 18, color: Colors.blue),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                  tooltip: 'Edit league name',
-                                  onPressed: () => _showEditNameDialog(context),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (!hasFixtures) ...[
-                      // Only show the code if user is creator OR allow_code_share is true
-                      if (leagueInfo['is_creator'] == true || leagueInfo['allow_code_share'] == true) ...[
-                        // The code, labelled so it says what it is for
-                        //
-                        // It used to be a bare number in a blue chip with nothing explaining
-                        // it. The word "code" never appeared, so there was no way to tell it
-                        // was the thing you give people to get them into the league.
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withAlpha(25),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: InkWell(
-                            onTap: () => onCopyToClipboard(leagueInfo['public_code']),
-                            child: Row(
-                              children: [
-                                const Text(
-                                  'Join code ',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.blue,
-                                  ),
-                                ),
-                                Text(
-                                  leagueInfo['public_code'] ?? 'Unknown',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                const Icon(
-                                  Icons.copy,
-                                  color: Colors.blue,
-                                  size: 16,
-                                ),
-                              ],
-                            ),
-                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          code,
+                          style: AppType.t(
+                            AppType.display,
+                            color: AppPalette.ink,
+                            size: 34,
+                          ).copyWith(letterSpacing: 6),
                         ),
                       ],
-                    ],
-                    // Nothing takes the join code's place once the league has started.
-                    // There used to be a green "Started" badge here, but the stage banner
-                    // at the top of the screen already says "In play" - two badges saying
-                    // the same thing in different words was the confusion, not the fix.
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Share the public league page
-                //
-                // Deliberately OUTSIDE the !hasFixtures block above. The join code is
-                // hidden once a league starts, but that is exactly when people want the
-                // table - so sharing has to keep working for the life of the league.
-                //
-                // Before the league starts this is the most important control on the screen:
-                // a new league has one player and nothing to look at, and what the organiser
-                // needs is people. So it becomes a filled, primary "Invite players" button
-                // rather than a quiet outlined one advertising an empty table.
-                SizedBox(
-                  width: double.infinity,
-                  child: hasFixtures
-                    ? OutlinedButton.icon(
-                        onPressed: () => _shareLeague(context),
-                        icon: const Icon(Icons.ios_share, size: 18),
-                        label: const Text('Share league'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.blue,
-                          side: const BorderSide(color: Colors.blue),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      )
-                    : ElevatedButton.icon(
-                        onPressed: () => _shareLeague(context),
-                        icon: const Icon(Icons.person_add, size: 18),
-                        label: const Text('Invite players'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
+                    ),
                   ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Organizer
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withAlpha(25),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.person,
-                        color: Colors.blue,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Organiser',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        Text(
-                          leagueInfo['created_by_nickname'] ?? leagueInfo['created_by']?.toString() ?? 'Unknown',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Points Type
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withAlpha(25),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.emoji_events,
-                        color: Colors.blue,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Points Type',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        Text(
-                          getPointsTypeDisplay(leagueInfo['win_type']),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Created at
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withAlpha(25),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.history,
-                        color: Colors.blue,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Created On',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        Text(
-                          formatDate(leagueInfo['created_at']),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-
-                // Organizer Notes - only show if there are notes and user is not a guest
-                // Check if current user is a guest (nickname starts with 'guest_')
-                if (organizerNotes != null &&
-                    organizerNotes!.isNotEmpty &&
-                    !(leagueInfo['user_nickname'] != null &&
-                      leagueInfo['user_nickname'].toString().startsWith('guest_'))) ...[
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withAlpha(25),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.note,
-                          color: Colors.blue,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              leagueInfo['is_creator'] == true ? 'Your note' : 'Organiser note to you',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            Text(
-                              organizerNotes!,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                  const Icon(Icons.copy, size: 18, color: AppPalette.tealDeep),
                 ],
-              ],
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
 
-        const SizedBox(height: 24),
+  // Who runs it, how it scores, when it started, and any note left for you.
+  Widget _buildAbout(BuildContext context) {
+    final String? note =
+        (organizerNotes != null && organizerNotes!.isNotEmpty)
+                // A guest cannot read their own note - guests are placeholders managed by
+                // the organiser, not people holding this phone.
+                &&
+                !(leagueInfo['user_nickname'] != null &&
+                    leagueInfo['user_nickname'].toString().startsWith('guest_'))
+            ? organizerNotes
+            : null;
 
-        // Reset Scores button - only visible to the organizer and only if fixtures exist
-        if (leagueInfo['is_creator'] == true && hasFixtures && onResetScores != null) ...[
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: onResetScores,
-              icon: const Icon(Icons.refresh, color: Colors.white),
-              label: const Text('Reset All Scores'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 26),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text('THIS LEAGUE', style: AppType.b(AppType.eyebrow)),
+        ),
 
-        // Reset League button - only visible to the organizer and only if fixtures exist
-        if (leagueInfo['is_creator'] == true && hasFixtures && onResetLeague != null) ...[
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: onResetLeague,
-              icon: const Icon(Icons.delete_forever, color: Colors.white),
-              label: const Text('Reset League'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-
-        // Copy League button - only visible to the organizer and only if fixtures exist
-        if (leagueInfo['is_creator'] == true && hasFixtures && onCopyLeague != null) ...[
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: onCopyLeague,
-              icon: const Icon(Icons.copy, color: Colors.white),
-              label: const Text('Copy League'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-
-        // View Members button - only visible to the organizer
-        if (leagueInfo['is_creator'] == true && onViewMembers != null) ...[
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: onViewMembers,
-              icon: const Icon(Icons.people, color: Colors.white),
-              label: const Text('Manage League Members'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-        ],
-
-        // Points rules section
-        Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
+        Container(
+          decoration: BoxDecoration(
+            color: AppPalette.surface,
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.blue.withAlpha(50)),
+            border: Border.all(color: AppPalette.hairline),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Points rules list
-                Column(
-                  children: [
-                    // Win points
-                    _buildPointsCard(
-                      'Win',
-                      '${leagueInfo['points_for_win'] ?? 0}',
-                      Icons.emoji_events,
-                      Colors.blue,
-                    ),
-                    const SizedBox(height: 12),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              _fact(
+                'Name',
+                leagueInfo['name']?.toString() ?? 'Unknown',
+                // Renaming is an organiser's edit of their own content, so it is a
+                // pencil beside the value rather than a row of its own.
+                onEdit:
+                    _isCreator && onEditLeagueName != null
+                        ? () => _showEditNameDialog(context)
+                        : null,
+              ),
+              _divider(),
+              _fact(
+                'Organiser',
+                leagueInfo['created_by_nickname']?.toString() ??
+                    leagueInfo['created_by']?.toString() ??
+                    'Unknown',
+              ),
+              _divider(),
+              _fact(
+                'Scoring',
+                getPointsTypeDisplay(leagueInfo['win_type']?.toString()),
+              ),
+              _divider(),
+              _fact(
+                'Created',
+                formatDate(leagueInfo['created_at']?.toString()),
+              ),
 
-                    // Draw points (only for WDL)
-                    if (leagueInfo['win_type'] == 'WDL') ...[
-                      _buildPointsCard(
-                        'Draw',
-                        '${leagueInfo['points_for_draw'] ?? 0}',
-                        Icons.handshake,
-                        Colors.blue,
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-
-                    // Win margin bonus
-                    _buildPointsCard(
-                      'Win Margin Bonus',
-                      '${leagueInfo['points_for_win_margin'] ?? 0}',
-                      Icons.add_circle,
-                      Colors.blue,
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Close loss points
-                    _buildPointsCard(
-                      'Lose within margin',
-                      '${leagueInfo['points_for_close_loss'] ?? 0}',
-                      Icons.remove_circle,
-                      Colors.blue,
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Margin threshold
-                    _buildPointsCard(
-                      'Margin Threshold',
-                      '${leagueInfo['win_margin_threshold'] ?? 0}',
-                      Icons.speed,
-                      Colors.blue,
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Play each other
-                    _buildPointsCard(
-                      'Play Each Other',
-                      '${leagueInfo['play_each_other'] ?? 1} time${leagueInfo['play_each_other'] == 1 ? '' : 's'}',
-                      Icons.repeat,
-                      Colors.blue,
-                    ),
-                  ],
+              if (note != null) ...[
+                _divider(),
+                _fact(
+                  _isCreator ? 'Your note' : 'Note from the organiser',
+                  note,
+                  wrap: true,
                 ),
               ],
-            ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  // Helper method to build points rule card
-  Widget _buildPointsCard(String label, String value, IconData icon, Color color) {
-    return Container(
-      width: double.infinity, // Make container take full width
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withAlpha(50)),
+  // How points work in this league.
+  //
+  // Rows that are always zero are dropped. A Win/Lose league has no draw points and
+  // usually no margin bonus, and printing "Win margin bonus  0" tells nobody anything
+  // except that the app does not know what matters.
+  Widget _buildRules() {
+    final String? winType = leagueInfo['win_type']?.toString();
+
+    final List<Widget> rows = [];
+
+    void rule(String label, dynamic value, {bool always = false}) {
+      final int number = _asInt(value) ?? 0;
+      if (number == 0 && !always) return;
+
+      if (rows.isNotEmpty) rows.add(_divider());
+      rows.add(_fact(label, '$number'));
+    }
+
+    // The points for a win are always shown, even at zero - they are the basis of
+    // the whole table, so their absence would be a question rather than a silence.
+    rule('Win', leagueInfo['points_for_win'], always: true);
+    if (winType == 'WDL') {
+      rule('Draw', leagueInfo['points_for_draw'], always: true);
+    }
+    rule(
+      'Bonus for winning by the margin',
+      leagueInfo['points_for_win_margin'],
+    );
+    rule(
+      'Bonus for losing within the margin',
+      leagueInfo['points_for_close_loss'],
+    );
+    rule('The margin', leagueInfo['win_margin_threshold']);
+
+    final int meetings = _asInt(leagueInfo['play_each_other']) ?? 1;
+    if (rows.isNotEmpty) rows.add(_divider());
+    rows.add(
+      _fact(
+        'Everyone plays everyone',
+        meetings == 1 ? 'Once' : (meetings == 2 ? 'Twice' : '$meetings times'),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 20,
-            ),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 26),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text('POINTS', style: AppType.b(AppType.eyebrow)),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: AppPalette.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppPalette.hairline),
           ),
-          const SizedBox(width: 16),
+          clipBehavior: Clip.antiAlias,
+          child: Column(children: rows),
+        ),
+      ],
+    );
+  }
+
+  // The organiser's controls.
+  //
+  // Ordinary things first, then the two that destroy data. The dangerous pair are
+  // rows in clay text, not filled buttons - see sl_action_row.dart.
+  Widget _buildOrganiserSection() {
+    if (!_isCreator) return const SizedBox.shrink();
+
+    final List<Widget> rows = [];
+
+    if (onViewMembers != null) {
+      rows.add(
+        SlActionRow(
+          label: 'Players and notes',
+          icon: Icons.group_outlined,
+          onTap: onViewMembers,
+        ),
+      );
+    }
+
+    if (hasFixtures && onCopyLeague != null) {
+      rows.add(
+        SlActionRow(
+          label: 'Start a new season',
+          detail: 'Copies the players and the scoring into a fresh league',
+          icon: Icons.copy_all_outlined,
+          onTap: onCopyLeague,
+        ),
+      );
+    }
+
+    if (hasFixtures && onResetScores != null) {
+      rows.add(
+        SlActionRow(
+          label: 'Clear all results',
+          detail: 'Keeps the fixtures, empties every score',
+          icon: Icons.backspace_outlined,
+          onTap: onResetScores,
+          destructive: true,
+        ),
+      );
+    }
+
+    if (hasFixtures && onResetLeague != null) {
+      rows.add(
+        SlActionRow(
+          label: 'Reset the league',
+          detail: 'Deletes every fixture and score, and reopens it for players',
+          icon: Icons.restart_alt,
+          onTap: onResetLeague,
+          destructive: true,
+        ),
+      );
+    }
+
+    if (rows.isEmpty) return const SizedBox.shrink();
+
+    return SlSection(eyebrow: 'Organiser', topGap: 26, children: rows);
+  }
+
+  // One label-and-value row.
+  Widget _fact(
+    String label,
+    String value, {
+    VoidCallback? onEdit,
+    bool wrap = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      child: Row(
+        crossAxisAlignment:
+            wrap ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 128,
+            child: Text(label, style: AppType.b(AppType.meta)),
+          ),
           Expanded(
             child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                color: color.withAlpha(200),
+              value,
+              style: AppType.b(AppType.value),
+              maxLines: wrap ? 6 : 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (onEdit != null)
+            IconButton(
+              icon: const Icon(
+                Icons.edit_outlined,
+                size: 17,
+                color: AppPalette.tealDeep,
               ),
+              tooltip: 'Rename this league',
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+              padding: EdgeInsets.zero,
+              onPressed: onEdit,
             ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
         ],
       ),
     );
   }
 
-  // Show dialog to edit league name
+  Widget _divider() => const Divider(
+    height: 1,
+    thickness: 1,
+    indent: 16,
+    color: AppPalette.hairline,
+  );
+
+  int? _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  // Rename the league.
   void _showEditNameDialog(BuildContext context) {
-    final TextEditingController nameController = TextEditingController(text: leagueInfo['name'] ?? '');
+    final TextEditingController nameController = TextEditingController(
+      text: leagueInfo['name']?.toString() ?? '',
+    );
 
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Edit League Name'),
+          title: const Text('Rename this league'),
           content: TextField(
             controller: nameController,
-            decoration: const InputDecoration(
-              labelText: 'League Name',
-              hintText: 'Enter new league name',
-            ),
+            decoration: const InputDecoration(labelText: 'League name'),
             maxLength: 30,
             textCapitalization: TextCapitalization.sentences,
             autofocus: true,
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
                 final newName = nameController.text.trim();
-                if (newName.isNotEmpty && newName != leagueInfo['name']) {
-                  Navigator.of(context).pop();
-                  onEditLeagueName?.call(newName);
-                } else if (newName.isEmpty) {
-                  // Show error for empty name
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('League name cannot be empty')),
+
+                if (newName.isEmpty) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(content: Text('Give the league a name')),
                   );
-                } else {
-                  // Name is unchanged, just close the dialog
-                  Navigator.of(context).pop();
+                  return;
+                }
+
+                Navigator.of(dialogContext).pop();
+
+                if (newName != leagueInfo['name']) {
+                  onEditLeagueName?.call(newName);
                 }
               },
-              style: TextButton.styleFrom(foregroundColor: Colors.blue),
               child: const Text('Save'),
             ),
           ],

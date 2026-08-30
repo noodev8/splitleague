@@ -1,12 +1,31 @@
 /*
-Screen for displaying the list of players in a league
-Only shown if the league has not yet started (no fixtures)
-Only the organizer can remove players from the list
-Also allows the league organizer to generate fixtures
+The players in a league that has not started yet.
+
+This is where a new organiser lands straight after creating a league, so it is the second
+screen in the drop-off. It has one job: get more people into this league, then start it.
+
+What was wrong with it. There were three identical blue buttons - "Invite players", "Add
+Guest", "Generate Fixtures" - plus a heading repeating the tab name, plus a three-line
+stage banner, plus a bordered panel containing a paragraph explaining fixtures and an
+italic note underneath. Every action looked equally urgent, so none of them read as the
+next step, and the explanation of the one-way door was buried in a wall of text nobody
+reads twice.
+
+What it is now. The screen is a list of who is in, and the two actions are ranked against
+each other:
+
+    Invite players    filled teal - the thing we want, because a real player who
+                      joins is worth more than a guest name typed by the organiser
+    Add a guest       outlined - a real action, just not the one being pushed
+
+Starting the league is a fixed bar at the bottom that only appears once there are enough
+players to have a fixture at all. That is the sequence made physical: fill the list, then
+the way forward appears. The consequences of starting stay in the confirmation dialog,
+where they are read once at the moment they matter, instead of in a panel that is on
+screen the whole time.
 */
 
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 import '../api/get_league_members_api.dart';
 import '../api/remove_player_from_league_api.dart';
@@ -15,8 +34,11 @@ import '../helpers/auth_helper.dart';
 import '../helpers/error_helper.dart';
 import '../helpers/league_stage.dart';
 import '../helpers/share_helper.dart';
-import '../styles/app_styles.dart';
-import '../widgets/league_stage_banner.dart';
+import '../styles/app_palette.dart';
+import '../styles/app_type.dart';
+import '../widgets/sl_button.dart';
+import '../widgets/sl_league_header.dart';
+import '../widgets/sl_segmented.dart';
 import '../providers/league_provider.dart';
 import 'fixtures_screen.dart';
 import 'dashboard_screen.dart';
@@ -25,10 +47,7 @@ import 'league_details_screen.dart';
 class PlayerListScreen extends StatefulWidget {
   final Map<String, dynamic> league;
 
-  const PlayerListScreen({
-    super.key,
-    required this.league,
-  });
+  const PlayerListScreen({super.key, required this.league});
 
   @override
   State<PlayerListScreen> createState() => _PlayerListScreenState();
@@ -53,13 +72,6 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
   // Generate fixtures state
   bool _isGeneratingFixtures = false;
   String? _generateErrorMessage;
-  String? _successMessage;
-  int? _fixturesCount;
-
-  // Guest player tracking
-  // Number of guest players in this league. There is no maximum - the cap was removed
-  // deliberately (see section 4.2 of docs/rebuild-plan.md). This is shown on the button only.
-  int _guestPlayerCount = 0;
 
   // League provider
   late LeagueProvider _leagueProvider;
@@ -80,27 +92,20 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
 
   // Check if fixtures exist for this league
   Future<void> _checkFixtures() async {
-    try {
-      // Check if hasFixtures is already provided in the league data
-      if (widget.league.containsKey('has_fixtures')) {
-        setState(() {
-          _hasFixtures = widget.league['has_fixtures'] == true;
-        });
-        return;
-      }
-
-      // If not provided, we'll assume no fixtures for now
-      // This is a safe default since the player list screen is typically
-      // only shown when there are no fixtures
+    // The dashboard hands the stage down with the league, so this is normally
+    // already known and nothing has to be asked.
+    if (widget.league.containsKey('has_fixtures')) {
       setState(() {
-        _hasFixtures = false;
+        _hasFixtures = widget.league['has_fixtures'] == true;
       });
-    } catch (e) {
-      // If there's an error, assume no fixtures
-      setState(() {
-        _hasFixtures = false;
-      });
+      return;
     }
+
+    // Nothing said. Assume not started, which is the harmless answer and is also
+    // true of nearly every league that reaches this screen.
+    setState(() {
+      _hasFixtures = false;
+    });
   }
 
   // Load league members
@@ -115,11 +120,13 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
       final userData = await AuthHelper.getUserData();
 
       // The creator ID could be in 'creator_id', 'created_by', or the user might have 'is_creator' flag
-      final creatorId = widget.league['creator_id'] ?? widget.league['created_by'];
-      final isCreator = (userData != null &&
-                         creatorId != null &&
-                         userData['id'].toString() == creatorId.toString()) ||
-                        widget.league['is_creator'] == true;
+      final creatorId =
+          widget.league['creator_id'] ?? widget.league['created_by'];
+      final isCreator =
+          (userData != null &&
+              creatorId != null &&
+              userData['id'].toString() == creatorId.toString()) ||
+          widget.league['is_creator'] == true;
 
       // Set creator flag
       setState(() {
@@ -127,30 +134,28 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
       });
 
       // Get league members
-      final response = await GetLeagueMembersApi.getLeagueMembers(widget.league['league_id']);
+      final response = await GetLeagueMembersApi.getLeagueMembers(
+        widget.league['league_id'],
+      );
 
       if (response['return_code'] == 'SUCCESS') {
-        // Count guest players (those with nickname starting with 'guest_')
-        final members = List<Map<String, dynamic>>.from(response['members'] ?? []);
-        final guestCount = members.where((member) {
-          final nickname = member['nickname'] ?? '';
-          return nickname.toString().startsWith('guest_');
-        }).length;
+        final members = List<Map<String, dynamic>>.from(
+          response['members'] ?? [],
+        );
 
         setState(() {
           _members = members;
-          _guestPlayerCount = guestCount;
           _isLoading = false;
         });
       } else {
         setState(() {
-          _errorMessage = response['message'] ?? 'Failed to load members';
+          _errorMessage = response['message'] ?? 'Could not load the players';
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'An error occurred while loading members';
+        _errorMessage = 'Could not load the players';
         _isLoading = false;
       });
     }
@@ -164,7 +169,7 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
   // than a bare "are you sure?".
   //
   // The asking happens here rather than in the provider so that the button below only
-  // reads "Generating..." once something actually is.
+  // reads "Starting" once something actually is.
   Future<void> _generateFixtures() async {
     final bool? confirmed = await showDialog<bool>(
       context: context,
@@ -176,20 +181,17 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'This generates the fixtures for all ${_members.length} players and '
-                'moves the league into play.',
+                'Everyone gets paired up and the league moves into play.',
+                style: AppType.b(AppType.body),
               ),
-              const SizedBox(height: 12),
-              const Text('From then on:', style: TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 6),
-              const Text('•  No one else can join'),
-              const Text('•  Players cannot be removed'),
-              const Text('•  You enter scores instead of adding people'),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
+              _consequence('No one else can join'),
+              _consequence('Players cannot be removed'),
+              _consequence('You enter results instead of adding people'),
+              const SizedBox(height: 14),
               Text(
-                'You can undo this from Details → Reset League, which deletes every '
-                'fixture and every score.',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                'Details → Reset league undoes it, and deletes every fixture and score.',
+                style: AppType.b(AppType.meta),
               ),
             ],
           ),
@@ -198,13 +200,9 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
               onPressed: () => Navigator.of(dialogContext).pop(false),
               child: const Text('Not yet'),
             ),
-            ElevatedButton(
+            TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: LeagueStageInfo.colour(LeagueStage.inPlay),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Generate fixtures'),
+              child: const Text('Start it'),
             ),
           ],
         );
@@ -216,8 +214,6 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
     setState(() {
       _isGeneratingFixtures = true;
       _generateErrorMessage = null;
-      _successMessage = null;
-      _fixturesCount = null;
     });
 
     try {
@@ -230,12 +226,9 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
       final result = await _leagueProvider.generateFixtures();
 
       if (result) {
-        // Update success state
         setState(() {
           _isGeneratingFixtures = false;
-          _successMessage = _leagueProvider.successMessage;
-          _fixturesCount = _leagueProvider.fixturesCount;
-          _hasFixtures = true; // Update fixtures exist flag
+          _hasFixtures = true;
         });
 
         // Through the door. Replace rather than push, because there is no going back to
@@ -250,53 +243,73 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
 
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => FixturesScreen(
-              league: leagueNowInPlay,
-            ),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+            pageBuilder:
+                (context, animation, secondaryAnimation) =>
+                    FixturesScreen(league: leagueNowInPlay),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) => child,
             transitionDuration: Duration.zero,
           ),
         );
       } else {
-        // Update error state
         setState(() {
           _isGeneratingFixtures = false;
           _generateErrorMessage = _leagueProvider.generateErrorMessage;
         });
       }
     } catch (e) {
-      // Handle error
       setState(() {
         _isGeneratingFixtures = false;
-        _generateErrorMessage = 'An error occurred while generating fixtures';
+        _generateErrorMessage = 'Could not start the league';
       });
     }
   }
 
+  // One consequence line in the start dialog.
+  Widget _consequence(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 6, right: 10),
+            child: Container(
+              width: 4,
+              height: 4,
+              decoration: const BoxDecoration(
+                color: AppPalette.slate,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Expanded(child: Text(text, style: AppType.b(AppType.body, size: 14))),
+        ],
+      ),
+    );
+  }
+
   // Add guest player to league
   Future<void> _addGuestPlayer() async {
-    // Check if fixtures exist
     if (_hasFixtures) {
-      ErrorHelper.showErrorToast('Cannot add guest players after fixtures are generated');
+      ErrorHelper.showErrorToast(
+        'The league has started, so players cannot be added',
+      );
       return;
     }
 
-    // Show dialog to get guest nickname
     final guestNickname = await _showAddGuestDialog();
 
-    // If user cancelled, return
     if (guestNickname == null || guestNickname.isEmpty) {
       return;
     }
 
-    // Show loading indicator
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      // Call API to add guest player
       final response = await AddGuestPlayerApi.addGuestPlayer(
         leagueId: widget.league['league_id'],
         guestNickname: guestNickname,
@@ -304,30 +317,24 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
 
       if (response['return_code'] == 'SUCCESS') {
         // No success toast - the new player appearing in the list below says it already
-
-        // Increment guest count temporarily for better UX
-        setState(() {
-          _guestPlayerCount++;
-        });
-
-        // Reload members to get the updated list including the new guest
         _loadMembers();
       } else if (response['return_code'] == 'FIXTURES_EXIST') {
-        // If fixtures exist, update our state
         setState(() {
           _hasFixtures = true;
           _isLoading = false;
-          ErrorHelper.showErrorToast('Cannot add guest players after fixtures are generated');
+          ErrorHelper.showErrorToast(
+            'The league has started, so players cannot be added',
+          );
         });
       } else {
         setState(() {
-          _errorMessage = response['message'] ?? 'Failed to add guest player';
+          _errorMessage = response['message'] ?? 'Could not add that guest';
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'An error occurred while adding guest player';
+        _errorMessage = 'Could not add that guest';
         _isLoading = false;
       });
     }
@@ -342,16 +349,18 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
   String _capitaliseName(String value) {
     return value
         .split(' ')
-        .map((word) => word.isEmpty ? word : word[0].toUpperCase() + word.substring(1))
+        .map(
+          (word) =>
+              word.isEmpty ? word : word[0].toUpperCase() + word.substring(1),
+        )
         .join(' ');
   }
 
   // Invite real players into the league
   //
-  // This is the same action as "Invite players" on the league details screen - it opens the
-  // share sheet with a link to the league's public page. It is repeated here because this is
-  // the screen an organiser is actually on when they realise they are a player short: it
-  // lists who has joined and offers Add Guest, so "invite somebody real" belongs beside it.
+  // This is the same action as "Share league" on the details screen - it opens the share
+  // sheet with a link to the league's public page. It is repeated here because this is the
+  // screen an organiser is actually on when they realise they are a player short.
   Future<void> _invitePlayers() async {
     await ShareHelper.shareLeague(
       shareSlug: widget.league['share_slug']?.toString(),
@@ -366,101 +375,101 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
 
     return showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Guest Player'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Add a guest player - someone who plays but does not have an account.',
-              style: const TextStyle(fontSize: 14),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Add a guest'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Someone who plays but has no account. You keep their results for them.',
+                  style: AppType.b(AppType.meta),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(labelText: 'Their name'),
+                  autofocus: true,
+                  textInputAction: TextInputAction.done,
+
+                  // No underline under the name as it is typed
+                  //
+                  // The line is the keyboard's composing region - the IME marks the word it
+                  // is still autocorrecting. Turning autocorrect and suggestions off removes
+                  // it, which is right anyway: these are people's names, not dictionary words.
+                  autocorrect: false,
+                  enableSuggestions: false,
+
+                  // Guest names are people's names, so the keyboard shifts itself for the
+                  // first letter rather than leaving the organiser to type "dave".
+                  textCapitalization: TextCapitalization.words,
+                  onSubmitted:
+                      (_) => Navigator.of(
+                        context,
+                      ).pop(_capitaliseName(controller.text.trim())),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Guest Name',
-                hintText: 'Enter guest name',
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
               ),
-              autofocus: true,
-              textInputAction: TextInputAction.done,
-
-              // No underline under the name as it is typed
-              //
-              // The line is the keyboard's composing region - the IME marks the word it
-              // is still autocorrecting. Turning autocorrect and suggestions off removes
-              // it, which is right anyway: these are people's names, not dictionary words.
-              autocorrect: false,
-              enableSuggestions: false,
-
-              // Start each word of the name with a capital letter
-              //
-              // Guest names are people's names, so the keyboard shifts itself for the
-              // first letter rather than leaving the organiser to type "dave".
-              textCapitalization: TextCapitalization.words,
-              onSubmitted: (_) => Navigator.of(context).pop(_capitaliseName(controller.text.trim())),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+              TextButton(
+                onPressed:
+                    () => Navigator.of(
+                      context,
+                    ).pop(_capitaliseName(controller.text.trim())),
+                child: const Text('Add'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(_capitaliseName(controller.text.trim())),
-            child: const Text('Add Guest'),
-          ),
-        ],
-      ),
     );
   }
 
   // Remove player from league
   Future<void> _removePlayer(int playerId, String playerName) async {
-    // Check if fixtures exist
     if (_hasFixtures) {
-      ErrorHelper.showErrorToast('Cannot remove players after fixtures are generated');
+      ErrorHelper.showErrorToast(
+        'The league has started, so players cannot be removed',
+      );
       return;
     }
 
-    // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Remove Player'),
-        content: Text('Are you sure you want to remove $playerName from the league?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
+      builder:
+          (context) => AlertDialog(
+            title: Text('Remove $playerName?'),
+            content: Text(
+              'They come out of this league. Nothing else about their account changes.',
+              style: AppType.b(AppType.body),
             ),
-            child: const Text('Remove'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Keep them'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: AppPalette.clay),
+                child: const Text('Remove'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
-    // If not confirmed, return
     if (confirmed != true) {
       return;
     }
 
-    // Show loading indicator
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      // Call API to remove player
       final response = await RemovePlayerFromLeagueApi.removePlayerFromLeague(
         widget.league['league_id'],
         playerId,
@@ -469,601 +478,317 @@ class _PlayerListScreenState extends State<PlayerListScreen> {
       if (response['return_code'] == 'SUCCESS') {
         // No success toast - the player vanishing from the list below says it already,
         // and the organiser has just confirmed the removal in a dialog. Errors still toast.
-
-        // If this was a guest player, decrement the count temporarily for better UX
-        if (playerName.startsWith('guest_')) {
-          setState(() {
-            if (_guestPlayerCount > 0) _guestPlayerCount--;
-          });
-        }
-
-        // Reload members
         _loadMembers();
       } else if (response['return_code'] == 'FIXTURES_EXIST') {
-        // If fixtures exist, update our state
         setState(() {
           _hasFixtures = true;
           _isLoading = false;
-          ErrorHelper.showErrorToast('Cannot remove players after fixtures are generated');
+          ErrorHelper.showErrorToast(
+            'The league has started, so players cannot be removed',
+          );
         });
       } else {
         setState(() {
-          _errorMessage = response['message'] ?? 'Failed to remove player';
+          _errorMessage = response['message'] ?? 'Could not remove that player';
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'An error occurred while removing player';
+        _errorMessage = 'Could not remove that player';
         _isLoading = false;
       });
     }
   }
 
+  void _leaveLeague() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder:
+              (context, animation, secondaryAnimation) =>
+                  const DashboardScreen(),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        ),
+      );
+    }
+  }
+
+  void _openDetails() {
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder:
+            (context, animation, secondaryAnimation) => LeagueDetailsScreen(
+              league: widget.league,
+              hasFixtures: _hasFixtures,
+            ),
+        // Sideways move between two views of the same league, so it replaces rather
+        // than stacks. The dashboard underneath stays put and Back still leaves the
+        // league. See docs/next-league-flow.md.
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Two players is the minimum for a single fixture, so it is the point at which
+    // starting the league stops being nonsense and the bottom bar appears.
+    final bool canStart = _isCreator && !_hasFixtures && _members.length >= 2;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.league['name'] ?? 'League Players'),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            } else {
-              Navigator.of(context).pushReplacement(
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) => const DashboardScreen(),
-                  transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
-                  transitionDuration: Duration.zero,
-                ),
-              );
-            }
-          },
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF005F8A), // Top color from logo gradient
-                Color(0xFF00B3A4), // Bottom color from logo gradient
-              ],
-            ),
-          ),
-        ),
-      ),
-      body: _isLoading
-        ? const Center(
-            child: SpinKitCircle(
-              color: Colors.blue,
-              size: 50.0,
-            ),
-          )
-        : _errorMessage != null
-          ? Center(
-              child: Text(
-                _errorMessage!,
-                style: const TextStyle(color: Colors.red),
-              ),
-            )
-          : Column(
-              children: [
-                // Top section with navigation buttons
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withAlpha(30),
-                        spreadRadius: 0,
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                  child: Column(
-                    children: [
-                      // Navigation buttons - unified design
-                      Row(
-                        children: [
-                          // Players label (current screen)
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              decoration: BoxDecoration(
-                                color: AppStyles.primaryColor,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.people, color: Colors.white, size: 18),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'Players',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-
-                          // Details button
-                          Expanded(
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.of(context).pushReplacement(
-                                  PageRouteBuilder(
-                                    pageBuilder: (context, animation, secondaryAnimation) => LeagueDetailsScreen(
-                                      league: widget.league,
-                                      hasFixtures: _hasFixtures, // Pass the fixtures status to avoid visual flip
-                                    ),
-                                    // Sideways move between two views of the same league,
-                                    // so it replaces rather than stacks. The dashboard
-                                    // underneath stays put and Back still leaves the league.
-                                    transitionDuration: Duration.zero,
-                                    reverseTransitionDuration: Duration.zero,
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.info_outline, color: AppStyles.primaryColor, size: 18),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Details',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: AppStyles.primaryColor,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Which stage this league is in, in the same place on every league screen.
-                LeagueStageBanner(stage: LeagueStageInfo.fromHasFixtures(_hasFixtures)),
-
-                // Content area
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Header text
-                              Text(
-                                'League Players',
-                                style: AppStyles.sectionHeading,
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Invite real players
-                              //
-                              // Full width and above the list, because on a league that has
-                              // not started this is usually the thing the organiser came here
-                              // to do. Hidden once fixtures exist - nobody can join then.
-                              if (_isCreator && !_hasFixtures) ...[
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton.icon(
-                                    onPressed: _invitePlayers,
-                                    icon: const Icon(Icons.person_add, size: 18),
-                                    label: const Text('Invite players'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(vertical: 12),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                              ],
-
-                              // Player count and add guest button
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    _members.length == 1
-                                      ? '1 player joined'
-                                      : '${_members.length} players joined',
-                                    style: AppStyles.subtitle,
-                                  ),
-                                  if (_isCreator && !_hasFixtures) ...[
-                                    // Always available - guests are the mechanic that works
-                                    ElevatedButton.icon(
-                                      onPressed: _addGuestPlayer,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue,
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                      icon: const Icon(Icons.person_add, size: 18),
-                                      label: Text(_guestPlayerCount > 0
-                                        ? 'Add Guest ($_guestPlayerCount)'
-                                        : 'Add Guest'),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Players list
-                              ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: _members.length,
-                                itemBuilder: (context, index) {
-                                  final member = _members[index];
-                                  final memberId = member['id'];
-                                  final memberName = member['nickname'] ?? member['name'] ?? 'Unknown Player';
-                                  final isCreator = member['is_creator'] == true ||
-                                                  member['is_organiser'] == true ||
-                                                  member['is_organizer'] == true;
-
-                                  // Check if this is a guest player (nickname starts with 'guest_')
-                                  final isGuest = memberName.startsWith('guest_');
-
-                                  // Display name - for guests, remove the 'guest_' prefix for display
-                                  final displayName = isGuest
-                                      ? memberName.substring(6) // Remove 'guest_' prefix
-                                      : memberName;
-
-                                  return Card(
-                                    margin: const EdgeInsets.only(bottom: 8.0),
-                                    child: ListTile(
-                                      leading: CircleAvatar(
-                                        backgroundColor: isGuest ? Colors.orange : null,
-                                        child: Text(
-                                          displayName.substring(0, 1).toUpperCase(),
-                                        ),
-                                      ),
-                                      title: Text(displayName),
-                                      subtitle: isCreator
-                                        ? const Text('League Organizer',
-                                            style: TextStyle(color: Colors.blue)
-                                          )
-                                        : isGuest
-                                          ? const Text('Guest Player',
-                                              style: TextStyle(color: Colors.orange)
-                                            )
-                                          : null,
-                                      trailing: _isCreator && !isCreator && !_hasFixtures
-                                        ? IconButton(
-                                            icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
-                                            onPressed: () => _removePlayer(memberId, displayName),
-                                          )
-                                        : null,
-                                    ),
-                                  );
-                                },
-                              ),
-
-                              // Generate fixtures section
-                              if (_isCreator && !_hasFixtures) ...[
-                                const Divider(height: 32),
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.shade50,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.blue.shade100),
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Text(
-                                        'Start the league',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.blue,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      const Text(
-                                        'Generating fixtures pairs everyone up using the "Play Each Other" setting '
-                                        'and moves this league into play. Once it has started, no one else can '
-                                        'join and players cannot be removed.',
-                                        style: TextStyle(fontSize: 14),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      ElevatedButton.icon(
-                                        onPressed: _isGeneratingFixtures ? null : _generateFixtures,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.blue,
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                        ),
-                                        icon: _isGeneratingFixtures
-                                            ? SizedBox(
-                                                height: 20,
-                                                width: 20,
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                                    Colors.white,
-                                                  ),
-                                                ),
-                                              )
-                                            : const Icon(Icons.sports),
-                                        label: Text(_isGeneratingFixtures ? 'Generating...' : 'Generate Fixtures'),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        _hasFixtures
-                                            ? 'Note: Players cannot be removed after fixtures are generated.'
-                                            : 'Note: You can remove players before fixtures are generated.',
-                                        style: TextStyle(
-                                          color: _hasFixtures ? Colors.red.shade700 : Colors.grey.shade700,
-                                          fontStyle: FontStyle.italic,
-                                          fontSize: 12,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                // Error message
-                                if (_generateErrorMessage != null)
-                                  Container(
-                                    margin: const EdgeInsets.only(top: 16),
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.shade50,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.red.shade100),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.error_outline, color: Colors.red.shade700),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            _generateErrorMessage!,
-                                            style: TextStyle(color: Colors.red.shade700),
-                                          ),
-                                        ),
-                                        TextButton(
-                                          onPressed: _generateFixtures,
-                                          style: TextButton.styleFrom(
-                                            foregroundColor: Colors.red.shade700,
-                                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                                          ),
-                                          child: const Text('Retry'),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                // Success message
-                                if (_successMessage != null)
-                                  Container(
-                                    margin: const EdgeInsets.only(top: 16),
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green.shade50,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.green.shade100),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.check_circle, color: Colors.green.shade700),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            _fixturesCount != null
-                                                ? '$_successMessage\n$_fixturesCount fixtures created'
-                                                : _successMessage!,
-                                            style: TextStyle(color: Colors.green.shade700),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-}
-
-// Success display widget
-class SuccessDisplay extends StatelessWidget {
-  final String message;
-
-  const SuccessDisplay({
-    super.key,
-    required this.message,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.green.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.green.shade200),
-      ),
-      child: Column(
+      backgroundColor: AppPalette.chalk,
+      body: Column(
         children: [
-          const Icon(
-            Icons.check_circle,
-            color: Colors.green,
-            size: 32,
+          SlLeagueHeader(
+            leagueName: widget.league['name'] ?? 'League',
+            stage: LeagueStageInfo.fromHasFixtures(_hasFixtures),
+            selectedIndex: 0,
+            segments: [
+              const SlSegment(label: 'Players'),
+              SlSegment(label: 'Details', onTap: _openDetails),
+            ],
+            onBack: _leaveLeague,
+            actionIcon: Icons.ios_share,
+            actionTooltip: 'Share this league',
+            onAction: _invitePlayers,
           ),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.green,
-              fontWeight: FontWeight.bold,
-            ),
+
+          Expanded(
+            child:
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _errorMessage != null
+                    ? _buildError()
+                    : _buildContent(),
           ),
         ],
       ),
+
+      bottomNavigationBar: canStart ? _buildStartBar() : null,
     );
   }
-}
 
-// Error display widget
-class ErrorDisplay extends StatelessWidget {
-  final String message;
-  final VoidCallback? onRetry;
-  final String retryText;
-
-  const ErrorDisplay({
-    super.key,
-    required this.message,
-    this.onRetry,
-    this.retryText = 'Retry',
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.red.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red.shade200),
-      ),
-      child: Column(
-        children: [
-          const Icon(
-            Icons.error_outline,
-            color: Colors.red,
-            size: 32,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.red.shade700,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          if (onRetry != null) ...[
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: onRetry,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade100,
-                foregroundColor: Colors.red.shade700,
-              ),
-              child: Text(retryText),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-// Empty state display widget
-class EmptyStateDisplay extends StatelessWidget {
-  final String message;
-  final IconData icon;
-  final String? actionText;
-  final VoidCallback? onAction;
-  final bool showPullToRefresh;
-
-  const EmptyStateDisplay({
-    super.key,
-    required this.message,
-    required this.icon,
-    this.actionText,
-    this.onAction,
-    this.showPullToRefresh = true,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildError() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 32.0),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
             Text(
-              message,
+              _errorMessage!,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 16,
-              ),
+              style: AppType.b(AppType.body, color: AppPalette.slate),
             ),
-            if (actionText != null && onAction != null) ...[
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: onAction,
-                child: Text(actionText!),
-              ),
-            ],
+            const SizedBox(height: 20),
+            SlButton.secondary(label: 'Try again', onPressed: _loadMembers),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildContent() {
+    // Once the league can be started, the start bar at the bottom holds the one
+    // filled button on this screen, so these two step down a rank each. Below two
+    // players there is nothing to start and getting people in is the whole job, so
+    // inviting keeps the fill.
+    final bool startBarShowing =
+        _isCreator && !_hasFixtures && _members.length >= 2;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+      children: [
+        // The two ways to get people in, ranked against each other. Inviting a real
+        // person is the one pushed, because a guest is a name the organiser has to
+        // keep updated by hand while a real player enters their own results.
+        if (_isCreator && !_hasFixtures) ...[
+          if (startBarShowing)
+            SlButton.secondary(
+              label: 'Invite players',
+              icon: Icons.person_add_alt,
+              onPressed: _invitePlayers,
+              expand: true,
+            )
+          else
+            SlButton.primary(
+              label: 'Invite players',
+              icon: Icons.person_add_alt,
+              onPressed: _invitePlayers,
+            ),
+
+          const SizedBox(height: 10),
+
+          if (startBarShowing)
+            SlButton.quiet(
+              label: 'Add a guest',
+              icon: Icons.person_outline,
+              onPressed: _addGuestPlayer,
+              expand: true,
+            )
+          else
+            SlButton.secondary(
+              label: 'Add a guest',
+              icon: Icons.person_outline,
+              onPressed: _addGuestPlayer,
+              expand: true,
+            ),
+
+          const SizedBox(height: 26),
+        ],
+
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            _members.length == 1
+                ? 'IN THIS LEAGUE · 1'
+                : 'IN THIS LEAGUE · ${_members.length}',
+            style: AppType.b(AppType.eyebrow),
+          ),
+        ),
+
+        Container(
+          decoration: BoxDecoration(
+            color: AppPalette.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppPalette.hairline),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              for (int i = 0; i < _members.length; i++) ...[
+                if (i > 0)
+                  const Divider(
+                    height: 1,
+                    thickness: 1,
+                    indent: 60,
+                    color: AppPalette.hairline,
+                  ),
+                _buildMemberRow(_members[i]),
+              ],
+            ],
+          ),
+        ),
+
+        if (_generateErrorMessage != null) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppPalette.clayTint,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              _generateErrorMessage!,
+              style: AppType.b(AppType.meta, color: AppPalette.clay),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildMemberRow(Map<String, dynamic> member) {
+    final memberId = member['id'];
+    final memberName = member['nickname'] ?? member['name'] ?? 'Unknown player';
+    final isOrganiser =
+        member['is_creator'] == true ||
+        member['is_organiser'] == true ||
+        member['is_organizer'] == true;
+
+    // Guests are rows in app_user with a nickname of the form "guest_Dave". The
+    // prefix is storage, not something to show anybody.
+    final isGuest = memberName.toString().startsWith('guest_');
+    final displayName =
+        isGuest ? memberName.toString().substring(6) : memberName.toString();
+
+    final String? role = isOrganiser ? 'Organiser' : (isGuest ? 'Guest' : null);
+    final Color roleColour =
+        isOrganiser ? AppPalette.tealDeep : AppPalette.guest;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          // The initial in a tinted disc. Guests are warm, everybody else is teal,
+          // which is the only place the guest/member difference is shown as colour.
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: isGuest ? AppPalette.guestTint : AppPalette.tealTint,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              displayName.isEmpty
+                  ? '?'
+                  : displayName.substring(0, 1).toUpperCase(),
+              style: AppType.t(
+                AppType.figure,
+                color: isGuest ? AppPalette.guest : AppPalette.tealDeep,
+                size: 14,
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 12),
+
+          Expanded(
+            child: Text(
+              displayName,
+              style: AppType.b(AppType.name),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+
+          if (role != null)
+            Text(
+              role,
+              style: AppType.b(AppType.meta, color: roleColour, size: 12),
+            ),
+
+          if (_isCreator && !isOrganiser && !_hasFixtures)
+            IconButton(
+              icon: const Icon(Icons.close, size: 18, color: AppPalette.slate),
+              tooltip: 'Remove $displayName',
+              onPressed: () => _removePlayer(memberId, displayName),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // The way forward, once there is somebody to play.
+  //
+  // A fixed bar rather than a panel in the scroll, because it is the conclusion of
+  // the screen and it should not be something you have to scroll past a list to find.
+  Widget _buildStartBar() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppPalette.chalk,
+        border: Border(top: BorderSide(color: AppPalette.hairline)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: SlButton.primary(
+            label:
+                _isGeneratingFixtures
+                    ? 'Starting'
+                    : 'Start with ${_members.length} players',
+            busy: _isGeneratingFixtures,
+            onPressed: _isGeneratingFixtures ? null : _generateFixtures,
+          ),
+        ),
+      ),
+    );
+  }
 }
-
-

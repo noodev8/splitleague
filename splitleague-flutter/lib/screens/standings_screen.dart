@@ -1,6 +1,13 @@
 /*
-Show the standings for a league
-This screen shows the league standings
+The league table.
+
+The shell only - the table itself is widgets/standings_tab_content.dart. Like the other
+league screens it is now just the shared header plus its content, so the four views of a
+league differ only in what they show.
+
+The one addition is the share button in the header, and it is here on purpose: the table
+is the thing people want to send to the group, and this is the screen they are looking at
+when they want to send it.
 */
 
 import 'package:flutter/material.dart';
@@ -9,8 +16,10 @@ import '../providers/league_provider.dart';
 import '../widgets/standings_tab_content.dart';
 import '../helpers/auth_helper.dart';
 import '../helpers/league_stage.dart';
-import '../styles/app_styles.dart';
-import '../widgets/league_stage_banner.dart';
+import '../helpers/share_helper.dart';
+import '../styles/app_palette.dart';
+import '../widgets/sl_league_header.dart';
+import '../widgets/sl_segmented.dart';
 import 'fixtures_screen.dart';
 import 'league_details_screen.dart';
 import 'dashboard_screen.dart';
@@ -18,10 +27,7 @@ import 'dashboard_screen.dart';
 class StandingsScreen extends StatefulWidget {
   final Map<String, dynamic> league;
 
-  const StandingsScreen({
-    super.key,
-    required this.league,
-  });
+  const StandingsScreen({super.key, required this.league});
 
   @override
   State<StandingsScreen> createState() => _StandingsScreenState();
@@ -33,6 +39,9 @@ class _StandingsScreenState extends State<StandingsScreen> {
 
   // Flag to track if we're disposing
   bool _isDisposing = false;
+
+  // The logged-in user's id, so their row in the table can be marked.
+  int? _currentUserId;
 
   @override
   void initState() {
@@ -51,10 +60,18 @@ class _StandingsScreenState extends State<StandingsScreen> {
       AuthHelper.getUserData().then((userData) {
         if (!mounted || _isDisposing) return;
 
-        final isCreator = userData != null &&
+        final isCreator =
+            userData != null &&
             widget.league['creator_id'] != null &&
             userData['id'].toString() == widget.league['creator_id'].toString();
         _leagueProvider.setCreator(isCreator);
+
+        setState(() {
+          _currentUserId =
+              userData?['id'] is int
+                  ? userData!['id']
+                  : int.tryParse(userData?['id']?.toString() ?? '');
+        });
       });
     });
   }
@@ -68,226 +85,99 @@ class _StandingsScreenState extends State<StandingsScreen> {
     super.dispose();
   }
 
+  void _leaveLeague() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder:
+              (context, animation, secondaryAnimation) =>
+                  const DashboardScreen(),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        ),
+      );
+    }
+  }
+
+  // A sideways move to another view of the same league. Replaces rather than pushes,
+  // so Back still means "leave this league". See docs/next-league-flow.md.
+  void _replaceWith(Widget screen) {
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => screen,
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+      ),
+    );
+  }
+
+  Future<void> _shareLeague() async {
+    await ShareHelper.shareLeague(
+      shareSlug: widget.league['share_slug']?.toString(),
+      name: widget.league['name']?.toString(),
+      hasFixtures: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          '${widget.league['name']}',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            } else {
-              Navigator.of(context).pushReplacement(
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) => const DashboardScreen(),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
-            }
-          },
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF005F8A), // Top color from logo gradient
-                Color(0xFF00B3A4), // Bottom color from logo gradient
-              ],
-            ),
-          ),
-        ),
-      ),
-      body: Consumer<LeagueProvider>(
-        builder: (context, leagueProvider, _) {
-          return Container(
-            color: AppStyles.backgroundColor,
-            child: SafeArea(
-              bottom: false,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top section with unified design
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withAlpha(30),
-                          spreadRadius: 0,
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                    child: Column(
-                      children: [
-                        // Note: This screen should only be accessible when fixtures exist,
-                        // but we'll keep the conditional logic for consistency and safety
-                        Row(
-                          children: [
-                            // Fixtures/Players button (depends on whether fixtures exist)
-                            Expanded(
-                              child: InkWell(
-                                onTap: () {
-                                  // Navigate to Fixtures screen (we know fixtures exist since we're on the Standings screen)
-                                  Navigator.of(context).pushReplacement(
-                                    PageRouteBuilder(
-                                      pageBuilder: (context, animation, secondaryAnimation) => FixturesScreen(
-                                        league: widget.league,
-                                      ),
-                                      transitionDuration: Duration.zero,
-                                      reverseTransitionDuration: Duration.zero,
-                                    ),
-                                  );
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      // Show different icon and text based on whether fixtures exist
-                                      Icon(
-                                        leagueProvider.fixtures.isNotEmpty
-                                          ? Icons.sports_soccer
-                                          : Icons.people,
-                                        color: AppStyles.primaryColor,
-                                        size: 18
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        leagueProvider.fixtures.isNotEmpty
-                                          ? 'Fixtures'
-                                          : 'Players',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: AppStyles.primaryColor,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-
-                            // Standings label (current screen)
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: AppStyles.primaryColor,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.leaderboard, color: Colors.white, size: 18),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      'Standings',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-
-                            // Details button
-                            Expanded(
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.of(context).pushReplacement(
-                                    PageRouteBuilder(
-                                      pageBuilder: (context, animation, secondaryAnimation) => LeagueDetailsScreen(
-                                        league: widget.league,
-                                        hasFixtures: true, // We know fixtures exist since we're on the Standings screen
-                                      ),
-                                      transitionDuration: Duration.zero,
-                                      reverseTransitionDuration: Duration.zero,
-                                    ),
-                                  );
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.info_outline, color: AppStyles.primaryColor, size: 18),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Details',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          color: AppStyles.primaryColor,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Which stage this league is in. Standings only exist in play.
-                  const LeagueStageBanner(stage: LeagueStage.inPlay),
-
-                  // Standings content - takes remaining space
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: StandingsTabContent(
-                        isLoadingStandings: leagueProvider.isLoadingStandings,
-                        standings: leagueProvider.standings,
-                        standingsErrorMessage: leagueProvider.standingsErrorMessage,
-                        winType: leagueProvider.leagueInfo['win_type'],
-                        onLoadStandings: leagueProvider.loadStandings,
+      backgroundColor: AppPalette.chalk,
+      body: Column(
+        children: [
+          SlLeagueHeader(
+            leagueName: widget.league['name'] ?? 'League',
+            // You only reach the table from a league that has started.
+            stage: LeagueStage.inPlay,
+            selectedIndex: 1,
+            segments: [
+              SlSegment(
+                label: 'Fixtures',
+                onTap:
+                    () => _replaceWith(FixturesScreen(league: widget.league)),
+              ),
+              const SlSegment(label: 'Table'),
+              SlSegment(
+                label: 'Details',
+                onTap:
+                    () => _replaceWith(
+                      LeagueDetailsScreen(
+                        league: widget.league,
+                        hasFixtures: true,
                       ),
                     ),
-                  ),
-                ],
               ),
+            ],
+            onBack: _leaveLeague,
+            actionIcon: Icons.ios_share,
+            actionTooltip: 'Share this league',
+            onAction: _shareLeague,
+          ),
+
+          Expanded(
+            child: Consumer<LeagueProvider>(
+              builder: (context, leagueProvider, _) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  child: StandingsTabContent(
+                    isLoadingStandings: leagueProvider.isLoadingStandings,
+                    standings: leagueProvider.standings,
+                    standingsErrorMessage: leagueProvider.standingsErrorMessage,
+                    winType: leagueProvider.leagueInfo['win_type'],
+                    onLoadStandings: leagueProvider.loadStandings,
+                    currentUserId: _currentUserId,
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
 }
-
-
-
-
-
-

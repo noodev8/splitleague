@@ -10,6 +10,7 @@ import '../api/reset_league_scores_api.dart';
 import '../api/reset_league_fixtures_api.dart';
 import '../api/copy_league_api.dart';
 import '../helpers/error_handler.dart';
+import '../styles/app_palette.dart';
 
 class LeagueProvider extends ChangeNotifier {
   // Flag to track if the provider is disposed
@@ -36,6 +37,7 @@ class LeagueProvider extends ChangeNotifier {
     // We don't clear filter states here anymore
     // This allows filters to persist when navigating between screens
   }
+
   // League info
   Map<String, dynamic> _leagueInfo = {};
   Map<String, dynamic> get leagueInfo => _leagueInfo;
@@ -103,7 +105,8 @@ class LeagueProvider extends ChangeNotifier {
 
   // Played status filter
   String? _filterPlayedStatus;
-  String? get filterPlayedStatus => _filterPlayedStatus; // Can be 'played', 'not_played', or null (all)
+  String? get filterPlayedStatus =>
+      _filterPlayedStatus; // Can be 'played', 'not_played', or null (all)
 
   // Is creator flag
   bool _isCreator = false;
@@ -160,7 +163,8 @@ class LeagueProvider extends ChangeNotifier {
       } else {
         _leagueInfo = {};
         _isLoadingLeagueInfo = false;
-        _leagueInfoErrorMessage = response['message'] ?? 'Failed to load league info';
+        _leagueInfoErrorMessage =
+            response['message'] ?? 'Could not load the league';
       }
     } catch (e) {
       _leagueInfo = {};
@@ -199,23 +203,25 @@ class LeagueProvider extends ChangeNotifier {
           _applyFilter(_filterPlayerId!, _filterPlayerName);
         } else if (_filterPlayedStatus != null) {
           // Apply only played status filter
-          _filteredFixtures = _fixtures.where((fixture) {
-            bool playedMatch = _filterPlayedStatus == 'played';
-            return fixture['played'] == playedMatch;
-          }).toList();
+          _filteredFixtures =
+              _fixtures.where((fixture) {
+                bool playedMatch = _filterPlayedStatus == 'played';
+                return fixture['played'] == playedMatch;
+              }).toList();
         }
       } else if (response['return_code'] == 'NO_FIXTURES') {
         // Handle the no fixtures case gracefully - this is not an error
         _fixtures = [];
         _isLoadingFixtures = false;
-        _fixturesErrorMessage = null; // Don't set an error message for this case
+        _fixturesErrorMessage =
+            null; // Don't set an error message for this case
         _isFirstLoad = false; // Reset first load flag
       } else {
         _fixtures = [];
         _isLoadingFixtures = false;
         _fixturesErrorMessage = ErrorHandler.handleApiError(
           response,
-          'Failed to load fixtures'
+          'Could not load the fixtures',
         );
         _isFirstLoad = false; // Reset first load flag
       }
@@ -224,7 +230,7 @@ class LeagueProvider extends ChangeNotifier {
       _isLoadingFixtures = false;
       _fixturesErrorMessage = ErrorHandler.handleException(
         e,
-        'An error occurred while loading fixtures'
+        'An error occurred while loading fixtures',
       );
       _isFirstLoad = false; // Reset first load flag
       // Error is already logged by handleException
@@ -244,8 +250,10 @@ class LeagueProvider extends ChangeNotifier {
   // Sort fixtures by ID
   void _sortFixturesById() {
     _fixtures.sort((a, b) {
-      final aId = a['id'] is int ? a['id'] : int.tryParse(a['id'].toString()) ?? 0;
-      final bId = b['id'] is int ? b['id'] : int.tryParse(b['id'].toString()) ?? 0;
+      final aId =
+          a['id'] is int ? a['id'] : int.tryParse(a['id'].toString()) ?? 0;
+      final bId =
+          b['id'] is int ? b['id'] : int.tryParse(b['id'].toString()) ?? 0;
       return aId.compareTo(bId);
     });
   }
@@ -255,9 +263,8 @@ class LeagueProvider extends ChangeNotifier {
     if (fixtureId == null) return;
 
     // Convert to int if needed
-    _lastUpdatedFixtureId = fixtureId is int
-        ? fixtureId
-        : int.tryParse(fixtureId.toString());
+    _lastUpdatedFixtureId =
+        fixtureId is int ? fixtureId : int.tryParse(fixtureId.toString());
 
     notifyListeners();
   }
@@ -277,16 +284,21 @@ class LeagueProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await GetLeagueMembersApi.getLeagueMembers(_currentLeagueId);
+      final response = await GetLeagueMembersApi.getLeagueMembers(
+        _currentLeagueId,
+      );
 
       if (response['return_code'] == 'SUCCESS') {
-        _leagueMembers = List<Map<String, dynamic>>.from(response['members'] ?? []);
+        _leagueMembers = List<Map<String, dynamic>>.from(
+          response['members'] ?? [],
+        );
         _isLoadingMembers = false;
         _membersErrorMessage = null;
       } else {
         _leagueMembers = [];
         _isLoadingMembers = false;
-        _membersErrorMessage = response['message'] ?? 'Failed to load league members';
+        _membersErrorMessage =
+            response['message'] ?? 'Could not load the players';
       }
     } catch (e) {
       _leagueMembers = [];
@@ -305,19 +317,22 @@ class LeagueProvider extends ChangeNotifier {
 
     _isLoadingStandings = true;
     _standingsErrorMessage = null;
-    notifyListeners();  // Safe, because it only ever runs after first frame
+    notifyListeners(); // Safe, because it only ever runs after first frame
 
     try {
       final response = await GetStandingsApi.getStandings(_currentLeagueId);
 
       if (response['return_code'] == 'SUCCESS') {
-        _standings = List<Map<String, dynamic>>.from(response['standings'] ?? []);
+        _standings = List<Map<String, dynamic>>.from(
+          response['standings'] ?? [],
+        );
         _isLoadingStandings = false;
         _standingsErrorMessage = null;
       } else {
         _standings = [];
         _isLoadingStandings = false;
-        _standingsErrorMessage = response['message'] ?? 'Failed to load standings';
+        _standingsErrorMessage =
+            response['message'] ?? 'Could not load the table';
       }
     } catch (e) {
       _standings = [];
@@ -325,7 +340,7 @@ class LeagueProvider extends ChangeNotifier {
       _standingsErrorMessage = 'An error occurred while loading standings';
     }
 
-    notifyListeners();  // Safe, because it only ever runs after first frame
+    notifyListeners(); // Safe, because it only ever runs after first frame
 
     // Force a second notification after a short delay to ensure UI updates
     // This helps with edge cases where the first notification might not trigger a rebuild
@@ -350,12 +365,14 @@ class LeagueProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await GenerateFixturesApi.generateFixtures(_currentLeagueId);
+      final response = await GenerateFixturesApi.generateFixtures(
+        _currentLeagueId,
+      );
 
       if (response['return_code'] == 'SUCCESS') {
         _isGeneratingFixtures = false;
         _generateErrorMessage = null;
-        _successMessage = 'Fixtures generated successfully';
+        _successMessage = 'The league has started';
         _fixturesCount = response['fixtures_count'];
 
         // Reload fixtures
@@ -363,7 +380,8 @@ class LeagueProvider extends ChangeNotifier {
         return true;
       } else {
         _isGeneratingFixtures = false;
-        _generateErrorMessage = response['message'] ?? 'Failed to generate fixtures';
+        _generateErrorMessage =
+            response['message'] ?? 'Failed to generate fixtures';
         _successMessage = null;
         _fixturesCount = null;
         notifyListeners();
@@ -389,18 +407,20 @@ class LeagueProvider extends ChangeNotifier {
   void _applyFilter(String playerId, String? playerName) {
     _filterPlayerId = playerId;
     _filterPlayerName = playerName ?? 'Selected Player';
-    _filteredFixtures = _fixtures.where((fixture) {
-      bool playerMatch = fixture['player_1_id'].toString() == playerId ||
-          fixture['player_2_id'].toString() == playerId;
+    _filteredFixtures =
+        _fixtures.where((fixture) {
+          bool playerMatch =
+              fixture['player_1_id'].toString() == playerId ||
+              fixture['player_2_id'].toString() == playerId;
 
-      // Also apply played status filter if set
-      if (_filterPlayedStatus != null) {
-        bool playedMatch = _filterPlayedStatus == 'played';
-        return playerMatch && (fixture['played'] == playedMatch);
-      }
+          // Also apply played status filter if set
+          if (_filterPlayedStatus != null) {
+            bool playedMatch = _filterPlayedStatus == 'played';
+            return playerMatch && (fixture['played'] == playedMatch);
+          }
 
-      return playerMatch;
-    }).toList();
+          return playerMatch;
+        }).toList();
   }
 
   // Apply played status filter
@@ -419,10 +439,11 @@ class LeagueProvider extends ChangeNotifier {
       _applyFilter(_filterPlayerId!, _filterPlayerName);
     } else {
       // Apply only played status filter
-      _filteredFixtures = _fixtures.where((fixture) {
-        bool playedMatch = status == 'played';
-        return fixture['played'] == playedMatch;
-      }).toList();
+      _filteredFixtures =
+          _fixtures.where((fixture) {
+            bool playedMatch = status == 'played';
+            return fixture['played'] == playedMatch;
+          }).toList();
     }
 
     // Always notify listeners to ensure UI updates
@@ -468,10 +489,11 @@ class LeagueProvider extends ChangeNotifier {
 
     // Keep played status filter if it exists
     if (_filterPlayedStatus != null) {
-      _filteredFixtures = _fixtures.where((fixture) {
-        bool playedMatch = _filterPlayedStatus == 'played';
-        return fixture['played'] == playedMatch;
-      }).toList();
+      _filteredFixtures =
+          _fixtures.where((fixture) {
+            bool playedMatch = _filterPlayedStatus == 'played';
+            return fixture['played'] == playedMatch;
+          }).toList();
     } else {
       _filteredFixtures = [];
     }
@@ -487,7 +509,11 @@ class LeagueProvider extends ChangeNotifier {
   }
 
   // Remove a player from the league
-  Future<bool> removePlayerFromLeague(BuildContext context, int playerId, String playerName) async {
+  Future<bool> removePlayerFromLeague(
+    BuildContext context,
+    int playerId,
+    String playerName,
+  ) async {
     if (_currentLeagueId == null) return false;
 
     // Show confirmation dialog
@@ -496,7 +522,9 @@ class LeagueProvider extends ChangeNotifier {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Remove Player'),
-          content: Text('Are you sure you want to remove $playerName from the league?'),
+          content: Text(
+            'Are you sure you want to remove $playerName from the league?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -524,7 +552,9 @@ class LeagueProvider extends ChangeNotifier {
 
       if (response['return_code'] == 'SUCCESS') {
         // Show success message
-        ErrorHandler.showSuccessToast(response['message'] ?? 'Player removed successfully');
+        ErrorHandler.showSuccessToast(
+          response['message'] ?? 'Player removed successfully',
+        );
 
         // Reload the league members list
         await loadLeagueMembers();
@@ -544,7 +574,9 @@ class LeagueProvider extends ChangeNotifier {
       }
     } catch (e) {
       // Show error message for exceptions
-      ErrorHandler.showErrorToast('An error occurred while removing the player');
+      ErrorHandler.showErrorToast(
+        'An error occurred while removing the player',
+      );
       return false;
     }
   }
@@ -606,7 +638,9 @@ class LeagueProvider extends ChangeNotifier {
       }
     } catch (e) {
       // Still show error message for exceptions
-      ErrorHandler.showErrorToast('An error occurred while updating the league name');
+      ErrorHandler.showErrorToast(
+        'An error occurred while updating the league name',
+      );
       return false;
     }
   }
@@ -620,11 +654,10 @@ class LeagueProvider extends ChangeNotifier {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Reset All Scores'),
+          title: const Text('Clear all results?'),
           content: const Text(
-            'WARNING: This will reset ALL scores in the league. '
-            'All match results will be cleared and cannot be recovered. '
-            'Are you sure you want to continue?'
+            'Every score goes back to blank and the table empties. The fixtures '
+            'stay, so the same games can be played again. This cannot be undone.',
           ),
           actions: [
             TextButton(
@@ -633,8 +666,8 @@ class LeagueProvider extends ChangeNotifier {
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Reset All Scores'),
+              style: TextButton.styleFrom(foregroundColor: AppPalette.clay),
+              child: const Text('Clear them'),
             ),
           ],
         );
@@ -646,7 +679,9 @@ class LeagueProvider extends ChangeNotifier {
 
     try {
       // Call the API to reset all scores
-      final response = await ResetLeagueScoresApi.resetLeagueScores(_currentLeagueId);
+      final response = await ResetLeagueScoresApi.resetLeagueScores(
+        _currentLeagueId,
+      );
 
       if (response['return_code'] == 'SUCCESS') {
         // Reload fixtures and standings
@@ -657,13 +692,15 @@ class LeagueProvider extends ChangeNotifier {
       } else {
         // Show error message for failures
         ErrorHandler.showErrorToast(
-          response['message'] ?? 'Failed to reset league scores',
+          response['message'] ?? 'Could not clear the results',
         );
         return false;
       }
     } catch (e) {
       // Show error message for exceptions
-      ErrorHandler.showErrorToast('An error occurred while resetting league scores');
+      ErrorHandler.showErrorToast(
+        'An error occurred while resetting league scores',
+      );
       return false;
     }
   }
@@ -677,12 +714,11 @@ class LeagueProvider extends ChangeNotifier {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Reset League'),
+          title: const Text('Reset the league?'),
           content: const Text(
-            'WARNING: This will delete ALL fixtures in the league. '
-            'The league will return to its initial state where you can add/remove players '
-            'and generate new fixtures. This action cannot be undone. '
-            'Are you sure you want to continue?'
+            'Every fixture and every score is deleted, and the league goes back to '
+            'being set up - so players can join and be removed again. This cannot '
+            'be undone.',
           ),
           actions: [
             TextButton(
@@ -691,8 +727,8 @@ class LeagueProvider extends ChangeNotifier {
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Reset League'),
+              style: TextButton.styleFrom(foregroundColor: AppPalette.clay),
+              child: const Text('Reset it'),
             ),
           ],
         );
@@ -704,7 +740,9 @@ class LeagueProvider extends ChangeNotifier {
 
     try {
       // Call the API to reset the league
-      final response = await ResetLeagueFixturesApi.resetLeagueFixtures(_currentLeagueId);
+      final response = await ResetLeagueFixturesApi.resetLeagueFixtures(
+        _currentLeagueId,
+      );
 
       if (response['return_code'] == 'SUCCESS') {
         // Reload all data since fixtures are now gone
@@ -716,13 +754,15 @@ class LeagueProvider extends ChangeNotifier {
       } else {
         // Show error message for failures
         ErrorHandler.showErrorToast(
-          response['message'] ?? 'Failed to reset league',
+          response['message'] ?? 'Could not reset the league',
         );
         return false;
       }
     } catch (e) {
       // Show error message for exceptions
-      ErrorHandler.showErrorToast('An error occurred while resetting the league');
+      ErrorHandler.showErrorToast(
+        'An error occurred while resetting the league',
+      );
       return false;
     }
   }
@@ -736,11 +776,10 @@ class LeagueProvider extends ChangeNotifier {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Copy League'),
+          title: const Text('Start a new season?'),
           content: const Text(
-            'This will create a copy of the league with all players and settings, '
-            'but without any fixtures or scores. '
-            'Are you sure you want to continue?'
+            'A new league is created with the same players and the same scoring, '
+            'ready to be started. This one is left exactly as it is.',
           ),
           actions: [
             TextButton(
@@ -749,8 +788,7 @@ class LeagueProvider extends ChangeNotifier {
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(foregroundColor: Colors.blue),
-              child: const Text('Copy League'),
+              child: const Text('Create it'),
             ),
           ],
         );
