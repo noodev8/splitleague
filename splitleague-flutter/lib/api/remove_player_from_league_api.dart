@@ -1,6 +1,11 @@
 /*
 API service for removing a player from a league
 Allows a league organizer to remove a player from their league
+
+The response carries 'guest_deleted' as well as 'return_code'. It is true when the removed
+player was a guest and the server also deleted their app_user row, which it does once that
+guest belongs to no league at all. Nothing in the UI needs it today - the whole response map
+is passed straight back to the caller - but it is there if a screen ever wants to say so.
 */
 
 import 'dart:convert';
