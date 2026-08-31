@@ -55,13 +55,22 @@ export default function CleanupView({ data }: { data: CleanupData }) {
   const [idle_days, set_idle_days] = useState(String(data.thresholds.idle_days));
   const [min_age_days, set_min_age_days] = useState(String(data.thresholds.min_age_days));
 
-  const visible = useMemo(
-    () =>
-      reason_filter
-        ? data.leagues.filter((league) => league.reasons.includes(reason_filter))
-        : data.leagues,
-    [data.leagues, reason_filter]
-  );
+  // Filtered by the reason chip, then ordered by when anything last happened: most recently
+  // active at the top, stale further down, and the ones nothing has ever happened in right
+  // at the bottom. A null days_idle is the absence of a date, not the oldest one, so it
+  // sorts last rather than pretending to be infinitely idle - the same rule DataTable uses.
+  const visible = useMemo(() => {
+    const rows = reason_filter
+      ? data.leagues.filter((league) => league.reasons.includes(reason_filter))
+      : data.leagues;
+
+    return [...rows].sort((a, b) => {
+      if (a.days_idle === null && b.days_idle === null) return 0;
+      if (a.days_idle === null) return 1;
+      if (b.days_idle === null) return -1;
+      return a.days_idle - b.days_idle;
+    });
+  }, [data.leagues, reason_filter]);
 
   // How many of the selected leagues have real played matches in them. This drives the
   // warning on the delete panel - deleting 40 empty shells is housekeeping, deleting one

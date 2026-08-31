@@ -74,6 +74,8 @@ const columns: Column<UserRow>[] = [
   {
     key: 'days_idle',
     label: 'Last seen',
+    // Ascending first, same as the leagues table - a small idle number is a live user
+    first_dir: 'asc',
     render: (user) => (
       <span className={user.days_idle === null || user.days_idle > 180 ? 'text-slate-400' : ''}>
         {format_idle(user.days_idle)}
@@ -131,7 +133,8 @@ export default function UsersTable({ users }: { users: UserRow[] }) {
         href={(user) => `/users/${user.id}`}
         search={(user) => [user.name, user.nickname, user.email].filter(Boolean).join(' ')}
         search_placeholder="Search name, nickname, email…"
-        initial_sort={{ key: 'created_at', dir: 'desc' }}
+        // Most recently seen first, never-seen accounts at the bottom
+        initial_sort={{ key: 'days_idle', dir: 'asc' }}
         empty="No users match."
       />
     </>

@@ -68,3 +68,6 @@ android/key.properties
 *.env
 splitleague-server/.env
 
+
+# Local-only data dumps taken before destructive admin cleanups - never commit
+backups/

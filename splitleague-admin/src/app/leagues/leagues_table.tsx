@@ -73,6 +73,9 @@ const columns: Column<LeagueRow>[] = [
   {
     key: 'days_idle',
     label: 'Last activity',
+    // Small idle number = touched recently, so this column opens ascending: live leagues
+    // at the top, stale ones underneath, never-touched ones last of all.
+    first_dir: 'asc',
     render: (league) => (
       <span className={league.days_idle === null || league.days_idle > 180 ? 'text-slate-400' : ''}>
         {format_idle(league.days_idle)}
@@ -114,7 +117,10 @@ export default function LeaguesTable({ leagues }: { leagues: LeagueRow[] }) {
           .join(' ')
       }
       search_placeholder="Search name, organiser, code…"
-      initial_sort={{ key: 'created_at', dir: 'desc' }}
+      // Most recently active first. Sorting on days_idle rather than created_at answers
+      // "what is alive?" instead of "what is new?", and DataTable puts the nulls - leagues
+      // nothing has ever happened in - at the bottom, which is where they belong.
+      initial_sort={{ key: 'days_idle', dir: 'asc' }}
       empty="No leagues match."
     />
   );

@@ -44,6 +44,12 @@ export type Column<T> = {
 
   // Right-align numbers, left-align everything else
   align?: 'left' | 'right';
+
+  // Which way this column sorts the first time its header is clicked. Defaults to 'desc',
+  // because on most columns the interesting end is the big one - most members, most
+  // fixtures. It is 'asc' on the idle columns, where a small number means "active
+  // yesterday" and that is the end worth looking at first.
+  first_dir?: 'asc' | 'desc';
 };
 
 export type Filter<T> = {
@@ -154,8 +160,10 @@ export default function DataTable<T>({
       set_sort_key(key);
 
       // A newly chosen column starts descending, because on this data the interesting end
-      // is almost always the big one - most members, most fixtures, longest idle.
-      set_sort_dir('desc');
+      // is almost always the big one - most members, most fixtures. Columns where the
+      // small end is the interesting one say so with first_dir.
+      const column = columns.find((c) => c.key === key);
+      set_sort_dir(column?.first_dir ?? 'desc');
     }
   }
 

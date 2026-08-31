@@ -186,6 +186,8 @@ router.post('/', verifyAdmin, async (req, res) => {
       -- Anything younger than the floor is not a candidate, whatever else is true of it
       WHERE l.created_at < now() - make_interval(days => $1)
 
+      -- A stable order so the response is deterministic. The admin table reorders these by
+      -- last activity in the browser, so this is the tie-break, not the order you see.
       ORDER BY l.created_at ASC
     `, [minAgeDays]);
 
