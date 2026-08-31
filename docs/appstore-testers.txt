@@ -1,28 +1,8 @@
 -- App store Tester
 Email: peter@test.com
-Password: 123456
-
-
-== Postman ==
-URL: http://localhost:3000/login_user
-{
-  "email": "test1@test.com",
-  "password": "1234"
-}
+123456
 
 == Test Users ==
 Email: amy@test.com
-Password: 123456
-
 Email: jane@test.com
-Password: 123456
-
-Email: delete@test.com
-Password: 123456
-
-== Data Safety / Privacy Policy / Account Deletion ==
-https://www.noodev8.com/privacy-policy/
-
-== App Store Descriptions ==
-Your scoreboard for any game — leagues, matches, scores, standings.
 
