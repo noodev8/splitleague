@@ -1,3 +1,8 @@
+-- App store Tester
+Email: peter@test.com
+Password: 123456
+
+
 == Postman ==
 URL: http://localhost:3000/login_user
 {
@@ -6,12 +11,6 @@ URL: http://localhost:3000/login_user
 }
 
 == Test Users ==
-Email: allan@test.com
-Password: 123456
-
-Email: peter@test.com
-Password: 123456
-
 Email: amy@test.com
 Password: 123456
 
