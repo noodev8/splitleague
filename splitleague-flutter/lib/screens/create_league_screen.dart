@@ -60,6 +60,29 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
   final _winMarginThresholdController = TextEditingController(text: '0');
   final _playEachOtherController = TextEditingController(text: '1');
 
+  // How far the "everyone plays everyone" stepper can go. Thirty is not a technical
+  // limit - the server takes whatever number it is given - it is a sanity limit.
+  // It is set where it is because of head-to-head leagues: two people playing chess
+  // to "first to ten" need nineteen fixtures, and they usually want room for more
+  // than one session of it. Thirty is a lot of fixtures in a league of eight, which
+  // is why the number is also typeable rather than only reachable by tapping plus.
+  static const int _minMeetings = 1;
+  static const int _maxMeetings = 30;
+
+  // The stepper reads and writes the same controller the rest of the screen uses,
+  // so nothing else on the screen has to know it changed shape.
+  int get _meetings {
+    final int value = int.tryParse(_playEachOtherController.text) ?? _minMeetings;
+    return value.clamp(_minMeetings, _maxMeetings);
+  }
+
+  void _setMeetings(int value) {
+    setState(() {
+      _playEachOtherController.text =
+          '${value.clamp(_minMeetings, _maxMeetings)}';
+    });
+  }
+
   // Loading state
   bool _isLoading = false;
 
@@ -566,12 +589,15 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
 
   // How many times everyone plays everyone.
   //
-  // Three buttons rather than a number field. It used to be a text box labelled
+  // A stepper rather than a text box. It used to be a text box labelled
   // "Times to play each other:" that would happily accept 40, which in a league of
-  // eight people is 1,120 fixtures. One, two and three cover every real league, and
-  // they say what they mean in words.
+  // eight people is 1,120 fixtures. Then it was three buttons - once, twice, three
+  // times - which turned out to be too few: a head-to-head league playing "first to
+  // ten" needs far more than three. So it is a minus and a plus between 1 and
+  // _maxMeetings, and the number itself can be tapped to type a value, because
+  // walking from 1 to 19 one tap at a time is nobody's idea of an evening.
   Widget _meetingsPicker() {
-    final int current = int.tryParse(_playEachOtherController.text) ?? 1;
+    final int current = _meetings;
 
     return Container(
       decoration: BoxDecoration(
@@ -587,57 +613,128 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              _meetingOption('Once', 1, current),
-              const SizedBox(width: 8),
-              _meetingOption('Twice', 2, current),
-              const SizedBox(width: 8),
-              _meetingOption('3 times', 3, current),
+              _meetingStep(
+                icon: Icons.remove,
+                label: 'One time fewer',
+                onTap: current > _minMeetings
+                    ? () => _setMeetings(current - 1)
+                    : null,
+              ),
+
+              // The value itself, filling the space between the two buttons so the
+              // buttons stay pinned to the edges whatever the text scale. Tapping it
+              // opens a keypad, which is the only sane way to reach the high numbers.
+              Expanded(
+                child: Semantics(
+                  button: true,
+                  liveRegion: true,
+                  label: '${_meetingsLabel(current)}. Tap to type a number.',
+                  excludeSemantics: true,
+                  child: InkWell(
+                    onTap: _askForMeetings,
+                    borderRadius: BorderRadius.circular(9),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Center(
+                        child: Text(
+                          _meetingsLabel(current),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppType.b(
+                            AppType.action,
+                            color: AppPalette.ink,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              _meetingStep(
+                icon: Icons.add,
+                label: 'One time more',
+                onTap: current < _maxMeetings
+                    ? () => _setMeetings(current + 1)
+                    : null,
+              ),
             ],
+          ),
+
+          const SizedBox(height: 10),
+
+          // Say where the ceiling is, and say that the number can be typed - the
+          // plus button on its own gives no hint that either is true, and somebody
+          // who wants thirty should not have to find out by tapping thirty times.
+          Text(
+            current >= _maxMeetings
+                ? '$_maxMeetings is the most. Tap the number to type it.'
+                : 'Up to $_maxMeetings. Tap the number to type it.',
+            style: AppType.b(AppType.meta, color: AppPalette.slate),
           ),
         ],
       ),
     );
   }
 
-  Widget _meetingOption(String label, int value, int current) {
-    final bool selected = current == value;
+  // Type an exact number of meetings. Anything outside the range is pulled back
+  // into it rather than rejected - the person meant "as many as you allow".
+  //
+  // The text field lives in _MeetingsDialog rather than here because a controller
+  // created here would have to be disposed of the moment showDialog returns, and
+  // the dialog is still on screen at that point playing its close animation - it
+  // rebuilds the field once more and throws "used after being disposed". Letting
+  // the dialog own its own controller means it is disposed of when the dialog is
+  // actually gone.
+  Future<void> _askForMeetings() async {
+    final int? chosen = await showDialog<int>(
+      context: context,
+      builder:
+          (context) => _MeetingsDialog(initial: _meetings),
+    );
 
-    return Expanded(
-      child: Semantics(
-        button: true,
-        selected: selected,
-        label: label,
-        excludeSemantics: true,
-        child: Material(
-          color: selected ? AppPalette.tealTint : AppPalette.chalk,
+    if (chosen != null) _setMeetings(chosen);
+  }
+
+  // "Once", "Twice", then plain counting.
+  String _meetingsLabel(int value) {
+    if (value == 1) return 'Once';
+    if (value == 2) return 'Twice';
+    return '$value times';
+  }
+
+  // One end of the stepper. A null onTap means the limit has been reached, and the
+  // button greys out rather than disappearing, so the row does not jump about.
+  Widget _meetingStep({
+    required IconData icon,
+    required String label,
+    required VoidCallback? onTap,
+  }) {
+    final bool enabled = onTap != null;
+
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      excludeSemantics: true,
+      child: Material(
+        color: enabled ? AppPalette.chalk : AppPalette.surface,
+        borderRadius: BorderRadius.circular(9),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(9),
-          child: InkWell(
-            onTap:
-                () => setState(() => _playEachOtherController.text = '$value'),
-            borderRadius: BorderRadius.circular(9),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(9),
-                border: Border.all(
-                  color:
-                      selected
-                          ? AppPalette.teal.withValues(alpha: 0.45)
-                          : Colors.transparent,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppType.b(
-                    AppType.action,
-                    color: selected ? AppPalette.tealDeep : AppPalette.slate,
-                    size: 14,
-                  ),
-                ),
-              ),
+          child: Container(
+            width: 56,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: AppPalette.hairline),
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: enabled ? AppPalette.tealDeep : AppPalette.hairlineStrong,
             ),
           ),
         ),
@@ -768,6 +865,67 @@ class _CreateLeagueScreenState extends State<CreateLeagueScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+
+// The "how many times?" keypad, kept as its own widget so that it owns the text
+// controller and disposes of it at the right moment. Pops the number the person
+// typed, or null if they cancelled or typed something that is not a number - the
+// screen clamps whatever comes back into range.
+class _MeetingsDialog extends StatefulWidget {
+  final int initial;
+
+  const _MeetingsDialog({required this.initial});
+
+  @override
+  State<_MeetingsDialog> createState() => _MeetingsDialogState();
+}
+
+class _MeetingsDialogState extends State<_MeetingsDialog> {
+  late final TextEditingController _entry;
+
+  @override
+  void initState() {
+    super.initState();
+    _entry = TextEditingController(text: '${widget.initial}');
+  }
+
+  @override
+  void dispose() {
+    _entry.dispose();
+    super.dispose();
+  }
+
+  // Hand back what was typed. Not a number means null, and the screen leaves the
+  // value alone.
+  void _submit() {
+    Navigator.of(context).pop(int.tryParse(_entry.text.trim()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      // Scrollable, because the keyboard takes most of a phone screen and the
+      // dialog has to survive being squeezed into what is left.
+      scrollable: true,
+      title: const Text('How many times?'),
+      content: TextField(
+        controller: _entry,
+        autofocus: true,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        onSubmitted: (_) => _submit(),
+        decoration: const InputDecoration(border: OutlineInputBorder()),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        TextButton(onPressed: _submit, child: const Text('Set')),
+      ],
     );
   }
 }
