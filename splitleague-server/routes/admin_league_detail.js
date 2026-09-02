@@ -48,9 +48,9 @@ Success Response:
     {
       "id": 900,                       // integer
       "player_1_id": 7,                // integer, may be null
-      "player_1_name": "Andreas",      // string, may be null
+      "player_1_name": "Andy",         // string, the player's nickname, may be null
       "player_2_id": 9,                // integer, may be null
-      "player_2_name": "Dave (g)",     // string, may be null
+      "player_2_name": "guest_Dave",   // string, the player's nickname, may be null
       "scheduled_date": "2026-03-11",  // string, date only, may be null
       "played": true,                  // boolean
       "player_1_score": 3,             // integer, may be null
@@ -187,14 +187,23 @@ router.post('/', verifyAdmin, async (req, res) => {
     // Two LEFT JOINs onto app_user under different aliases, because the two player columns
     // are two separate references to the same table. LEFT rather than inner so a fixture
     // whose player row has been deleted still shows up instead of silently vanishing.
+    //
+    // The nickname is the name, and reading app_user.name instead is wrong twice over.
+    // For a guest, name is the literal string 'guest' for every one of them, so a whole
+    // fixture list reads "guest v guest"; the person's label lives in nickname. For a real
+    // user, nickname is the handle they chose to play under and it is what the app puts on
+    // every fixture - get_league_fixtures.js returns both and the client prefers the
+    // nickname. Showing anything else here would not match what the players themselves see.
+    //
+    // COALESCE is belt and braces: every row in production has a nickname today.
     // ---------------------------------------------------------------------------------
     const fixturesQuery = pool.query(`
       SELECT
         f.id,
         f.player_1_id,
-        p1.name                 AS player_1_name,
+        COALESCE(p1.nickname, p1.name)  AS player_1_name,
         f.player_2_id,
-        p2.name                 AS player_2_name,
+        COALESCE(p2.nickname, p2.name)  AS player_2_name,
         f.scheduled_date,
         f.played,
         f.player_1_score,
